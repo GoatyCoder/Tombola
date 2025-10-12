@@ -34,20 +34,27 @@
 
       <section class="card" aria-labelledby="manual-title">
         <h2 id="manual-title">Inserimento manuale</h2>
-        <form id="manual-form">
-          <label class="visually-hidden" for="number-input">Numero della tombola</label>
-          <input
-            id="number-input"
-            name="number"
-            type="number"
-            inputmode="numeric"
-            min="1"
-            max="90"
-            placeholder="Digita un numero (1-90)"
-            required
-          />
-          <button type="submit" class="primary">Ascolta pronuncia</button>
-        </form>
+        <div class="game-actions">
+          <form id="manual-form">
+            <label class="visually-hidden" for="number-input">Numero della tombola</label>
+            <input
+              id="number-input"
+              name="number"
+              type="number"
+              inputmode="numeric"
+              min="1"
+              max="90"
+              placeholder="Digita un numero (1-90)"
+              required
+            />
+            <button type="submit" class="primary">Ascolta pronuncia</button>
+          </form>
+          <label class="audio-toggle" id="audio-toggle-control" for="audio-toggle">
+            <input type="checkbox" id="audio-toggle" checked />
+            <span class="audio-toggle-slider" aria-hidden="true"></span>
+            <span id="audio-toggle-status" class="audio-toggle-text">Audio attivo</span>
+          </label>
+        </div>
         <div id="selection-output" class="selection-output" aria-live="polite"></div>
       </section>
 

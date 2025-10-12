@@ -121,6 +121,17 @@ body {
   flex-wrap: wrap;
 }
 
+.game-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.game-actions form {
+  flex: 1 1 280px;
+}
+
 #manual-form input {
   flex: 1 1 180px;
   padding: 0.75rem 1rem;
@@ -136,6 +147,87 @@ body {
     border-color: rgba(255, 255, 255, 0.2);
     color: inherit;
   }
+}
+
+.audio-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .audio-toggle {
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.audio-toggle input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+}
+
+.audio-toggle-slider {
+  width: 52px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.2);
+  position: relative;
+  transition: background 0.2s ease;
+}
+
+.audio-toggle-slider::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+.audio-toggle input:checked + .audio-toggle-slider {
+  background: var(--accent);
+}
+
+.audio-toggle input:checked + .audio-toggle-slider::after {
+  transform: translateX(24px);
+}
+
+.audio-toggle input:focus-visible + .audio-toggle-slider {
+  outline: 3px solid rgba(192, 57, 43, 0.35);
+  outline-offset: 3px;
+}
+
+.audio-toggle-text {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: inherit;
+  transition: color 0.2s ease;
+}
+
+.audio-toggle[data-state='on'] {
+  background: rgba(192, 57, 43, 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  .audio-toggle[data-state='on'] {
+    background: rgba(230, 126, 34, 0.2);
+  }
+}
+
+.audio-toggle[data-state='off'] .audio-toggle-text {
+  color: var(--text-muted);
 }
 
 .selection-output {

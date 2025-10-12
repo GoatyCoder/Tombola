@@ -6,6 +6,7 @@ const state = {
   currentUtterance: null,
   html5QrCode: null,
   isScanning: false,
+  audioEnabled: true,
 };
 
 const elements = {
@@ -18,6 +19,9 @@ const elements = {
   scannerContainer: document.querySelector('#scanner-container'),
   closeScanner: document.querySelector('#close-scanner'),
   completeOnly: document.querySelector('#complete-only'),
+  audioToggle: document.querySelector('#audio-toggle'),
+  audioToggleStatus: document.querySelector('#audio-toggle-status'),
+  audioToggleControl: document.querySelector('#audio-toggle-control'),
 };
 
 async function loadNumbers() {
@@ -76,10 +80,17 @@ function handleSelection(entry) {
   ].filter(Boolean);
 
   elements.output.innerHTML = lines.map((line) => `<span>${line}</span>`).join('');
-  speakEntry(entry);
+
+  if (state.audioEnabled) {
+    speakEntry(entry);
+  }
 }
 
 function speakEntry(entry) {
+  if (!state.audioEnabled) {
+    return;
+  }
+
   if (!('speechSynthesis' in window)) {
     elements.output.insertAdjacentHTML('beforeend', '<span class="warning">Sintesi vocale non supportata dal dispositivo.</span>');
     return;
@@ -191,11 +202,51 @@ function setupEventListeners() {
     applyFilter();
   });
 
+  if (elements.audioToggle) {
+    elements.audioToggle.addEventListener('change', (event) => {
+      state.audioEnabled = event.target.checked;
+      if (!state.audioEnabled && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        state.currentUtterance = null;
+      }
+      updateDrawStatus();
+    });
+  }
+
   document.addEventListener('visibilitychange', () => {
     if (document.hidden && state.isScanning) {
       stopScanner();
     }
   });
+}
+
+function updateDrawStatus() {
+  if (elements.audioToggle) {
+    elements.audioToggle.checked = state.audioEnabled;
+  }
+  if (elements.audioToggleControl) {
+    elements.audioToggleControl.dataset.state = state.audioEnabled ? 'on' : 'off';
+  }
+  if (elements.audioToggleStatus) {
+    elements.audioToggleStatus.textContent = state.audioEnabled ? 'Audio attivo' : 'Audio disattivato';
+  }
+  if (elements.completeOnly) {
+    elements.completeOnly.checked = state.showCompleteOnly;
+  }
+}
+
+function resetGame() {
+  if (elements.numberInput) {
+    elements.numberInput.value = '';
+  }
+  if (elements.output) {
+    elements.output.textContent = '';
+  }
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
+  state.currentUtterance = null;
+  updateDrawStatus();
 }
 
 function announceMissingVoices() {
@@ -212,6 +263,7 @@ function announceMissingVoices() {
 
 function init() {
   setupEventListeners();
+  resetGame();
   announceMissingVoices();
   loadNumbers();
 }
