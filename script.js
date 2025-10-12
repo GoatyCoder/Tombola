@@ -136,7 +136,8 @@ function handleSelection(
   speakEntry(entry);
 }
 
-function markNumberDrawn(number) {
+function markNumberDrawn(number, options = {}) {
+  const { animate = false } = options;
   if (state.drawnNumbers.has(number)) {
     return;
   }
@@ -145,6 +146,16 @@ function markNumberDrawn(number) {
   if (cell) {
     cell.classList.add('board-cell--drawn');
     cell.setAttribute('aria-pressed', 'true');
+    if (animate) {
+      cell.classList.add('board-cell--just-drawn');
+      const handleAnimationEnd = (event) => {
+        if (event.animationName === 'boardCellPop') {
+          cell.classList.remove('board-cell--just-drawn');
+          cell.removeEventListener('animationend', handleAnimationEnd);
+        }
+      };
+      cell.addEventListener('animationend', handleAnimationEnd);
+    }
   }
 }
 
@@ -160,7 +171,7 @@ function handleDraw() {
 
   const randomIndex = Math.floor(Math.random() * remaining.length);
   const entry = remaining[randomIndex];
-  markNumberDrawn(entry.number);
+  markNumberDrawn(entry.number, { animate: true });
   updateDrawStatus(entry);
   handleSelection(entry, state.cellsByNumber.get(entry.number), { fromDraw: true });
 }
