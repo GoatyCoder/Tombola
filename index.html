@@ -54,13 +54,58 @@
             <p class="board-panel__status" id="draw-status" aria-live="polite">
               Caricamento del tabellone…
             </p>
+            <button
+              type="button"
+              id="history-toggle"
+              class="board-panel__history-toggle"
+              aria-expanded="false"
+              aria-controls="history-panel"
+            >
+              Cronologia estrazioni
+            </button>
           </div>
         </header>
         <div class="board-panel__body">
-          <div id="board" class="board-grid" aria-live="polite"></div>
+          <div class="board-layout">
+            <div class="board-layout__grid">
+              <div id="board" class="board-grid" aria-live="polite"></div>
+            </div>
+            <aside
+              id="history-panel"
+              class="history-panel"
+              aria-label="Cronologia estrazioni"
+              aria-hidden="false"
+              tabindex="-1"
+            >
+              <header class="history-panel__header">
+                <h3>Cronologia estrazioni</h3>
+                <p class="history-panel__subtitle">
+                  Tieni d'occhio l'ordine di uscita dei numeri.
+                </p>
+              </header>
+              <div class="history-panel__latest" id="draw-history-latest" hidden>
+                <p class="history-panel__latest-label">Ultimo numero</p>
+                <div class="history-panel__latest-ball">
+                  <span id="draw-history-latest-number"></span>
+                </div>
+                <p class="history-panel__latest-detail" id="draw-history-latest-detail"></p>
+              </div>
+              <p class="history-panel__empty" id="draw-history-empty">
+                Nessun numero estratto finora.
+              </p>
+              <ol class="history-list" id="draw-history" aria-live="polite"></ol>
+            </aside>
+          </div>
         </div>
       </section>
     </main>
+
+    <div
+      id="history-scrim"
+      class="history-scrim"
+      hidden
+      aria-hidden="true"
+    ></div>
 
     <div
       id="draw-animation"
