@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tombola Nojana</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Signika:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script defer src="https://unpkg.com/html5-qrcode@2.3.7/html5-qrcode.min.js"></script>
+    <script defer src="script.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="top-bar">
+        <div class="title-group">
+          <h1>Tombola Nojana</h1>
+          <p>Tabellone interattivo con pronuncia in dialetto nojano.</p>
+        </div>
+        <div class="top-actions">
+          <button type="button" id="manual-trigger" class="action-btn">Inserisci numero</button>
+          <button type="button" id="scanner-trigger" class="action-btn primary">Scansiona QR</button>
+        </div>
+      </header>
+
+      <main class="board-section" aria-labelledby="board-title">
+        <div class="board-frame">
+          <div class="board-label" id="board-title">Tabellone della tombola</div>
+          <div id="board" class="board-grid" role="list" aria-live="polite"></div>
+        </div>
+      </main>
+
+      <footer class="footer-note">
+        <p>
+          Suggerimento: per una pronuncia autentica registra una voce narrante madrelingua e
+          sostituisci la sintesi vocale.
+        </p>
+      </footer>
+    </div>
+
+    <div class="modal-backdrop" data-modal="number" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="number-heading">
+        <button class="modal-close" type="button" data-close aria-label="Chiudi">
+          ×
+        </button>
+        <div class="modal-header">
+          <div class="modal-token">
+            <span class="token-label">Numero</span>
+            <span class="token-value" id="number-heading"></span>
+          </div>
+          <button type="button" class="ghost" id="play-number">▶︎ Riproduci</button>
+        </div>
+        <div class="modal-body">
+          <dl class="details">
+            <div>
+              <dt>Italiano</dt>
+              <dd id="detail-italian"></dd>
+            </div>
+            <div>
+              <dt>Dialetto nojano</dt>
+              <dd id="detail-dialect"></dd>
+            </div>
+          </dl>
+          <p class="missing-hint" id="missing-hint" hidden>
+            Pronuncia dialettale non ancora disponibile: verrà usato il testo italiano.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" data-modal="manual" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="manual-heading">
+        <button class="modal-close" type="button" data-close aria-label="Chiudi">
+          ×
+        </button>
+        <div class="modal-header">
+          <h2 id="manual-heading">Digita un numero</h2>
+        </div>
+        <div class="modal-body">
+          <form id="manual-form" class="manual-form">
+            <label class="visually-hidden" for="number-input">Numero della tombola</label>
+            <input
+              id="number-input"
+              name="number"
+              type="number"
+              inputmode="numeric"
+              min="1"
+              max="90"
+              placeholder="Da 1 a 90"
+              required
+            />
+            <button type="submit" class="action-btn primary">Ascolta</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" data-modal="scanner" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="scanner-heading">
+        <button class="modal-close" type="button" data-close aria-label="Chiudi">
+          ×
+        </button>
+        <div class="modal-header">
+          <h2 id="scanner-heading">Scansiona un QR</h2>
+        </div>
+        <div class="modal-body scanner-body">
+          <div id="qr-reader" class="qr-reader" aria-live="polite"></div>
+          <p id="scanner-status" class="status-text">Inquadra il codice QR per ascoltare il numero.</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
