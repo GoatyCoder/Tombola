@@ -27,12 +27,28 @@ const elements = {
 };
 
 async function loadNumbers() {
+  const ingestNumbers = (data) => {
+    if (!data || !Array.isArray(data.numbers)) {
+      throw new Error('Struttura dati non valida.');
+    }
+    state.numbers = [...data.numbers].sort((a, b) => a.number - b.number);
+    renderBoard();
+  };
+
+  try {
+    if (window.__TOMBOLA_DATA) {
+      ingestNumbers(window.__TOMBOLA_DATA);
+      return;
+    }
+  } catch (error) {
+    console.error('Errore nel dataset incorporato', error);
+  }
+
   try {
     const response = await fetch('data.json');
     if (!response.ok) throw new Error('Impossibile caricare i dati della tombola');
     const data = await response.json();
-    state.numbers = [...data.numbers].sort((a, b) => a.number - b.number);
-    renderBoard();
+    ingestNumbers(data);
   } catch (error) {
     console.error(error);
     elements.board.innerHTML = '<p class="status-text">Errore nel caricamento dei numeri.</p>';

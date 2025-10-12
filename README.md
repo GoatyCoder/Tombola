@@ -13,7 +13,7 @@ Questa repository contiene una web app statica che permette di esplorare i numer
 
 ```
 .
-├── data.json      # Archivio dei numeri con testi italiano/dialetto
+├── data.js        # Archivio dei numeri con testi italiano/dialetto esposto come variabile globale
 ├── index.html     # Pagina principale dell'app
 ├── script.js      # Logica dell'interfaccia, popup, sintesi vocale e scanner QR
 └── styles.css     # Stili grafici (tema tavola da gioco, responsive)
@@ -21,7 +21,7 @@ Questa repository contiene una web app statica che permette di esplorare i numer
 
 ## Come eseguire l'app
 
-Trattandosi di una SPA statica non è necessario alcun build step. È sufficiente servire i file con un web server locale (necessario per permettere al browser di accedere alla fotocamera e leggere `data.json`).
+Trattandosi di una SPA statica non è necessario alcun build step. Puoi aprire direttamente `index.html` anche senza server per provare il tabellone e la pronuncia (i dati sono inclusi in `data.js`). Un web server locale resta comunque consigliato (ed è necessario quando vuoi usare la fotocamera per la scansione dei QR).
 
 ### Utilizzando Python 3
 
@@ -41,19 +41,19 @@ npx http-server -p 8000
 
 ## Formato dei QR code
 
-Lo scanner si aspetta un QR code che contenga **semplicemente il numero** (es. `42`). Quando il valore è valido e presente in `data.json`, l'app apre automaticamente il popup relativo, ferma la scansione e riproduce l'audio.
+Lo scanner si aspetta un QR code che contenga **semplicemente il numero** (es. `42`). Quando il valore è valido e presente in `data.js`, l'app apre automaticamente il popup relativo, ferma la scansione e riproduce l'audio.
 
 ## Personalizzazione delle pronunce
 
 Al momento la pronuncia sfrutta la sintesi vocale (`speechSynthesis`) del dispositivo. Per ottenere un risultato fedele al dialetto nojano è possibile:
 
 1. Registrare i file audio originali (uno per numero) e salvarli nella cartella `audio/`.
-2. Aggiornare `data.json` aggiungendo un attributo `audio` con il percorso del file.
+2. Aggiornare `data.js` aggiungendo un attributo `audio` con il percorso del file.
 3. Estendere `script.js` per riprodurre i file locali al posto della sintesi vocale quando disponibili.
 
 ## Stato dei dati
 
-Alcune voci dialettali non sono ancora state fornite. In questi casi la UI mostra l'avviso "In attesa di registrazione" e, alla riproduzione, viene letto il testo italiano come fallback. Puoi aggiornare `data.json` man mano che ricevi le traduzioni complete.
+Alcune voci dialettali non sono ancora state fornite. In questi casi la UI mostra l'avviso "In attesa di registrazione" e, alla riproduzione, viene letto il testo italiano come fallback. Puoi aggiornare `data.js` man mano che ricevi le traduzioni complete.
 
 ## Requisiti del browser
 
