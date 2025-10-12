@@ -16,12 +16,13 @@
       "number": 3,
       "italian": "Le castagne del prete",
       "dialect": null,
-      "image": 
+      "image": "images/3.png"
     },
     {
       "number": 4,
       "italian": "L'arco di Santoro",
-      "dialect": "UARK D SANTAO-R"
+      "dialect": "UARK D SANTAO-R",
+      "image": "images/4.png"
     },
     {
       "number": 5,
