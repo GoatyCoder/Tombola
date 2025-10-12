@@ -4,25 +4,24 @@
       "number": 1,
       "italian": "Noicattaro",
       "dialect": "U PAIEI-S DI NAO",
-      "image": null
+      "image": "images/1.png"
     },
     {
       "number": 2,
       "italian": "Il cornuto",
       "dialect": "U C-RNEUT",
-      "image": "images/2.png"
+      "image": null
     },
     {
       "number": 3,
       "italian": "Le castagne del prete",
       "dialect": null,
-      "image": "images/3.png"
+      "image": 
     },
     {
       "number": 4,
       "italian": "L'arco di Santoro",
-      "dialect": "UARK D SANTAO-R",
-      "image": "images/4.png"
+      "dialect": "UARK D SANTAO-R"
     },
     {
       "number": 5,
