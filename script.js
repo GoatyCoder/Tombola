@@ -31,9 +31,6 @@ const elements = {
   drawOverlayLabel: document.querySelector('#draw-animation-label'),
   historyList: document.querySelector('#draw-history'),
   historyEmpty: document.querySelector('#draw-history-empty'),
-  historyLatest: document.querySelector('#draw-history-latest'),
-  historyLatestNumber: document.querySelector('#draw-history-latest-number'),
-  historyLatestDetail: document.querySelector('#draw-history-latest-detail'),
   historyPanel: document.querySelector('#history-panel'),
   historyToggle: document.querySelector('#history-toggle'),
   historyScrim: document.querySelector('#history-scrim'),
@@ -410,13 +407,7 @@ async function handleDraw() {
 }
 
 function updateDrawHistory() {
-  const {
-    historyList,
-    historyEmpty,
-    historyLatest,
-    historyLatestNumber,
-    historyLatestDetail,
-  } = elements;
+  const { historyList, historyEmpty } = elements;
 
   if (!historyList) {
     return;
@@ -435,38 +426,6 @@ function updateDrawHistory() {
       historyEmpty.textContent = historyEmpty.dataset.initialText || historyEmpty.textContent;
       historyEmpty.hidden = false;
     }
-    if (historyLatest) {
-      historyLatest.hidden = true;
-    }
-    return;
-  }
-
-  const hasPreviousDraws = draws.length > 1;
-
-  historyList.hidden = !hasPreviousDraws;
-
-  const latest = draws[draws.length - 1];
-  if (historyLatest && historyLatestNumber && historyLatestDetail) {
-    historyLatest.hidden = false;
-    historyLatestNumber.textContent = latest.number;
-
-    const summaryParts = [];
-    if (latest.italian) {
-      summaryParts.push(latest.italian);
-    }
-    if (latest.dialect) {
-      summaryParts.push(latest.dialect);
-    }
-    historyLatestDetail.textContent =
-      summaryParts.join(' · ') || 'In attesa di descrizione.';
-  }
-
-  if (!hasPreviousDraws) {
-    if (historyEmpty) {
-      historyEmpty.textContent = 'Ancora nessuna estrazione precedente.';
-      historyEmpty.hidden = false;
-    }
-    historyList.scrollTop = 0;
     return;
   }
 
@@ -475,12 +434,19 @@ function updateDrawHistory() {
     historyEmpty.hidden = true;
   }
 
-  for (let index = draws.length - 2; index >= 0; index -= 1) {
+  historyList.hidden = false;
+
+  for (let index = draws.length - 1; index >= 0; index -= 1) {
     const item = draws[index];
     const order = index + 1;
+    const isLatest = index === draws.length - 1;
 
     const listItem = document.createElement('li');
     listItem.className = 'history-item';
+    if (isLatest) {
+      listItem.classList.add('history-item--latest');
+      listItem.setAttribute('aria-current', 'true');
+    }
 
     const orderBadge = document.createElement('span');
     orderBadge.className = 'history-item__order';
@@ -500,6 +466,15 @@ function updateDrawHistory() {
     const title = document.createElement('p');
     title.className = 'history-item__title';
     title.textContent = `Numero ${item.number}`;
+
+    if (isLatest) {
+      const latestLabel = document.createElement('p');
+      latestLabel.className = 'history-item__latest-label';
+      latestLabel.textContent = 'Ultimo numero';
+      details.appendChild(latestLabel);
+      title.classList.add('history-item__title--latest');
+    }
+
     details.appendChild(title);
 
     const meta = document.createElement('p');
