@@ -75,38 +75,6 @@ img {
   min-height: 0;
 }
 
-.app-footer {
-  margin: 0 auto 1.25rem;
-  width: min(1100px, 100%);
-  padding: 0 1rem;
-  display: flex;
-  justify-content: center;
-}
-
-.app-footer__inner {
-  background: rgba(255, 255, 255, 0.82);
-  border-radius: 999px;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
-  padding: 0.65rem 1.25rem 0.65rem 0.65rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  backdrop-filter: blur(4px);
-}
-
-.app-footer__logo {
-  width: clamp(140px, 24vw, 190px);
-  height: auto;
-}
-
-.app-footer__tagline {
-  margin: 0;
-  font-weight: 600;
-  font-size: clamp(0.95rem, 2.5vw, 1.1rem);
-  color: var(--muted);
-}
-
 .board-panel {
   background: var(--surface);
   border-radius: 1.75rem;
@@ -1122,22 +1090,6 @@ img {
 }
 
 @media (max-width: 600px) {
-  .app-footer {
-    padding: 0 0.75rem;
-  }
-
-  .app-footer__inner {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
-  }
-
-  .app-footer__logo {
-    width: clamp(120px, 42vw, 160px);
-  }
-
   .draw-overlay__content {
     padding: 2.4rem 1.3rem 2.1rem;
     gap: 1.3rem;
