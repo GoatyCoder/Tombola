@@ -4,7 +4,10 @@ const state = {
   currentUtterance: null,
   cellsByNumber: new Map(),
   drawnNumbers: new Set(),
+  drawHistory: [],
   isAnimatingDraw: false,
+  historyOpen: false,
+  audioEnabled: true,
 };
 
 const elements = {
@@ -26,7 +29,183 @@ const elements = {
   drawOverlayNumber: document.querySelector('#draw-animation-number'),
   drawOverlayBall: document.querySelector('#draw-animation-ball'),
   drawOverlayLabel: document.querySelector('#draw-animation-label'),
+  historyList: document.querySelector('#draw-history'),
+  historyEmpty: document.querySelector('#draw-history-empty'),
+  historyPanel: document.querySelector('#history-panel'),
+  historyToggle: document.querySelector('#history-toggle'),
+  historyScrim: document.querySelector('#history-scrim'),
+  audioToggle: document.querySelector('#audio-toggle'),
 };
+
+const AUDIO_STORAGE_KEY = 'tombola-audio-enabled';
+
+const MOBILE_HISTORY_QUERY = '(max-width: 540px)';
+const historyMediaMatcher =
+  typeof window !== 'undefined' && 'matchMedia' in window
+    ? window.matchMedia(MOBILE_HISTORY_QUERY)
+    : { matches: false };
+
+function syncHistoryPanelToLayout(options = {}) {
+  const { immediate = false } = options;
+  const { historyPanel, historyToggle, historyScrim } = elements;
+
+  if (!historyPanel) {
+    state.historyOpen = false;
+    return;
+  }
+
+  const mobileLayout = Boolean(historyMediaMatcher.matches);
+
+  if (!mobileLayout) {
+    state.historyOpen = false;
+    historyPanel.classList.remove('history-panel--open');
+    historyPanel.setAttribute('aria-hidden', 'false');
+    if (historyToggle) {
+      historyToggle.setAttribute('aria-expanded', 'false');
+    }
+    if (historyScrim) {
+      historyScrim.classList.remove('history-scrim--visible');
+      historyScrim.hidden = true;
+    }
+    return;
+  }
+
+  historyPanel.setAttribute('aria-hidden', state.historyOpen ? 'false' : 'true');
+  historyPanel.classList.toggle('history-panel--open', state.historyOpen);
+  if (historyToggle) {
+    historyToggle.setAttribute('aria-expanded', state.historyOpen ? 'true' : 'false');
+  }
+
+  if (!historyScrim) {
+    return;
+  }
+
+  if (state.historyOpen) {
+    historyScrim.hidden = false;
+    if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(() => {
+        historyScrim.classList.add('history-scrim--visible');
+      });
+    } else {
+      historyScrim.classList.add('history-scrim--visible');
+    }
+  } else {
+    historyScrim.classList.remove('history-scrim--visible');
+    const finalizeHide = () => {
+      if (!state.historyOpen) {
+        historyScrim.hidden = true;
+      }
+      historyScrim.removeEventListener('transitionend', finalizeHide);
+    };
+
+    if (immediate) {
+      finalizeHide();
+    } else {
+      historyScrim.addEventListener('transitionend', finalizeHide);
+      window.setTimeout(finalizeHide, 260);
+    }
+  }
+}
+
+function openHistoryPanel() {
+  if (state.historyOpen) {
+    return;
+  }
+  state.historyOpen = true;
+  syncHistoryPanelToLayout();
+  window.setTimeout(() => {
+    if (state.historyOpen && elements.historyPanel) {
+      elements.historyPanel.focus({ preventScroll: true });
+    }
+  }, 120);
+}
+
+function closeHistoryPanel(options = {}) {
+  const { immediate = false } = options;
+  if (!state.historyOpen) {
+    syncHistoryPanelToLayout({ immediate });
+    return;
+  }
+  state.historyOpen = false;
+  syncHistoryPanelToLayout({ immediate });
+}
+
+function toggleHistoryPanel() {
+  if (!historyMediaMatcher.matches) {
+    if (elements.historyPanel) {
+      elements.historyPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    return;
+  }
+
+  if (state.historyOpen) {
+    closeHistoryPanel();
+  } else {
+    openHistoryPanel();
+  }
+}
+
+function updateAudioToggle() {
+  const { audioToggle } = elements;
+  if (!audioToggle) {
+    return;
+  }
+
+  const enabled = Boolean(state.audioEnabled);
+  audioToggle.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+  audioToggle.classList.toggle('board-panel__audio-toggle--off', !enabled);
+  audioToggle.textContent = enabled ? 'Audio attivo' : 'Audio disattivato';
+  const actionLabel = enabled ? 'Disattiva annuncio audio' : 'Attiva annuncio audio';
+  audioToggle.setAttribute('aria-label', actionLabel);
+  audioToggle.title = actionLabel;
+}
+
+function setAudioEnabled(enabled) {
+  const nextValue = Boolean(enabled);
+  state.audioEnabled = nextValue;
+
+  if (
+    !nextValue &&
+    state.currentUtterance &&
+    typeof window !== 'undefined' &&
+    'speechSynthesis' in window
+  ) {
+    window.speechSynthesis.cancel();
+    state.currentUtterance = null;
+  }
+
+  updateAudioToggle();
+
+  try {
+    if (typeof window !== 'undefined' && 'localStorage' in window) {
+      window.localStorage.setItem(AUDIO_STORAGE_KEY, nextValue ? 'true' : 'false');
+    }
+  } catch (error) {
+    console.warn('Impossibile salvare la preferenza audio', error);
+  }
+}
+
+function initializeAudioPreference() {
+  if (typeof window === 'undefined') {
+    state.audioEnabled = true;
+    updateAudioToggle();
+    return;
+  }
+
+  try {
+    if ('localStorage' in window) {
+      const stored = window.localStorage.getItem(AUDIO_STORAGE_KEY);
+      if (stored !== null) {
+        state.audioEnabled = stored === 'true';
+      }
+    }
+  } catch (error) {
+    console.warn('Impossibile leggere la preferenza audio', error);
+    state.audioEnabled = true;
+  }
+
+  updateAudioToggle();
+}
 
 async function loadNumbers() {
   try {
@@ -37,6 +216,8 @@ async function loadNumbers() {
     const data = await response.json();
     state.numbers = data.numbers.sort((a, b) => a.number - b.number);
     renderBoard();
+    state.drawHistory = [];
+    updateDrawHistory();
     updateDrawStatus();
   } catch (error) {
     console.error(error);
@@ -141,12 +322,26 @@ function handleSelection(
   speakEntry(entry);
 }
 
-function markNumberDrawn(number, options = {}) {
+function markNumberDrawn(entry, options = {}) {
+  if (!entry) {
+    return;
+  }
+
   const { animate = false } = options;
+  const number = entry.number;
+
   if (state.drawnNumbers.has(number)) {
     return;
   }
+
   state.drawnNumbers.add(number);
+  state.drawHistory.push({
+    number,
+    italian: entry.italian || '',
+    dialect: entry.dialect || '',
+  });
+  updateDrawHistory();
+
   const cell = state.cellsByNumber.get(number);
   if (cell) {
     cell.classList.add('board-cell--drawn');
@@ -169,6 +364,10 @@ async function handleDraw() {
     return;
   }
 
+  if (state.historyOpen && historyMediaMatcher.matches) {
+    closeHistoryPanel();
+  }
+
   const remaining = state.numbers.filter(
     (entry) => !state.drawnNumbers.has(entry.number)
   );
@@ -178,9 +377,14 @@ async function handleDraw() {
     return;
   }
 
+  const modalWasOpen = elements.modal && !elements.modal.hasAttribute('hidden');
+  if (modalWasOpen) {
+    closeModal({ returnFocus: false });
+  }
+
   const randomIndex = Math.floor(Math.random() * remaining.length);
   const entry = remaining[randomIndex];
-  markNumberDrawn(entry.number, { animate: true });
+  markNumberDrawn(entry, { animate: true });
 
   state.isAnimatingDraw = true;
   let restoreDrawButton = false;
@@ -202,10 +406,102 @@ async function handleDraw() {
   updateDrawStatus(entry);
 }
 
+function updateDrawHistory() {
+  const { historyList, historyEmpty } = elements;
+
+  if (!historyList) {
+    return;
+  }
+
+  if (historyEmpty && !historyEmpty.dataset.initialText) {
+    historyEmpty.dataset.initialText = historyEmpty.textContent;
+  }
+
+  const draws = state.drawHistory;
+  historyList.innerHTML = '';
+
+  if (draws.length === 0) {
+    historyList.hidden = true;
+    if (historyEmpty) {
+      historyEmpty.textContent = historyEmpty.dataset.initialText || historyEmpty.textContent;
+      historyEmpty.hidden = false;
+    }
+    return;
+  }
+
+  if (historyEmpty) {
+    historyEmpty.textContent = historyEmpty.dataset.initialText || historyEmpty.textContent;
+    historyEmpty.hidden = true;
+  }
+
+  historyList.hidden = false;
+
+  for (let index = draws.length - 1; index >= 0; index -= 1) {
+    const item = draws[index];
+    const order = index + 1;
+    const isLatest = index === draws.length - 1;
+
+    const listItem = document.createElement('li');
+    listItem.className = 'history-item';
+    if (isLatest) {
+      listItem.classList.add('history-item--latest');
+      listItem.setAttribute('aria-current', 'true');
+    }
+
+    const orderBadge = document.createElement('span');
+    orderBadge.className = 'history-item__order';
+    orderBadge.textContent = `#${order}`;
+    orderBadge.setAttribute('aria-hidden', 'true');
+    listItem.appendChild(orderBadge);
+
+    const ball = document.createElement('span');
+    ball.className = 'history-item__ball';
+    ball.textContent = item.number;
+    ball.setAttribute('aria-hidden', 'true');
+    listItem.appendChild(ball);
+
+    const details = document.createElement('div');
+    details.className = 'history-item__details';
+
+    const title = document.createElement('p');
+    title.className = 'history-item__title';
+    title.textContent = `Numero ${item.number}`;
+
+    if (isLatest) {
+      const latestLabel = document.createElement('p');
+      latestLabel.className = 'history-item__latest-label';
+      latestLabel.textContent = 'Ultimo numero';
+      details.appendChild(latestLabel);
+      title.classList.add('history-item__title--latest');
+    }
+
+    details.appendChild(title);
+
+    const meta = document.createElement('p');
+    meta.className = 'history-item__meta';
+    const metaParts = [];
+    if (item.italian) {
+      metaParts.push(`Italiano: ${item.italian}`);
+    }
+    if (item.dialect) {
+      metaParts.push(`Dialetto: ${item.dialect}`);
+    }
+    meta.textContent = metaParts.join(' · ') || 'Nessuna descrizione disponibile.';
+    details.appendChild(meta);
+
+    listItem.appendChild(details);
+    historyList.appendChild(listItem);
+  }
+
+  historyList.scrollTop = 0;
+}
+
 function resetGame() {
   if (!state.numbers.length) {
     return;
   }
+
+  closeHistoryPanel({ immediate: true });
 
   if (state.drawnNumbers.size > 0) {
     const shouldReset = window.confirm(
@@ -237,6 +533,8 @@ function resetGame() {
   state.currentUtterance = null;
 
   state.drawnNumbers.clear();
+  state.drawHistory = [];
+  updateDrawHistory();
 
   state.cellsByNumber.forEach((cell) => {
     cell.classList.remove('board-cell--drawn', 'board-cell--active');
@@ -307,8 +605,14 @@ function closeModal(options = {}) {
 
 function showDrawAnimation(entry) {
   return new Promise((resolve) => {
-    const { drawOverlay, drawOverlayNumber, drawOverlayBall } = elements;
-    if (!drawOverlay || !drawOverlayNumber) {
+    const { drawOverlay, drawOverlayNumber, drawOverlayBall, drawOverlayLabel } =
+      elements;
+    const targetCell = state.cellsByNumber.get(entry.number);
+
+    if (!drawOverlay || !drawOverlayNumber || !drawOverlayBall) {
+      if (targetCell) {
+        targetCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+      }
       resolve();
       return;
     }
@@ -317,56 +621,154 @@ function showDrawAnimation(entry) {
       window.matchMedia &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+    let overlayHidden = false;
+
+    const cleanupOverlay = (immediate = false) => {
+      if (!drawOverlay || overlayHidden) {
+        return;
+      }
+
+      drawOverlay.classList.remove('draw-overlay--visible');
+      if (drawOverlayBall) {
+        drawOverlayBall.classList.remove('draw-overlay__ball--animate');
+      }
+
+      const hide = () => {
+        if (overlayHidden) {
+          return;
+        }
+        overlayHidden = true;
+        drawOverlay.setAttribute('hidden', '');
+        drawOverlay.setAttribute('aria-hidden', 'true');
+      };
+
+      if (immediate) {
+        hide();
+      } else {
+        window.setTimeout(hide, 200);
+      }
+    };
+
+    const finish = () => {
+      cleanupOverlay(true);
+      if (targetCell) {
+        targetCell.classList.remove('board-cell--incoming');
+      }
+      resolve();
+    };
+
+    const startFlight = (fromRect) => {
+      if (!targetCell) {
+        finish();
+        return;
+      }
+
+      targetCell.classList.add('board-cell--incoming');
+
+      const flightBall = document.createElement('div');
+      flightBall.className = 'draw-overlay__ball draw-flight-ball';
+      const numberSpan = document.createElement('span');
+      numberSpan.textContent = entry.number;
+      flightBall.appendChild(numberSpan);
+
+      const startX = fromRect.left + fromRect.width / 2;
+      const startY = fromRect.top + fromRect.height / 2;
+      flightBall.style.width = `${fromRect.width}px`;
+      flightBall.style.height = `${fromRect.height}px`;
+      flightBall.style.left = `${startX}px`;
+      flightBall.style.top = `${startY}px`;
+      document.body.appendChild(flightBall);
+
+      if (typeof flightBall.animate !== 'function') {
+        flightBall.remove();
+        finish();
+        return;
+      }
+
+      const animateTowardCell = () => {
+        const targetRect = targetCell.getBoundingClientRect();
+        const endX = targetRect.left + targetRect.width / 2;
+        const endY = targetRect.top + targetRect.height / 2;
+        const deltaX = endX - startX;
+        const deltaY = endY - startY;
+        const scale = Math.max(
+          Math.min(targetRect.width / fromRect.width || 1, 1.2),
+          0.55
+        );
+
+        const animation = flightBall.animate(
+          [
+            { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+            {
+              transform: `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(${scale})`,
+              opacity: 0.94,
+            },
+          ],
+          {
+            duration: 720,
+            easing: 'cubic-bezier(0.2, 0.9, 0.3, 1.05)',
+            fill: 'forwards',
+          }
+        );
+
+        const complete = () => {
+          flightBall.remove();
+          finish();
+        };
+
+        animation.addEventListener('finish', complete, { once: true });
+        animation.addEventListener('cancel', complete, { once: true });
+      };
+
+      if (!prefersReducedMotion) {
+        targetCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+        window.setTimeout(animateTowardCell, 240);
+      } else {
+        animateTowardCell();
+      }
+    };
+
     drawOverlayNumber.textContent = entry.number;
-    if (elements.drawOverlayLabel) {
-      elements.drawOverlayLabel.textContent = `Estrazione del numero ${entry.number}`;
+    if (drawOverlayLabel) {
+      drawOverlayLabel.textContent = 'Pesca dal sacchetto…';
     }
     drawOverlay.setAttribute('aria-hidden', 'false');
     drawOverlay.removeAttribute('hidden');
 
+    if (prefersReducedMotion) {
+      drawOverlay.classList.add('draw-overlay--visible');
+      if (targetCell) {
+        targetCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+      }
+      window.setTimeout(() => {
+        if (drawOverlayLabel) {
+          drawOverlayLabel.textContent = `Numero ${entry.number}!`;
+        }
+        finish();
+      }, 450);
+      return;
+    }
+
     const activate = () => {
       drawOverlay.classList.add('draw-overlay--visible');
 
-      if (drawOverlayBall) {
-        drawOverlayBall.classList.remove('draw-overlay__ball--animate');
-        // force reflow to restart the animation when needed
-        void drawOverlayBall.offsetWidth;
-
-        if (!prefersReducedMotion) {
-          drawOverlayBall.classList.add('draw-overlay__ball--animate');
-        }
-      }
+      drawOverlayBall.classList.remove('draw-overlay__ball--animate');
+      // force reflow to restart the animation when needed
+      void drawOverlayBall.offsetWidth;
+      drawOverlayBall.classList.add('draw-overlay__ball--animate');
     };
 
-    requestAnimationFrame(activate);
-
-    const finish = () => {
-      if (drawOverlayBall) {
-        drawOverlayBall.classList.remove('draw-overlay__ball--animate');
-      }
-      drawOverlay.classList.remove('draw-overlay--visible');
-      setTimeout(() => {
-        drawOverlay.setAttribute('hidden', '');
-        drawOverlay.setAttribute('aria-hidden', 'true');
-        resolve();
-      }, 220);
-    };
-
-    if (prefersReducedMotion || !drawOverlayBall) {
-      if (elements.drawOverlayLabel) {
-        elements.drawOverlayLabel.textContent = `Numero ${entry.number}!`;
-      }
-      setTimeout(finish, 450);
-      return;
-    }
+    window.requestAnimationFrame(activate);
 
     drawOverlayBall.addEventListener(
       'animationend',
       () => {
-        if (elements.drawOverlayLabel) {
-          elements.drawOverlayLabel.textContent = `Numero ${entry.number}!`;
+        if (drawOverlayLabel) {
+          drawOverlayLabel.textContent = `Numero ${entry.number}!`;
         }
-        setTimeout(finish, 200);
+        const fromRect = drawOverlayBall.getBoundingClientRect();
+        cleanupOverlay();
+        startFlight(fromRect);
       },
       { once: true }
     );
@@ -374,7 +776,15 @@ function showDrawAnimation(entry) {
 }
 
 function speakEntry(entry) {
-  if (!('speechSynthesis' in window)) {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+    return;
+  }
+
+  if (!state.audioEnabled) {
+    if (state.currentUtterance) {
+      window.speechSynthesis.cancel();
+      state.currentUtterance = null;
+    }
     return;
   }
 
@@ -382,10 +792,7 @@ function speakEntry(entry) {
     window.speechSynthesis.cancel();
   }
 
-  const parts = [`Numero ${entry.number}`];
-  if (entry.italian) {
-    parts.push(entry.italian);
-  }
+  const parts = [String(entry.number)];
   if (entry.dialect) {
     parts.push(entry.dialect);
   }
@@ -396,6 +803,24 @@ function speakEntry(entry) {
   utterance.pitch = 1.0;
 
   state.currentUtterance = utterance;
+  utterance.addEventListener(
+    'end',
+    () => {
+      if (state.currentUtterance === utterance) {
+        state.currentUtterance = null;
+      }
+    },
+    { once: true }
+  );
+  utterance.addEventListener(
+    'error',
+    () => {
+      if (state.currentUtterance === utterance) {
+        state.currentUtterance = null;
+      }
+    },
+    { once: true }
+  );
   window.speechSynthesis.speak(utterance);
 }
 
@@ -474,8 +899,17 @@ function setupEventListeners() {
   });
 
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && !elements.modal.hasAttribute('hidden')) {
+    if (event.key !== 'Escape') {
+      return;
+    }
+
+    if (!elements.modal.hasAttribute('hidden')) {
       closeModal();
+      return;
+    }
+
+    if (state.historyOpen && historyMediaMatcher.matches) {
+      closeHistoryPanel();
     }
   });
 
@@ -486,10 +920,43 @@ function setupEventListeners() {
   if (elements.resetButton) {
     elements.resetButton.addEventListener('click', resetGame);
   }
+
+  if (elements.historyToggle) {
+    elements.historyToggle.addEventListener('click', toggleHistoryPanel);
+  }
+
+  if (elements.audioToggle) {
+    elements.audioToggle.addEventListener('click', () => {
+      setAudioEnabled(!state.audioEnabled);
+    });
+  }
+
+  if (elements.historyScrim) {
+    elements.historyScrim.addEventListener('click', () => {
+      closeHistoryPanel();
+    });
+  }
+
+  if (historyMediaMatcher && typeof historyMediaMatcher.addEventListener === 'function') {
+    historyMediaMatcher.addEventListener('change', () => {
+      closeHistoryPanel({ immediate: true });
+      syncHistoryPanelToLayout({ immediate: true });
+    });
+  } else if (
+    historyMediaMatcher &&
+    typeof historyMediaMatcher.addListener === 'function'
+  ) {
+    historyMediaMatcher.addListener(() => {
+      closeHistoryPanel({ immediate: true });
+      syncHistoryPanelToLayout({ immediate: true });
+    });
+  }
 }
 
 function init() {
+  initializeAudioPreference();
   setupEventListeners();
+  syncHistoryPanelToLayout({ immediate: true });
   loadNumbers();
 }
 
