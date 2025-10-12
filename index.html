@@ -33,9 +33,24 @@
             <p>Le colonne seguono le decine per trovare più velocemente i numeri.</p>
           </div>
           <div class="board-panel__controls">
-            <button type="button" id="draw-button" class="board-panel__draw" disabled>
-              Estrai numero
-            </button>
+            <div class="board-panel__actions">
+              <button
+                type="button"
+                id="draw-button"
+                class="board-panel__draw"
+                disabled
+              >
+                Estrai numero
+              </button>
+              <button
+                type="button"
+                id="reset-button"
+                class="board-panel__reset"
+                disabled
+              >
+                Reset partita
+              </button>
+            </div>
             <p class="board-panel__status" id="draw-status" aria-live="polite">
               Caricamento del tabellone…
             </p>

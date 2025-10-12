@@ -18,6 +18,7 @@ const elements = {
   modalClose: document.querySelector('#modal-close'),
   modalPlay: document.querySelector('#modal-play'),
   drawButton: document.querySelector('#draw-button'),
+  resetButton: document.querySelector('#reset-button'),
   drawStatus: document.querySelector('#draw-status'),
 };
 
@@ -157,6 +158,49 @@ function handleDraw() {
   handleSelection(entry);
 }
 
+function resetGame() {
+  if (!state.numbers.length) {
+    return;
+  }
+
+  if (state.drawnNumbers.size > 0) {
+    const shouldReset = window.confirm(
+      'Vuoi ricominciare la partita? Tutti i numeri estratti verranno azzerati.'
+    );
+    if (!shouldReset) {
+      return;
+    }
+  }
+
+  if (!elements.modal.hasAttribute('hidden')) {
+    closeModal({ returnFocus: false });
+  }
+
+  if (state.currentUtterance && 'speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
+  state.currentUtterance = null;
+
+  state.drawnNumbers.clear();
+
+  state.cellsByNumber.forEach((cell) => {
+    cell.classList.remove('board-cell--drawn', 'board-cell--active');
+    cell.setAttribute('aria-pressed', 'false');
+  });
+
+  state.selected = null;
+
+  updateDrawStatus();
+  if (elements.drawStatus) {
+    elements.drawStatus.textContent =
+      'Tabellone azzerato. Pronto a estrarre il primo numero!';
+  }
+
+  if (elements.drawButton) {
+    elements.drawButton.focus();
+  }
+}
+
 function openModal(entry) {
   elements.modalNumber.textContent = `Numero ${entry.number}`;
   elements.modalItalian.textContent = entry.italian || '—';
@@ -172,11 +216,13 @@ function openModal(entry) {
   elements.modalClose.focus();
 }
 
-function closeModal() {
+function closeModal(options = {}) {
+  const config = options instanceof Event ? {} : options;
+  const { returnFocus = true } = config;
   elements.modal.classList.remove('modal--visible');
   elements.modal.setAttribute('hidden', '');
   document.body.classList.remove('modal-open');
-  if (state.selected) {
+  if (returnFocus && state.selected) {
     state.selected.focus();
   }
 }
@@ -236,10 +282,23 @@ function updateDrawStatus(latestEntry) {
   elements.drawStatus.textContent = message;
 
   if (elements.drawButton) {
-    const disable = drawnCount === total || total === 0;
-    elements.drawButton.disabled = disable;
-    elements.drawButton.textContent =
-      disable && total > 0 ? 'Fine estrazioni' : 'Estrai numero';
+    const noNumbersLoaded = total === 0;
+    const finished = drawnCount === total && total > 0;
+    elements.drawButton.disabled = noNumbersLoaded || finished;
+
+    if (noNumbersLoaded) {
+      elements.drawButton.textContent = 'Estrai numero';
+    } else if (finished) {
+      elements.drawButton.textContent = 'Fine estrazioni';
+    } else if (drawnCount === 0) {
+      elements.drawButton.textContent = 'Estrai primo numero';
+    } else {
+      elements.drawButton.textContent = 'Estrai successivo';
+    }
+  }
+
+  if (elements.resetButton) {
+    elements.resetButton.disabled = drawnCount === 0;
   }
 }
 
@@ -269,6 +328,10 @@ function setupEventListeners() {
 
   if (elements.drawButton) {
     elements.drawButton.addEventListener('click', handleDraw);
+  }
+
+  if (elements.resetButton) {
+    elements.resetButton.addEventListener('click', resetGame);
   }
 }
 
