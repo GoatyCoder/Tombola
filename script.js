@@ -46,43 +46,71 @@ async function loadNumbers() {
 
 function renderBoard() {
   elements.board.innerHTML = '';
-  const fragment = document.createDocumentFragment();
   state.cellsByNumber = new Map();
+  state.selected = null;
 
+  const columnLabels = [
+    '1-9',
+    '10-19',
+    '20-29',
+    '30-39',
+    '40-49',
+    '50-59',
+    '60-69',
+    '70-79',
+    '80-90',
+  ];
+
+  const columns = Array.from({ length: 9 }, () => []);
   state.numbers.forEach((entry) => {
-    const cell = elements.template.content.firstElementChild.cloneNode(true);
-    cell.dataset.number = entry.number;
-    const image = cell.querySelector('img');
-    image.src = buildNumberImage(entry.number);
-    image.alt = `Illustrazione del numero ${entry.number}`;
-
-    const label = cell.querySelector('.number-card__label');
-    label.textContent = entry.number;
-
-    const isDrawn = state.drawnNumbers.has(entry.number);
-    cell.classList.toggle('number-card--drawn', isDrawn);
-    cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
-
-    cell.addEventListener('click', () => handleSelection(entry, cell));
-    state.cellsByNumber.set(entry.number, cell);
-    fragment.appendChild(cell);
+    const columnIndex = Math.min(Math.floor((entry.number - 1) / 10), 8);
+    columns[columnIndex].push(entry);
   });
 
-  elements.board.appendChild(fragment);
+  columns.forEach((group, columnIndex) => {
+    const column = document.createElement('div');
+    column.className = 'board-grid__column';
+    const columnTitle = document.createElement('p');
+    columnTitle.className = 'board-grid__column-title';
+    columnTitle.textContent = columnLabels[columnIndex];
+    columnTitle.setAttribute('aria-hidden', 'true');
+    column.appendChild(columnTitle);
+
+    const cellsContainer = document.createElement('div');
+    cellsContainer.className = 'board-grid__cells';
+
+    group
+      .sort((a, b) => a.number - b.number)
+      .forEach((entry) => {
+        const cell = elements.template.content.firstElementChild.cloneNode(true);
+        cell.dataset.number = entry.number;
+        const image = cell.querySelector('img');
+        image.src = buildNumberImage(entry.number);
+        image.alt = `Segnaposto del numero ${entry.number}`;
+
+        const label = cell.querySelector('.board-cell__number');
+        label.textContent = entry.number;
+
+        const isDrawn = state.drawnNumbers.has(entry.number);
+        cell.classList.toggle('board-cell--drawn', isDrawn);
+        cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
+
+        cell.addEventListener('click', () => handleSelection(entry, cell));
+        state.cellsByNumber.set(entry.number, cell);
+        cellsContainer.appendChild(cell);
+      });
+
+    column.appendChild(cellsContainer);
+    elements.board.appendChild(column);
+  });
 }
 
 function buildNumberImage(number) {
-  const hue = (number * 37) % 360;
   const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'>
-      <defs>
-        <linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'>
-          <stop offset='0%' stop-color='hsl(${hue}, 80%, 65%)' />
-          <stop offset='100%' stop-color='hsl(${(hue + 40) % 360}, 85%, 55%)' />
-        </linearGradient>
-      </defs>
-      <rect width='160' height='160' rx='28' fill='url(#grad)' />
-      <text x='50%' y='54%' dominant-baseline='middle' text-anchor='middle' font-size='92' font-family='Signika, sans-serif' fill='rgba(255,255,255,0.95)' font-weight='700'>${number}</text>
-      <text x='50%' y='78%' dominant-baseline='middle' text-anchor='middle' font-size='20' font-family='Signika, sans-serif' fill='rgba(255,255,255,0.7)'>Nojana</text>
+      <rect width='160' height='160' rx='26' fill='#f8fafc' stroke='#cbd5f5' stroke-width='4' />
+      <path d='M28 120h104' stroke='#e2e8f0' stroke-width='6' stroke-linecap='round' />
+      <circle cx='80' cy='54' r='36' fill='#e2e8f0' />
+      <text x='80' y='64' text-anchor='middle' font-size='48' font-family='Signika, sans-serif' fill='#1f2933' font-weight='700'>${number}</text>
     </svg>`;
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
@@ -91,10 +119,10 @@ function handleSelection(entry, cell = state.cellsByNumber.get(entry.number)) {
   if (!entry || !cell) return;
 
   if (state.selected) {
-    state.selected.classList.remove('number-card--active');
+    state.selected.classList.remove('board-cell--active');
   }
   state.selected = cell;
-  cell.classList.add('number-card--active');
+  cell.classList.add('board-cell--active');
 
   openModal(entry);
   speakEntry(entry);
@@ -107,7 +135,7 @@ function markNumberDrawn(number) {
   state.drawnNumbers.add(number);
   const cell = state.cellsByNumber.get(number);
   if (cell) {
-    cell.classList.add('number-card--drawn');
+    cell.classList.add('board-cell--drawn');
     cell.setAttribute('aria-pressed', 'true');
   }
 }
@@ -132,10 +160,10 @@ function handleDraw() {
 function openModal(entry) {
   elements.modalNumber.textContent = `Numero ${entry.number}`;
   elements.modalItalian.textContent = entry.italian || '—';
-  elements.modalDialect.textContent = entry.dialect || 'Pronuncia da completare';
+  elements.modalDialect.textContent = entry.dialect || 'Da completare';
   elements.modalDialect.classList.toggle('missing', !entry.dialect);
   elements.modalImage.src = buildNumberImage(entry.number);
-  elements.modalImage.alt = `Numero ${entry.number}`;
+  elements.modalImage.alt = `Segnaposto per il numero ${entry.number}`;
   elements.modalCaption.textContent = entry.italian || `Numero ${entry.number}`;
 
   elements.modal.removeAttribute('hidden');
@@ -163,10 +191,11 @@ function speakEntry(entry) {
   }
 
   const parts = [`Numero ${entry.number}`];
-  if (entry.dialect) {
-    parts.push(`Pronuncia nojano: ${entry.dialect}`);
-  } else if (entry.italian) {
+  if (entry.italian) {
     parts.push(entry.italian);
+  }
+  if (entry.dialect) {
+    parts.push(entry.dialect);
   }
 
   const utterance = new SpeechSynthesisUtterance(parts.join('. '));
@@ -189,7 +218,7 @@ function updateDrawStatus(latestEntry) {
 
   if (total > 0) {
     if (latestEntry) {
-      const detail = latestEntry.dialect || latestEntry.italian || '';
+      const detail = latestEntry.italian || latestEntry.dialect || '';
       message = `Estratto il numero ${latestEntry.number}`;
       if (detail) {
         message += ` — ${detail}`;

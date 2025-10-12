@@ -18,30 +18,32 @@
       <div class="header-content">
         <h1>Tombola Nojana</h1>
         <p>
-          Tocca un numero per scoprirne il significato tradizionale e ascoltare
-          la pronuncia. Il tabellone è ottimizzato per la consultazione da
-          smartphone durante il gioco.
+          Un tabellone ordinato per decine, pensato per essere chiaro anche su
+          smartphone. Tocca un numero per aprire la scheda con immagine e
+          descrizione.
         </p>
       </div>
     </header>
 
     <main class="app-main" aria-label="Tabellone principale">
-      <section class="board-card">
-        <header class="board-card__header">
-          <div class="board-card__title">
-            <h2>Tabellone</h2>
-            <p class="board-card__hint">Scorri o ruota il dispositivo per vedere tutti i numeri.</p>
+      <section class="board-panel">
+        <header class="board-panel__head">
+          <div class="board-panel__intro">
+            <h2>Tabellone della tombola</h2>
+            <p>Le colonne seguono le decine per trovare più velocemente i numeri.</p>
           </div>
-          <div class="board-card__controls">
-            <button type="button" id="draw-button" class="board-card__draw" disabled>
+          <div class="board-panel__controls">
+            <button type="button" id="draw-button" class="board-panel__draw" disabled>
               Estrai numero
             </button>
-            <p class="board-card__status" id="draw-status" aria-live="polite">
+            <p class="board-panel__status" id="draw-status" aria-live="polite">
               Caricamento del tabellone…
             </p>
           </div>
         </header>
-        <div id="board" class="number-grid" role="grid" aria-live="polite"></div>
+        <div class="board-panel__body">
+          <div id="board" class="board-grid" aria-live="polite"></div>
+        </div>
       </section>
     </main>
 
@@ -64,17 +66,17 @@
               <dd id="modal-dialect"></dd>
             </div>
           </dl>
-          <button type="button" class="modal__action" id="modal-play">Riproduci pronuncia</button>
+          <button type="button" class="modal__action" id="modal-play">Ascolta annuncio</button>
         </div>
       </div>
     </div>
 
     <template id="board-cell-template">
-      <button class="number-card" role="gridcell">
-        <span class="number-card__media" aria-hidden="true">
+      <button class="board-cell" type="button">
+        <span class="board-cell__figure" aria-hidden="true">
           <img loading="lazy" alt="" />
         </span>
-        <span class="number-card__label"></span>
+        <span class="board-cell__number"></span>
       </button>
     </template>
   </body>
