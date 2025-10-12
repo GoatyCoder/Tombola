@@ -422,12 +422,17 @@ function updateDrawHistory() {
     return;
   }
 
+  if (historyEmpty && !historyEmpty.dataset.initialText) {
+    historyEmpty.dataset.initialText = historyEmpty.textContent;
+  }
+
   const draws = state.drawHistory;
   historyList.innerHTML = '';
 
   if (draws.length === 0) {
     historyList.hidden = true;
     if (historyEmpty) {
+      historyEmpty.textContent = historyEmpty.dataset.initialText || historyEmpty.textContent;
       historyEmpty.hidden = false;
     }
     if (historyLatest) {
@@ -436,10 +441,9 @@ function updateDrawHistory() {
     return;
   }
 
-  historyList.hidden = false;
-  if (historyEmpty) {
-    historyEmpty.hidden = true;
-  }
+  const hasPreviousDraws = draws.length > 1;
+
+  historyList.hidden = !hasPreviousDraws;
 
   const latest = draws[draws.length - 1];
   if (historyLatest && historyLatestNumber && historyLatestDetail) {
@@ -457,15 +461,26 @@ function updateDrawHistory() {
       summaryParts.join(' · ') || 'In attesa di descrizione.';
   }
 
-  for (let index = draws.length - 1; index >= 0; index -= 1) {
+  if (!hasPreviousDraws) {
+    if (historyEmpty) {
+      historyEmpty.textContent = 'Ancora nessuna estrazione precedente.';
+      historyEmpty.hidden = false;
+    }
+    historyList.scrollTop = 0;
+    return;
+  }
+
+  if (historyEmpty) {
+    historyEmpty.textContent = historyEmpty.dataset.initialText || historyEmpty.textContent;
+    historyEmpty.hidden = true;
+  }
+
+  for (let index = draws.length - 2; index >= 0; index -= 1) {
     const item = draws[index];
     const order = index + 1;
 
     const listItem = document.createElement('li');
     listItem.className = 'history-item';
-    if (index === draws.length - 1) {
-      listItem.classList.add('history-item--latest');
-    }
 
     const orderBadge = document.createElement('span');
     orderBadge.className = 'history-item__order';
