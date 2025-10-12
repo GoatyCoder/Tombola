@@ -6,6 +6,7 @@ const state = {
   currentUtterance: null,
   html5QrCode: null,
   isScanning: false,
+  drawHistory: [],
 };
 
 const elements = {
@@ -18,6 +19,10 @@ const elements = {
   scannerContainer: document.querySelector('#scanner-container'),
   closeScanner: document.querySelector('#close-scanner'),
   completeOnly: document.querySelector('#complete-only'),
+  drawButton: document.querySelector('#draw-number'),
+  resetButton: document.querySelector('#reset-game'),
+  drawHistoryList: document.querySelector('#draw-history-list'),
+  drawHistoryEmpty: document.querySelector('#draw-history-empty'),
 };
 
 async function loadNumbers() {
@@ -28,10 +33,15 @@ async function loadNumbers() {
     }
     const data = await response.json();
     state.numbers = data.numbers.sort((a, b) => a.number - b.number);
+    state.drawHistory = [];
     applyFilter();
+    renderDrawHistory();
+    updateDrawControls();
   } catch (error) {
     console.error(error);
     elements.output.textContent = 'Errore nel caricamento dei dati della tombola.';
+    renderDrawHistory();
+    updateDrawControls();
   }
 }
 
@@ -65,6 +75,93 @@ function renderList() {
   });
 
   elements.list.appendChild(fragment);
+}
+
+function renderDrawHistory() {
+  if (!elements.drawHistoryList) return;
+
+  elements.drawHistoryList.innerHTML = '';
+
+  if (!state.drawHistory.length) {
+    if (elements.drawHistoryEmpty) {
+      elements.drawHistoryEmpty.hidden = false;
+    }
+    return;
+  }
+
+  if (elements.drawHistoryEmpty) {
+    elements.drawHistoryEmpty.hidden = true;
+  }
+
+  const fragment = document.createDocumentFragment();
+
+  state.drawHistory.forEach((entry, index) => {
+    const item = document.createElement('li');
+    item.className = 'draw-history__item';
+    item.setAttribute('data-order', index + 1);
+
+    const number = document.createElement('span');
+    number.className = 'draw-history__number';
+    number.textContent = entry.number;
+
+    const label = document.createElement('span');
+    label.className = 'draw-history__label';
+    label.textContent = entry.italian ?? `Numero ${entry.number}`;
+
+    item.append(number, label);
+    fragment.appendChild(item);
+  });
+
+  elements.drawHistoryList.appendChild(fragment);
+}
+
+function updateDrawControls() {
+  const remaining = Math.max(0, state.numbers.length - state.drawHistory.length);
+  if (elements.drawButton) {
+    const isDisabled = remaining === 0;
+    elements.drawButton.disabled = isDisabled;
+    if (isDisabled) {
+      elements.drawButton.setAttribute('aria-disabled', 'true');
+    } else {
+      elements.drawButton.removeAttribute('aria-disabled');
+    }
+  }
+  if (elements.resetButton) {
+    elements.resetButton.disabled = state.drawHistory.length === 0;
+  }
+}
+
+function handleDraw() {
+  if (!state.numbers.length) return;
+
+  const remainingEntries = state.numbers.filter(
+    (entry) => !state.drawHistory.some((drawn) => drawn.number === entry.number)
+  );
+
+  if (!remainingEntries.length) {
+    elements.output.textContent = 'Tutti i numeri sono stati estratti.';
+    updateDrawControls();
+    return;
+  }
+
+  const randomIndex = Math.floor(Math.random() * remainingEntries.length);
+  const entry = remainingEntries[randomIndex];
+  state.drawHistory = [...state.drawHistory, entry];
+
+  handleSelection(entry);
+  renderDrawHistory();
+  updateDrawControls();
+}
+
+function resetGame() {
+  state.drawHistory = [];
+  if (state.currentUtterance) {
+    window.speechSynthesis.cancel();
+    state.currentUtterance = null;
+  }
+  elements.output.textContent = 'Cronologia azzerata. Pronto per una nuova estrazione.';
+  renderDrawHistory();
+  updateDrawControls();
 }
 
 function handleSelection(entry) {
@@ -191,11 +288,21 @@ function setupEventListeners() {
     applyFilter();
   });
 
+  if (elements.drawButton) {
+    elements.drawButton.addEventListener('click', handleDraw);
+  }
+
+  if (elements.resetButton) {
+    elements.resetButton.addEventListener('click', resetGame);
+  }
+
   document.addEventListener('visibilitychange', () => {
     if (document.hidden && state.isScanning) {
       stopScanner();
     }
   });
+
+  updateDrawControls();
 }
 
 function announceMissingVoices() {

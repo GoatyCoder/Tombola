@@ -51,6 +51,25 @@
         <div id="selection-output" class="selection-output" aria-live="polite"></div>
       </section>
 
+      <section class="card board-panel" aria-labelledby="board-title">
+        <div class="card-header board-panel__controls">
+          <h2 id="board-title">Estrazione casuale</h2>
+          <div class="board-panel__buttons">
+            <button id="draw-number" type="button" class="primary">Estrai numero</button>
+            <button id="reset-game" type="button" class="secondary">Reset</button>
+          </div>
+        </div>
+        <section class="draw-history" aria-labelledby="draw-history-title">
+          <header class="draw-history__header">
+            <h3 id="draw-history-title">Numeri estratti</h3>
+            <p id="draw-history-empty" class="draw-history__empty" aria-live="polite">
+              Nessun numero estratto al momento.
+            </p>
+          </header>
+          <ol id="draw-history-list" class="draw-history__list" aria-live="polite"></ol>
+        </section>
+      </section>
+
       <section class="card" aria-labelledby="list-title">
         <div class="card-header">
           <h2 id="list-title">Numeri della Tombola</h2>
