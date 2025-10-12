@@ -17,6 +17,7 @@ const elements = {
   modalCaption: document.querySelector('#modal-caption'),
   modalClose: document.querySelector('#modal-close'),
   modalPlay: document.querySelector('#modal-play'),
+  modalNext: document.querySelector('#modal-next'),
   drawButton: document.querySelector('#draw-button'),
   resetButton: document.querySelector('#reset-button'),
   drawStatus: document.querySelector('#draw-status'),
@@ -116,8 +117,14 @@ function buildNumberImage(number) {
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
-function handleSelection(entry, cell = state.cellsByNumber.get(entry.number)) {
+function handleSelection(
+  entry,
+  cell = state.cellsByNumber.get(entry.number),
+  options = {}
+) {
   if (!entry || !cell) return;
+
+  const { fromDraw = false } = options;
 
   if (state.selected) {
     state.selected.classList.remove('board-cell--active');
@@ -125,7 +132,7 @@ function handleSelection(entry, cell = state.cellsByNumber.get(entry.number)) {
   state.selected = cell;
   cell.classList.add('board-cell--active');
 
-  openModal(entry);
+  openModal(entry, { fromDraw });
   speakEntry(entry);
 }
 
@@ -155,7 +162,7 @@ function handleDraw() {
   const entry = remaining[randomIndex];
   markNumberDrawn(entry.number);
   updateDrawStatus(entry);
-  handleSelection(entry);
+  handleSelection(entry, state.cellsByNumber.get(entry.number), { fromDraw: true });
 }
 
 function resetGame() {
@@ -201,7 +208,8 @@ function resetGame() {
   }
 }
 
-function openModal(entry) {
+function openModal(entry, options = {}) {
+  const { fromDraw = false } = options;
   elements.modalNumber.textContent = `Numero ${entry.number}`;
   elements.modalItalian.textContent = entry.italian || '—';
   elements.modalDialect.textContent = entry.dialect || 'Da completare';
@@ -213,7 +221,26 @@ function openModal(entry) {
   elements.modal.removeAttribute('hidden');
   elements.modal.classList.add('modal--visible');
   document.body.classList.add('modal-open');
-  elements.modalClose.focus();
+
+  let focusTarget = elements.modalClose;
+
+  if (elements.modalNext) {
+    const total = state.numbers.length;
+    const drawnCount = state.drawnNumbers.size;
+    const remaining = Math.max(total - drawnCount, 0);
+    const shouldShow = fromDraw && remaining > 0;
+
+    elements.modalNext.hidden = !shouldShow;
+    elements.modalNext.disabled = !shouldShow;
+
+    if (shouldShow) {
+      elements.modalNext.textContent =
+        remaining === 1 ? 'Estrai ultimo numero' : 'Estrai successivo';
+      focusTarget = elements.modalNext;
+    }
+  }
+
+  focusTarget.focus();
 }
 
 function closeModal(options = {}) {
@@ -222,6 +249,9 @@ function closeModal(options = {}) {
   elements.modal.classList.remove('modal--visible');
   elements.modal.setAttribute('hidden', '');
   document.body.classList.remove('modal-open');
+  if (elements.modalNext) {
+    elements.modalNext.hidden = true;
+  }
   if (returnFocus && state.selected) {
     state.selected.focus();
   }
@@ -313,6 +343,13 @@ function setupEventListeners() {
       }
     }
   });
+
+  if (elements.modalNext) {
+    elements.modalNext.addEventListener('click', () => {
+      elements.modalNext.disabled = true;
+      handleDraw();
+    });
+  }
 
   elements.modal.addEventListener('click', (event) => {
     if (event.target === elements.modal) {

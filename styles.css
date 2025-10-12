@@ -234,6 +234,7 @@ img {
   cursor: pointer;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   min-height: 112px;
+  position: relative;
 }
 
 .board-cell:focus-visible {
@@ -270,17 +271,37 @@ img {
 }
 
 .board-cell--drawn {
-  border-color: rgba(15, 23, 42, 0.28);
-  background: #fff;
-  box-shadow: inset 0 0 0 2px rgba(15, 23, 42, 0.08);
+  border-color: rgba(255, 111, 97, 0.85);
+  background: linear-gradient(
+    140deg,
+    rgba(255, 111, 97, 0.78),
+    rgba(248, 128, 151, 0.85)
+  );
+  box-shadow:
+    0 12px 30px rgba(255, 111, 97, 0.28),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
 }
 
 .board-cell--drawn .board-cell__figure {
-  opacity: 0.65;
+  background: rgba(255, 255, 255, 0.3);
+  filter: saturate(0.2) brightness(1.15);
 }
 
 .board-cell--drawn .board-cell__number {
-  color: var(--muted);
+  color: #fff;
+  text-shadow: 0 2px 6px rgba(15, 23, 42, 0.35);
+}
+
+.board-cell--drawn::after {
+  content: '✓';
+  position: absolute;
+  top: 0.55rem;
+  right: 0.75rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 6px rgba(15, 23, 42, 0.35);
 }
 
 .modal {
@@ -375,6 +396,11 @@ img {
   font-style: italic;
 }
 
+.modal__actions {
+  display: grid;
+  gap: 0.6rem;
+}
+
 .modal__action {
   padding: 0.75rem 1rem;
   border-radius: 999px;
@@ -396,6 +422,28 @@ img {
 .modal__action:active {
   background: var(--accent-dark);
   transform: translateY(-1px);
+}
+
+.modal__action--secondary {
+  background: #fff;
+  color: var(--accent);
+  border: 1px solid rgba(255, 111, 97, 0.45);
+  box-shadow: none;
+}
+
+.modal__action--secondary:focus-visible {
+  outline: 3px solid rgba(255, 111, 97, 0.35);
+  outline-offset: 2px;
+}
+
+.modal__action--secondary:hover,
+.modal__action--secondary:active {
+  background: rgba(255, 111, 97, 0.12);
+  color: var(--accent-dark);
+}
+
+.modal__action[hidden] {
+  display: none;
 }
 
 .board-error {
