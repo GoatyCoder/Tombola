@@ -57,7 +57,30 @@
           </div>
         </header>
         <div class="board-panel__body">
-          <div id="board" class="board-grid" aria-live="polite"></div>
+          <div class="board-layout">
+            <div class="board-layout__grid">
+              <div id="board" class="board-grid" aria-live="polite"></div>
+            </div>
+            <aside class="history-panel" aria-label="Cronologia estrazioni">
+              <header class="history-panel__header">
+                <h3>Cronologia estrazioni</h3>
+                <p class="history-panel__subtitle">
+                  Tieni d'occhio l'ordine di uscita dei numeri.
+                </p>
+              </header>
+              <div class="history-panel__latest" id="draw-history-latest" hidden>
+                <p class="history-panel__latest-label">Ultimo numero</p>
+                <div class="history-panel__latest-ball">
+                  <span id="draw-history-latest-number"></span>
+                </div>
+                <p class="history-panel__latest-detail" id="draw-history-latest-detail"></p>
+              </div>
+              <p class="history-panel__empty" id="draw-history-empty">
+                Nessun numero estratto finora.
+              </p>
+              <ol class="history-list" id="draw-history" aria-live="polite"></ol>
+            </aside>
+          </div>
         </div>
       </section>
     </main>

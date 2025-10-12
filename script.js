@@ -4,6 +4,7 @@ const state = {
   currentUtterance: null,
   cellsByNumber: new Map(),
   drawnNumbers: new Set(),
+  drawHistory: [],
   isAnimatingDraw: false,
 };
 
@@ -26,6 +27,11 @@ const elements = {
   drawOverlayNumber: document.querySelector('#draw-animation-number'),
   drawOverlayBall: document.querySelector('#draw-animation-ball'),
   drawOverlayLabel: document.querySelector('#draw-animation-label'),
+  historyList: document.querySelector('#draw-history'),
+  historyEmpty: document.querySelector('#draw-history-empty'),
+  historyLatest: document.querySelector('#draw-history-latest'),
+  historyLatestNumber: document.querySelector('#draw-history-latest-number'),
+  historyLatestDetail: document.querySelector('#draw-history-latest-detail'),
 };
 
 async function loadNumbers() {
@@ -37,6 +43,8 @@ async function loadNumbers() {
     const data = await response.json();
     state.numbers = data.numbers.sort((a, b) => a.number - b.number);
     renderBoard();
+    state.drawHistory = [];
+    updateDrawHistory();
     updateDrawStatus();
   } catch (error) {
     console.error(error);
@@ -141,12 +149,26 @@ function handleSelection(
   speakEntry(entry);
 }
 
-function markNumberDrawn(number, options = {}) {
+function markNumberDrawn(entry, options = {}) {
+  if (!entry) {
+    return;
+  }
+
   const { animate = false } = options;
+  const number = entry.number;
+
   if (state.drawnNumbers.has(number)) {
     return;
   }
+
   state.drawnNumbers.add(number);
+  state.drawHistory.push({
+    number,
+    italian: entry.italian || '',
+    dialect: entry.dialect || '',
+  });
+  updateDrawHistory();
+
   const cell = state.cellsByNumber.get(number);
   if (cell) {
     cell.classList.add('board-cell--drawn');
@@ -178,9 +200,14 @@ async function handleDraw() {
     return;
   }
 
+  const modalWasOpen = elements.modal && !elements.modal.hasAttribute('hidden');
+  if (modalWasOpen) {
+    closeModal({ returnFocus: false });
+  }
+
   const randomIndex = Math.floor(Math.random() * remaining.length);
   const entry = remaining[randomIndex];
-  markNumberDrawn(entry.number, { animate: true });
+  markNumberDrawn(entry, { animate: true });
 
   state.isAnimatingDraw = true;
   let restoreDrawButton = false;
@@ -200,6 +227,103 @@ async function handleDraw() {
 
   handleSelection(entry, state.cellsByNumber.get(entry.number), { fromDraw: true });
   updateDrawStatus(entry);
+}
+
+function updateDrawHistory() {
+  const {
+    historyList,
+    historyEmpty,
+    historyLatest,
+    historyLatestNumber,
+    historyLatestDetail,
+  } = elements;
+
+  if (!historyList) {
+    return;
+  }
+
+  const draws = state.drawHistory;
+  historyList.innerHTML = '';
+
+  if (draws.length === 0) {
+    historyList.hidden = true;
+    if (historyEmpty) {
+      historyEmpty.hidden = false;
+    }
+    if (historyLatest) {
+      historyLatest.hidden = true;
+    }
+    return;
+  }
+
+  historyList.hidden = false;
+  if (historyEmpty) {
+    historyEmpty.hidden = true;
+  }
+
+  const latest = draws[draws.length - 1];
+  if (historyLatest && historyLatestNumber && historyLatestDetail) {
+    historyLatest.hidden = false;
+    historyLatestNumber.textContent = latest.number;
+
+    const summaryParts = [];
+    if (latest.italian) {
+      summaryParts.push(latest.italian);
+    }
+    if (latest.dialect) {
+      summaryParts.push(latest.dialect);
+    }
+    historyLatestDetail.textContent =
+      summaryParts.join(' · ') || 'In attesa di descrizione.';
+  }
+
+  for (let index = draws.length - 1; index >= 0; index -= 1) {
+    const item = draws[index];
+    const order = index + 1;
+
+    const listItem = document.createElement('li');
+    listItem.className = 'history-item';
+    if (index === draws.length - 1) {
+      listItem.classList.add('history-item--latest');
+    }
+
+    const orderBadge = document.createElement('span');
+    orderBadge.className = 'history-item__order';
+    orderBadge.textContent = `#${order}`;
+    orderBadge.setAttribute('aria-hidden', 'true');
+    listItem.appendChild(orderBadge);
+
+    const ball = document.createElement('span');
+    ball.className = 'history-item__ball';
+    ball.textContent = item.number;
+    ball.setAttribute('aria-hidden', 'true');
+    listItem.appendChild(ball);
+
+    const details = document.createElement('div');
+    details.className = 'history-item__details';
+
+    const title = document.createElement('p');
+    title.className = 'history-item__title';
+    title.textContent = `Numero ${item.number}`;
+    details.appendChild(title);
+
+    const meta = document.createElement('p');
+    meta.className = 'history-item__meta';
+    const metaParts = [];
+    if (item.italian) {
+      metaParts.push(`Italiano: ${item.italian}`);
+    }
+    if (item.dialect) {
+      metaParts.push(`Dialetto: ${item.dialect}`);
+    }
+    meta.textContent = metaParts.join(' · ') || 'Nessuna descrizione disponibile.';
+    details.appendChild(meta);
+
+    listItem.appendChild(details);
+    historyList.appendChild(listItem);
+  }
+
+  historyList.scrollTop = 0;
 }
 
 function resetGame() {
@@ -237,6 +361,8 @@ function resetGame() {
   state.currentUtterance = null;
 
   state.drawnNumbers.clear();
+  state.drawHistory = [];
+  updateDrawHistory();
 
   state.cellsByNumber.forEach((cell) => {
     cell.classList.remove('board-cell--drawn', 'board-cell--active');
@@ -307,8 +433,14 @@ function closeModal(options = {}) {
 
 function showDrawAnimation(entry) {
   return new Promise((resolve) => {
-    const { drawOverlay, drawOverlayNumber, drawOverlayBall } = elements;
-    if (!drawOverlay || !drawOverlayNumber) {
+    const { drawOverlay, drawOverlayNumber, drawOverlayBall, drawOverlayLabel } =
+      elements;
+    const targetCell = state.cellsByNumber.get(entry.number);
+
+    if (!drawOverlay || !drawOverlayNumber || !drawOverlayBall) {
+      if (targetCell) {
+        targetCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+      }
       resolve();
       return;
     }
@@ -317,56 +449,154 @@ function showDrawAnimation(entry) {
       window.matchMedia &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+    let overlayHidden = false;
+
+    const cleanupOverlay = (immediate = false) => {
+      if (!drawOverlay || overlayHidden) {
+        return;
+      }
+
+      drawOverlay.classList.remove('draw-overlay--visible');
+      if (drawOverlayBall) {
+        drawOverlayBall.classList.remove('draw-overlay__ball--animate');
+      }
+
+      const hide = () => {
+        if (overlayHidden) {
+          return;
+        }
+        overlayHidden = true;
+        drawOverlay.setAttribute('hidden', '');
+        drawOverlay.setAttribute('aria-hidden', 'true');
+      };
+
+      if (immediate) {
+        hide();
+      } else {
+        window.setTimeout(hide, 200);
+      }
+    };
+
+    const finish = () => {
+      cleanupOverlay(true);
+      if (targetCell) {
+        targetCell.classList.remove('board-cell--incoming');
+      }
+      resolve();
+    };
+
+    const startFlight = (fromRect) => {
+      if (!targetCell) {
+        finish();
+        return;
+      }
+
+      targetCell.classList.add('board-cell--incoming');
+
+      const flightBall = document.createElement('div');
+      flightBall.className = 'draw-overlay__ball draw-flight-ball';
+      const numberSpan = document.createElement('span');
+      numberSpan.textContent = entry.number;
+      flightBall.appendChild(numberSpan);
+
+      const startX = fromRect.left + fromRect.width / 2;
+      const startY = fromRect.top + fromRect.height / 2;
+      flightBall.style.width = `${fromRect.width}px`;
+      flightBall.style.height = `${fromRect.height}px`;
+      flightBall.style.left = `${startX}px`;
+      flightBall.style.top = `${startY}px`;
+      document.body.appendChild(flightBall);
+
+      if (typeof flightBall.animate !== 'function') {
+        flightBall.remove();
+        finish();
+        return;
+      }
+
+      const animateTowardCell = () => {
+        const targetRect = targetCell.getBoundingClientRect();
+        const endX = targetRect.left + targetRect.width / 2;
+        const endY = targetRect.top + targetRect.height / 2;
+        const deltaX = endX - startX;
+        const deltaY = endY - startY;
+        const scale = Math.max(
+          Math.min(targetRect.width / fromRect.width || 1, 1.2),
+          0.55
+        );
+
+        const animation = flightBall.animate(
+          [
+            { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+            {
+              transform: `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(${scale})`,
+              opacity: 0.94,
+            },
+          ],
+          {
+            duration: 720,
+            easing: 'cubic-bezier(0.2, 0.9, 0.3, 1.05)',
+            fill: 'forwards',
+          }
+        );
+
+        const complete = () => {
+          flightBall.remove();
+          finish();
+        };
+
+        animation.addEventListener('finish', complete, { once: true });
+        animation.addEventListener('cancel', complete, { once: true });
+      };
+
+      if (!prefersReducedMotion) {
+        targetCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+        window.setTimeout(animateTowardCell, 240);
+      } else {
+        animateTowardCell();
+      }
+    };
+
     drawOverlayNumber.textContent = entry.number;
-    if (elements.drawOverlayLabel) {
-      elements.drawOverlayLabel.textContent = `Estrazione del numero ${entry.number}`;
+    if (drawOverlayLabel) {
+      drawOverlayLabel.textContent = 'Pesca dal sacchetto…';
     }
     drawOverlay.setAttribute('aria-hidden', 'false');
     drawOverlay.removeAttribute('hidden');
 
+    if (prefersReducedMotion) {
+      drawOverlay.classList.add('draw-overlay--visible');
+      if (targetCell) {
+        targetCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+      }
+      window.setTimeout(() => {
+        if (drawOverlayLabel) {
+          drawOverlayLabel.textContent = `Numero ${entry.number}!`;
+        }
+        finish();
+      }, 450);
+      return;
+    }
+
     const activate = () => {
       drawOverlay.classList.add('draw-overlay--visible');
 
-      if (drawOverlayBall) {
-        drawOverlayBall.classList.remove('draw-overlay__ball--animate');
-        // force reflow to restart the animation when needed
-        void drawOverlayBall.offsetWidth;
-
-        if (!prefersReducedMotion) {
-          drawOverlayBall.classList.add('draw-overlay__ball--animate');
-        }
-      }
+      drawOverlayBall.classList.remove('draw-overlay__ball--animate');
+      // force reflow to restart the animation when needed
+      void drawOverlayBall.offsetWidth;
+      drawOverlayBall.classList.add('draw-overlay__ball--animate');
     };
 
-    requestAnimationFrame(activate);
-
-    const finish = () => {
-      if (drawOverlayBall) {
-        drawOverlayBall.classList.remove('draw-overlay__ball--animate');
-      }
-      drawOverlay.classList.remove('draw-overlay--visible');
-      setTimeout(() => {
-        drawOverlay.setAttribute('hidden', '');
-        drawOverlay.setAttribute('aria-hidden', 'true');
-        resolve();
-      }, 220);
-    };
-
-    if (prefersReducedMotion || !drawOverlayBall) {
-      if (elements.drawOverlayLabel) {
-        elements.drawOverlayLabel.textContent = `Numero ${entry.number}!`;
-      }
-      setTimeout(finish, 450);
-      return;
-    }
+    window.requestAnimationFrame(activate);
 
     drawOverlayBall.addEventListener(
       'animationend',
       () => {
-        if (elements.drawOverlayLabel) {
-          elements.drawOverlayLabel.textContent = `Numero ${entry.number}!`;
+        if (drawOverlayLabel) {
+          drawOverlayLabel.textContent = `Numero ${entry.number}!`;
         }
-        setTimeout(finish, 200);
+        const fromRect = drawOverlayBall.getBoundingClientRect();
+        cleanupOverlay();
+        startFlight(fromRect);
       },
       { once: true }
     );
