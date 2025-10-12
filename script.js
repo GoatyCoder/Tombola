@@ -307,8 +307,14 @@ function closeModal(options = {}) {
 
 function showDrawAnimation(entry) {
   return new Promise((resolve) => {
-    const { drawOverlay, drawOverlayNumber, drawOverlayBall } = elements;
-    if (!drawOverlay || !drawOverlayNumber) {
+    const { drawOverlay, drawOverlayNumber, drawOverlayBall, drawOverlayLabel } =
+      elements;
+    const targetCell = state.cellsByNumber.get(entry.number);
+
+    if (!drawOverlay || !drawOverlayNumber || !drawOverlayBall) {
+      if (targetCell) {
+        targetCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+      }
       resolve();
       return;
     }
@@ -317,56 +323,154 @@ function showDrawAnimation(entry) {
       window.matchMedia &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+    let overlayHidden = false;
+
+    const cleanupOverlay = (immediate = false) => {
+      if (!drawOverlay || overlayHidden) {
+        return;
+      }
+
+      drawOverlay.classList.remove('draw-overlay--visible');
+      if (drawOverlayBall) {
+        drawOverlayBall.classList.remove('draw-overlay__ball--animate');
+      }
+
+      const hide = () => {
+        if (overlayHidden) {
+          return;
+        }
+        overlayHidden = true;
+        drawOverlay.setAttribute('hidden', '');
+        drawOverlay.setAttribute('aria-hidden', 'true');
+      };
+
+      if (immediate) {
+        hide();
+      } else {
+        window.setTimeout(hide, 200);
+      }
+    };
+
+    const finish = () => {
+      cleanupOverlay(true);
+      if (targetCell) {
+        targetCell.classList.remove('board-cell--incoming');
+      }
+      resolve();
+    };
+
+    const startFlight = (fromRect) => {
+      if (!targetCell) {
+        finish();
+        return;
+      }
+
+      targetCell.classList.add('board-cell--incoming');
+
+      const flightBall = document.createElement('div');
+      flightBall.className = 'draw-overlay__ball draw-flight-ball';
+      const numberSpan = document.createElement('span');
+      numberSpan.textContent = entry.number;
+      flightBall.appendChild(numberSpan);
+
+      const startX = fromRect.left + fromRect.width / 2;
+      const startY = fromRect.top + fromRect.height / 2;
+      flightBall.style.width = `${fromRect.width}px`;
+      flightBall.style.height = `${fromRect.height}px`;
+      flightBall.style.left = `${startX}px`;
+      flightBall.style.top = `${startY}px`;
+      document.body.appendChild(flightBall);
+
+      if (typeof flightBall.animate !== 'function') {
+        flightBall.remove();
+        finish();
+        return;
+      }
+
+      const animateTowardCell = () => {
+        const targetRect = targetCell.getBoundingClientRect();
+        const endX = targetRect.left + targetRect.width / 2;
+        const endY = targetRect.top + targetRect.height / 2;
+        const deltaX = endX - startX;
+        const deltaY = endY - startY;
+        const scale = Math.max(
+          Math.min(targetRect.width / fromRect.width || 1, 1.2),
+          0.55
+        );
+
+        const animation = flightBall.animate(
+          [
+            { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+            {
+              transform: `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(${scale})`,
+              opacity: 0.94,
+            },
+          ],
+          {
+            duration: 720,
+            easing: 'cubic-bezier(0.2, 0.9, 0.3, 1.05)',
+            fill: 'forwards',
+          }
+        );
+
+        const complete = () => {
+          flightBall.remove();
+          finish();
+        };
+
+        animation.addEventListener('finish', complete, { once: true });
+        animation.addEventListener('cancel', complete, { once: true });
+      };
+
+      if (!prefersReducedMotion) {
+        targetCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+        window.setTimeout(animateTowardCell, 240);
+      } else {
+        animateTowardCell();
+      }
+    };
+
     drawOverlayNumber.textContent = entry.number;
-    if (elements.drawOverlayLabel) {
-      elements.drawOverlayLabel.textContent = `Estrazione del numero ${entry.number}`;
+    if (drawOverlayLabel) {
+      drawOverlayLabel.textContent = `Estrazione del numero ${entry.number}`;
     }
     drawOverlay.setAttribute('aria-hidden', 'false');
     drawOverlay.removeAttribute('hidden');
 
+    if (prefersReducedMotion) {
+      drawOverlay.classList.add('draw-overlay--visible');
+      if (targetCell) {
+        targetCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+      }
+      window.setTimeout(() => {
+        if (drawOverlayLabel) {
+          drawOverlayLabel.textContent = `Numero ${entry.number}!`;
+        }
+        finish();
+      }, 450);
+      return;
+    }
+
     const activate = () => {
       drawOverlay.classList.add('draw-overlay--visible');
 
-      if (drawOverlayBall) {
-        drawOverlayBall.classList.remove('draw-overlay__ball--animate');
-        // force reflow to restart the animation when needed
-        void drawOverlayBall.offsetWidth;
-
-        if (!prefersReducedMotion) {
-          drawOverlayBall.classList.add('draw-overlay__ball--animate');
-        }
-      }
+      drawOverlayBall.classList.remove('draw-overlay__ball--animate');
+      // force reflow to restart the animation when needed
+      void drawOverlayBall.offsetWidth;
+      drawOverlayBall.classList.add('draw-overlay__ball--animate');
     };
 
-    requestAnimationFrame(activate);
-
-    const finish = () => {
-      if (drawOverlayBall) {
-        drawOverlayBall.classList.remove('draw-overlay__ball--animate');
-      }
-      drawOverlay.classList.remove('draw-overlay--visible');
-      setTimeout(() => {
-        drawOverlay.setAttribute('hidden', '');
-        drawOverlay.setAttribute('aria-hidden', 'true');
-        resolve();
-      }, 220);
-    };
-
-    if (prefersReducedMotion || !drawOverlayBall) {
-      if (elements.drawOverlayLabel) {
-        elements.drawOverlayLabel.textContent = `Numero ${entry.number}!`;
-      }
-      setTimeout(finish, 450);
-      return;
-    }
+    window.requestAnimationFrame(activate);
 
     drawOverlayBall.addEventListener(
       'animationend',
       () => {
-        if (elements.drawOverlayLabel) {
-          elements.drawOverlayLabel.textContent = `Numero ${entry.number}!`;
+        if (drawOverlayLabel) {
+          drawOverlayLabel.textContent = `Numero ${entry.number}!`;
         }
-        setTimeout(finish, 200);
+        const fromRect = drawOverlayBall.getBoundingClientRect();
+        cleanupOverlay();
+        startFlight(fromRect);
       },
       { once: true }
     );
