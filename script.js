@@ -400,7 +400,7 @@ function renderBoard() {
         cell.dataset.number = entry.number;
         const image = cell.querySelector('img');
         image.src = buildNumberImage(entry.number);
-        image.alt = `Segnaposto del numero ${entry.number}`;
+        image.alt = `Segnaposto per il numero ${entry.number}`;
 
         const label = cell.querySelector('.board-cell__number');
         label.textContent = entry.number;
@@ -428,6 +428,15 @@ function buildNumberImage(number) {
     </svg>`;
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
+
+function getNumberImage(entry) {
+  if (entry && entry.image) {
+    return entry.image;
+  }
+
+  return buildNumberImage(entry.number);
+}
+
 
 function handleSelection(
   entry,
@@ -694,8 +703,12 @@ function openModal(entry, options = {}) {
   elements.modalItalian.textContent = entry.italian || '—';
   elements.modalDialect.textContent = entry.dialect || 'Da completare';
   elements.modalDialect.classList.toggle('missing', !entry.dialect);
-  elements.modalImage.src = buildNumberImage(entry.number);
-  elements.modalImage.alt = `Segnaposto per il numero ${entry.number}`;
+  elements.modalImage.src = getNumberImage(entry);
+  elements.modalImage.alt = entry.image
+    ? entry.italian
+      ? `Illustrazione del numero ${entry.number}: ${entry.italian}`
+      : `Illustrazione del numero ${entry.number}`
+    : `Segnaposto per il numero ${entry.number}`;
   elements.modalCaption.textContent = entry.italian || `Numero ${entry.number}`;
 
   elements.modal.removeAttribute('hidden');

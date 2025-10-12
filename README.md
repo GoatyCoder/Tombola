@@ -14,7 +14,8 @@ Questa repository contiene una web app statica che permette di esplorare i numer
 
 ```
 .
-├── data.json      # Archivio dei numeri con testi italiano/dialetto
+├── data.json      # Archivio dei numeri con testi italiano/dialetto/immagini
+├── images/        # Cartella per gli asset grafici dei numeri (es. 1.png)
 ├── index.html     # Pagina principale dell'app
 ├── script.js      # Logica dell'interfaccia, sintesi vocale e scanner QR
 └── styles.css     # Stili grafici (tema tombola, responsive)
@@ -43,6 +44,14 @@ npx http-server -p 8000
 ## Formato dei QR code
 
 Lo scanner si aspetta un QR code che contenga **semplicemente il numero** (es. `42`). Quando il valore è valido e presente in `data.json`, l'app mostra la scheda relativa e riproduce l'audio.
+
+## Gestione delle immagini dei numeri
+
+Ogni elemento in `data.json` dispone ora della proprietà opzionale `image`. Quando valorizzata, l'interfaccia utilizza l'asset associato al posto del segnaposto SVG.
+
+1. Salva l'immagine definitiva nella cartella `images/` seguendo la convenzione `NUMERO.png` (esempio: `images/18.png`). Qualsiasi formato servito dal web server statico è supportato, ma si consiglia **PNG** con fondo trasparente per uniformità.
+2. Aggiorna la voce corrispondente in `data.json` impostando `"image": "images/NUMERO.png"`. Se l'immagine non è ancora disponibile puoi lasciare la proprietà mancante o impostarla a `null` per mostrare il segnaposto.
+3. Dopo aver servito il progetto in locale (ad esempio con `python3 -m http.server 8000`), verifica che il file sia raggiungibile aprendo `http://localhost:8000/images/NUMERO.png`. La stessa struttura sarà replicata automaticamente sui deploy statici (GitHub Pages, Netlify, ecc.), assicurando che gli asset vengano caricati correttamente.
 
 ## Personalizzazione delle pronunce
 
