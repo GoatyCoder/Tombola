@@ -1,23 +1,20 @@
 const state = {
   numbers: [],
-  filteredNumbers: [],
-  showCompleteOnly: false,
-  speechReady: false,
+  selected: null,
   currentUtterance: null,
-  html5QrCode: null,
-  isScanning: false,
 };
 
 const elements = {
-  list: document.querySelector('#numbers-list'),
-  template: document.querySelector('#number-template'),
-  output: document.querySelector('#selection-output'),
-  manualForm: document.querySelector('#manual-form'),
-  numberInput: document.querySelector('#number-input'),
-  toggleScanner: document.querySelector('#toggle-scanner'),
-  scannerContainer: document.querySelector('#scanner-container'),
-  closeScanner: document.querySelector('#close-scanner'),
-  completeOnly: document.querySelector('#complete-only'),
+  board: document.querySelector('#board'),
+  template: document.querySelector('#board-cell-template'),
+  modal: document.querySelector('#number-modal'),
+  modalNumber: document.querySelector('#modal-number'),
+  modalItalian: document.querySelector('#modal-italian'),
+  modalDialect: document.querySelector('#modal-dialect'),
+  modalImage: document.querySelector('#modal-image'),
+  modalCaption: document.querySelector('#modal-caption'),
+  modalClose: document.querySelector('#modal-close'),
+  modalPlay: document.querySelector('#modal-play'),
 };
 
 async function loadNumbers() {
@@ -28,60 +25,90 @@ async function loadNumbers() {
     }
     const data = await response.json();
     state.numbers = data.numbers.sort((a, b) => a.number - b.number);
-    applyFilter();
+    renderBoard();
   } catch (error) {
     console.error(error);
-    elements.output.textContent = 'Errore nel caricamento dei dati della tombola.';
+    elements.board.innerHTML =
+      '<p class="board-error">Errore nel caricamento dei dati della tombola.</p>';
   }
 }
 
-function applyFilter() {
-  state.filteredNumbers = state.numbers.filter((entry) => {
-    if (!state.showCompleteOnly) return true;
-    return Boolean(entry.dialect && entry.italian);
-  });
-  renderList();
-}
-
-function renderList() {
-  elements.list.innerHTML = '';
+function renderBoard() {
+  elements.board.innerHTML = '';
   const fragment = document.createDocumentFragment();
 
-  state.filteredNumbers.forEach((entry) => {
-    const card = elements.template.content.firstElementChild.cloneNode(true);
-    card.querySelector('.number-badge').textContent = entry.number;
-    card.querySelector('h3').textContent = `Numero ${entry.number}`;
-    card.querySelector('.italian').textContent = entry.italian ?? '—';
-    const dialectField = card.querySelector('.dialect');
-    dialectField.textContent = entry.dialect ?? 'Registrazione da fornire';
-    if (!entry.dialect) {
-      dialectField.classList.add('missing');
-    }
+  state.numbers.forEach((entry) => {
+    const cell = elements.template.content.firstElementChild.cloneNode(true);
+    cell.dataset.number = entry.number;
+    const image = cell.querySelector('img');
+    image.src = buildNumberImage(entry.number);
+    image.alt = `Illustrazione del numero ${entry.number}`;
 
-    const playButton = card.querySelector('.play-number');
-    playButton.addEventListener('click', () => handleSelection(entry));
+    const label = cell.querySelector('.number-card__label');
+    label.textContent = entry.number;
 
-    fragment.appendChild(card);
+    cell.addEventListener('click', () => handleSelection(entry, cell));
+    fragment.appendChild(cell);
   });
 
-  elements.list.appendChild(fragment);
+  elements.board.appendChild(fragment);
 }
 
-function handleSelection(entry) {
-  if (!entry) return;
-  const lines = [
-    `Numero ${entry.number}`,
-    entry.italian ? `Italiano: ${entry.italian}` : null,
-    entry.dialect ? `Dialetto: ${entry.dialect}` : 'Pronuncia dialettale mancante, verrà usato il testo italiano.',
-  ].filter(Boolean);
+function buildNumberImage(number) {
+  const hue = (number * 37) % 360;
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'>
+      <defs>
+        <linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'>
+          <stop offset='0%' stop-color='hsl(${hue}, 80%, 65%)' />
+          <stop offset='100%' stop-color='hsl(${(hue + 40) % 360}, 85%, 55%)' />
+        </linearGradient>
+      </defs>
+      <rect width='160' height='160' rx='28' fill='url(#grad)' />
+      <text x='50%' y='54%' dominant-baseline='middle' text-anchor='middle' font-size='92' font-family='Signika, sans-serif' fill='rgba(255,255,255,0.95)' font-weight='700'>${number}</text>
+      <text x='50%' y='78%' dominant-baseline='middle' text-anchor='middle' font-size='20' font-family='Signika, sans-serif' fill='rgba(255,255,255,0.7)'>Nojana</text>
+    </svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
 
-  elements.output.innerHTML = lines.map((line) => `<span>${line}</span>`).join('');
+function handleSelection(entry, cell) {
+  if (!entry) return;
+
+  if (state.selected) {
+    state.selected.classList.remove('number-card--active');
+  }
+  state.selected = cell;
+  cell.classList.add('number-card--active');
+
+  openModal(entry);
   speakEntry(entry);
+}
+
+function openModal(entry) {
+  elements.modalNumber.textContent = `Numero ${entry.number}`;
+  elements.modalItalian.textContent = entry.italian || '—';
+  elements.modalDialect.textContent = entry.dialect || 'Pronuncia da completare';
+  elements.modalDialect.classList.toggle('missing', !entry.dialect);
+  elements.modalImage.src = buildNumberImage(entry.number);
+  elements.modalImage.alt = `Numero ${entry.number}`;
+  elements.modalCaption.textContent = entry.italian || `Numero ${entry.number}`;
+
+  elements.modal.removeAttribute('hidden');
+  elements.modal.classList.add('modal--visible');
+  document.body.classList.add('modal-open');
+  elements.modalClose.focus();
+}
+
+function closeModal() {
+  elements.modal.classList.remove('modal--visible');
+  elements.modal.setAttribute('hidden', '');
+  document.body.classList.remove('modal-open');
+  if (state.selected) {
+    state.selected.focus();
+  }
 }
 
 function speakEntry(entry) {
   if (!('speechSynthesis' in window)) {
-    elements.output.insertAdjacentHTML('beforeend', '<span class="warning">Sintesi vocale non supportata dal dispositivo.</span>');
     return;
   }
 
@@ -99,120 +126,33 @@ function speakEntry(entry) {
   window.speechSynthesis.speak(utterance);
 }
 
-async function startScanner() {
-  if (state.isScanning) return;
-  try {
-    state.isScanning = true;
-    elements.toggleScanner.disabled = true;
-    elements.toggleScanner.textContent = 'Preparazione…';
-    elements.scannerContainer.hidden = false;
-
-    if (!state.html5QrCode) {
-      state.html5QrCode = new Html5Qrcode('qr-reader');
-    }
-
-    const cameras = await Html5Qrcode.getCameras();
-    if (!cameras || cameras.length === 0) {
-      throw new Error('Nessuna fotocamera disponibile');
-    }
-
-    await state.html5QrCode.start(
-      { deviceId: cameras[0].id },
-      { fps: 10, qrbox: { width: 240, height: 240 } },
-      (decodedText) => {
-        const parsedNumber = parseInt(decodedText, 10);
-        if (Number.isInteger(parsedNumber)) {
-          const entry = state.numbers.find((item) => item.number === parsedNumber);
-          if (entry) {
-            handleSelection(entry);
-            stopScanner();
-          } else {
-            elements.output.textContent = `Il numero ${decodedText} non è presente nell'elenco.`;
-          }
-        } else {
-          elements.output.textContent = `QR non valido: ${decodedText}`;
-        }
-      },
-      (errorMessage) => {
-        console.debug('Scanner log:', errorMessage);
-      }
-    );
-    elements.toggleScanner.textContent = 'Ferma scansione';
-  } catch (error) {
-    console.error(error);
-    elements.output.textContent = error.message || 'Errore durante l\'avvio dello scanner.';
-    stopScanner();
-  } finally {
-    elements.toggleScanner.disabled = false;
-  }
-}
-
-async function stopScanner() {
-  if (!state.html5QrCode) return;
-  try {
-    await state.html5QrCode.stop();
-    await state.html5QrCode.clear();
-  } catch (error) {
-    console.debug('Errore durante lo stop dello scanner', error);
-  }
-  state.isScanning = false;
-  elements.scannerContainer.hidden = true;
-  elements.toggleScanner.textContent = 'Avvia scansione';
-}
-
 function setupEventListeners() {
-  elements.manualForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const value = Number(elements.numberInput.value);
-    if (!Number.isInteger(value) || value < 1 || value > 90) {
-      elements.output.textContent = 'Inserisci un numero valido tra 1 e 90.';
-      return;
-    }
-    const entry = state.numbers.find((item) => item.number === value);
-    if (!entry) {
-      elements.output.textContent = `Il numero ${value} non è ancora stato definito.`;
-      return;
-    }
-    handleSelection(entry);
-  });
-
-  elements.toggleScanner.addEventListener('click', () => {
-    if (state.isScanning) {
-      stopScanner();
-    } else {
-      startScanner();
+  elements.modalClose.addEventListener('click', closeModal);
+  elements.modalPlay.addEventListener('click', () => {
+    if (state.selected) {
+      const number = Number(state.selected.dataset.number);
+      const entry = state.numbers.find((item) => item.number === number);
+      if (entry) {
+        speakEntry(entry);
+      }
     }
   });
 
-  elements.closeScanner.addEventListener('click', stopScanner);
-
-  elements.completeOnly.addEventListener('change', (event) => {
-    state.showCompleteOnly = event.target.checked;
-    applyFilter();
-  });
-
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden && state.isScanning) {
-      stopScanner();
+  elements.modal.addEventListener('click', (event) => {
+    if (event.target === elements.modal) {
+      closeModal();
     }
   });
-}
 
-function announceMissingVoices() {
-  if (!('speechSynthesis' in window)) {
-    elements.output.textContent = 'Questo dispositivo non supporta la sintesi vocale.';
-  } else if (window.speechSynthesis.getVoices().length === 0) {
-    window.speechSynthesis.addEventListener('voiceschanged', () => {
-      state.speechReady = true;
-    });
-  } else {
-    state.speechReady = true;
-  }
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !elements.modal.hasAttribute('hidden')) {
+      closeModal();
+    }
+  });
 }
 
 function init() {
   setupEventListeners();
-  announceMissingVoices();
   loadNumbers();
 }
 

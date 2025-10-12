@@ -7,89 +7,65 @@
     <link rel="stylesheet" href="styles.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Signika:wght@400;600;700&display=swap" rel="stylesheet" />
-    <script defer src="https://unpkg.com/html5-qrcode@2.3.7/html5-qrcode.min.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Signika:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
     <script defer src="script.js"></script>
   </head>
   <body>
-    <header class="app-header">
-      <h1>Tombola Nojana</h1>
-      <p>Ascolta la pronuncia dei numeri della tombola tradizionale di Noicattaro.</p>
+    <header class="app-header" role="banner">
+      <div class="header-content">
+        <h1>Tombola Nojana</h1>
+        <p>
+          Tocca un numero per scoprirne il significato tradizionale e ascoltare
+          la pronuncia. Il tabellone è ottimizzato per la consultazione da
+          smartphone durante il gioco.
+        </p>
+      </div>
     </header>
 
-    <main class="layout">
-      <section class="card" aria-labelledby="scanner-title">
-        <div class="card-header">
-          <h2 id="scanner-title">Scanner QR</h2>
-          <button id="toggle-scanner" type="button" class="primary">
-            Avvia scansione
-          </button>
-        </div>
-        <div id="scanner-container" class="scanner-container" hidden>
-          <div id="qr-reader" aria-live="polite"></div>
-          <button id="close-scanner" type="button" class="secondary">Chiudi</button>
-        </div>
-        <p class="help-text">Inquadra il QR code presente sulla cartella per ascoltare subito la pronuncia.</p>
-      </section>
-
-      <section class="card" aria-labelledby="manual-title">
-        <h2 id="manual-title">Inserimento manuale</h2>
-        <form id="manual-form">
-          <label class="visually-hidden" for="number-input">Numero della tombola</label>
-          <input
-            id="number-input"
-            name="number"
-            type="number"
-            inputmode="numeric"
-            min="1"
-            max="90"
-            placeholder="Digita un numero (1-90)"
-            required
-          />
-          <button type="submit" class="primary">Ascolta pronuncia</button>
-        </form>
-        <div id="selection-output" class="selection-output" aria-live="polite"></div>
-      </section>
-
-      <section class="card" aria-labelledby="list-title">
-        <div class="card-header">
-          <h2 id="list-title">Numeri della Tombola</h2>
-          <label class="switch">
-            <span>Mostra solo numeri completi</span>
-            <input type="checkbox" id="complete-only" />
-            <span class="slider"></span>
-          </label>
-        </div>
-        <div id="numbers-list" class="numbers-list" role="list"></div>
+    <main class="app-main" aria-label="Tabellone principale">
+      <section class="board-card">
+        <header class="board-card__header">
+          <h2>Tabellone</h2>
+          <p class="board-card__hint">Scorri o ruota il dispositivo per vedere tutti i numeri.</p>
+        </header>
+        <div id="board" class="number-grid" role="grid" aria-live="polite"></div>
       </section>
     </main>
 
-    <template id="number-template">
-      <article class="number-card" role="listitem">
-        <header>
-          <span class="number-badge" aria-hidden="true"></span>
-          <h3></h3>
-        </header>
-        <dl>
-          <div>
-            <dt>Italiano</dt>
-            <dd class="italian"></dd>
-          </div>
-          <div>
-            <dt>Dialetto</dt>
-            <dd class="dialect"></dd>
-          </div>
-        </dl>
-        <div class="actions">
-          <button type="button" class="secondary play-number">Ascolta</button>
+    <div id="number-modal" class="modal" role="dialog" aria-modal="true" hidden>
+      <div class="modal__dialog">
+        <button type="button" class="modal__close" aria-label="Chiudi" id="modal-close">&times;</button>
+        <figure class="modal__figure">
+          <img id="modal-image" alt="" decoding="async" />
+          <figcaption id="modal-caption" class="modal__caption"></figcaption>
+        </figure>
+        <div class="modal__details">
+          <p id="modal-number" class="modal__number"></p>
+          <dl class="modal__definitions">
+            <div>
+              <dt>Italiano</dt>
+              <dd id="modal-italian"></dd>
+            </div>
+            <div>
+              <dt>Dialetto</dt>
+              <dd id="modal-dialect"></dd>
+            </div>
+          </dl>
+          <button type="button" class="modal__action" id="modal-play">Riproduci pronuncia</button>
         </div>
-      </article>
-    </template>
+      </div>
+    </div>
 
-    <footer class="app-footer">
-      <p>
-        Le pronunce vocali utilizzano la sintesi vocale del dispositivo. Per un risultato ottimale registrare in futuro un parlante nativo del dialetto nojano.
-      </p>
-    </footer>
+    <template id="board-cell-template">
+      <button class="number-card" role="gridcell">
+        <span class="number-card__media" aria-hidden="true">
+          <img loading="lazy" alt="" />
+        </span>
+        <span class="number-card__label"></span>
+      </button>
+    </template>
   </body>
 </html>
