@@ -8,6 +8,7 @@ const state = {
   isAnimatingDraw: false,
   historyOpen: false,
   audioEnabled: true,
+  storageErrorMessage: '',
 };
 
 const elements = {
@@ -38,6 +39,8 @@ const elements = {
 };
 
 const AUDIO_STORAGE_KEY = 'tombola-audio-enabled';
+const DRAW_STATE_STORAGE_KEY = 'TOMBOLA_DRAW_STATE';
+const EMPTY_DRAW_STATE = Object.freeze({ drawnNumbers: [], drawHistory: [] });
 
 const MOBILE_HISTORY_QUERY = '(max-width: 540px)';
 const historyMediaMatcher =
@@ -207,6 +210,124 @@ function initializeAudioPreference() {
   updateAudioToggle();
 }
 
+function persistDrawState() {
+  if (typeof window === 'undefined' || !('localStorage' in window)) {
+    return;
+  }
+
+  try {
+    const payload = {
+      drawnNumbers: Array.from(state.drawnNumbers),
+      drawHistory: state.drawHistory.map((item) => ({ ...item })),
+    };
+    window.localStorage.setItem(DRAW_STATE_STORAGE_KEY, JSON.stringify(payload));
+    state.storageErrorMessage = '';
+  } catch (error) {
+    console.warn('Impossibile salvare lo stato della partita', error);
+    state.storageErrorMessage = 'Impossibile salvare lo stato della partita.';
+  }
+}
+
+function clearPersistedDrawState() {
+  if (typeof window === 'undefined' || !('localStorage' in window)) {
+    return;
+  }
+
+  try {
+    window.localStorage.removeItem(DRAW_STATE_STORAGE_KEY);
+    state.storageErrorMessage = '';
+  } catch (error) {
+    console.warn('Impossibile cancellare lo stato salvato', error);
+    state.storageErrorMessage = 'Impossibile cancellare lo stato salvato.';
+  }
+}
+
+function restoreDrawStateFromStorage() {
+  if (typeof window === 'undefined' || !('localStorage' in window)) {
+    return null;
+  }
+
+  try {
+    const stored = window.localStorage.getItem(DRAW_STATE_STORAGE_KEY);
+    if (!stored) {
+      state.storageErrorMessage = '';
+      return null;
+    }
+
+    const parsed = JSON.parse(stored);
+    const source = parsed && typeof parsed === 'object' ? parsed : EMPTY_DRAW_STATE;
+    const history = Array.isArray(source.drawHistory) ? source.drawHistory : [];
+    const storedNumbers = Array.isArray(source.drawnNumbers)
+      ? source.drawnNumbers
+          .map((value) => Number(value))
+          .filter((value) => Number.isInteger(value))
+      : [];
+    const limitSet = storedNumbers.length ? new Set(storedNumbers) : null;
+    const numbersMap = new Map(state.numbers.map((entry) => [entry.number, entry]));
+    const seen = new Set();
+    let latestEntry = null;
+
+    history.forEach((item) => {
+      if (
+        !item ||
+        (typeof item.number !== 'number' && typeof item.number !== 'string')
+      ) {
+        return;
+      }
+
+      const number = Number(item.number);
+      if (!Number.isInteger(number)) {
+        return;
+      }
+      if (seen.has(number)) {
+        return;
+      }
+
+      if (limitSet && !limitSet.has(number)) {
+        return;
+      }
+
+      const entry = numbersMap.get(number);
+      if (!entry) {
+        return;
+      }
+
+      seen.add(number);
+      markNumberDrawn(entry, { animate: false });
+      latestEntry = entry;
+    });
+
+    if (limitSet) {
+      storedNumbers.forEach((value) => {
+        const number = Number(value);
+        if (!Number.isInteger(number)) {
+          return;
+        }
+
+        if (seen.has(number)) {
+          return;
+        }
+
+        const entry = numbersMap.get(number);
+        if (!entry) {
+          return;
+        }
+
+        seen.add(number);
+        markNumberDrawn(entry, { animate: false });
+        latestEntry = entry;
+      });
+    }
+
+    state.storageErrorMessage = '';
+    return latestEntry;
+  } catch (error) {
+    console.warn('Impossibile ripristinare lo stato della partita', error);
+    state.storageErrorMessage = 'Impossibile ripristinare lo stato precedente.';
+    return null;
+  }
+}
+
 async function loadNumbers() {
   try {
     const response = await fetch('data.json');
@@ -215,12 +336,17 @@ async function loadNumbers() {
     }
     const data = await response.json();
     state.numbers = data.numbers.sort((a, b) => a.number - b.number);
-    renderBoard();
+    state.drawnNumbers = new Set();
     state.drawHistory = [];
+    state.storageErrorMessage = '';
+    renderBoard();
     updateDrawHistory();
-    updateDrawStatus();
+
+    const latestEntry = restoreDrawStateFromStorage();
+    updateDrawStatus(latestEntry || undefined);
   } catch (error) {
     console.error(error);
+    state.storageErrorMessage = '';
     elements.board.innerHTML =
       '<p class="board-error">Errore nel caricamento dei dati della tombola.</p>';
     if (elements.drawStatus) {
@@ -341,6 +467,10 @@ function markNumberDrawn(entry, options = {}) {
     dialect: entry.dialect || '',
   });
   updateDrawHistory();
+  persistDrawState();
+  if (state.storageErrorMessage) {
+    updateDrawStatus();
+  }
 
   const cell = state.cellsByNumber.get(number);
   if (cell) {
@@ -535,6 +665,10 @@ function resetGame() {
   state.drawnNumbers.clear();
   state.drawHistory = [];
   updateDrawHistory();
+  clearPersistedDrawState();
+  if (state.storageErrorMessage) {
+    updateDrawStatus();
+  }
 
   state.cellsByNumber.forEach((cell) => {
     cell.classList.remove('board-cell--drawn', 'board-cell--active');
@@ -544,7 +678,7 @@ function resetGame() {
   state.selected = null;
 
   updateDrawStatus();
-  if (elements.drawStatus) {
+  if (elements.drawStatus && !state.storageErrorMessage) {
     elements.drawStatus.textContent =
       'Tabellone azzerato. Pronto a estrarre il primo numero!';
   }
@@ -831,9 +965,9 @@ function updateDrawStatus(latestEntry) {
 
   const total = state.numbers.length;
   const drawnCount = state.drawnNumbers.size;
-  let message = 'Caricamento del tabellone…';
+  let message = state.storageErrorMessage || 'Caricamento del tabellone…';
 
-  if (total > 0) {
+  if (!state.storageErrorMessage && total > 0) {
     if (latestEntry) {
       const detail = latestEntry.italian || latestEntry.dialect || '';
       message = `Estratto il numero ${latestEntry.number}`;
