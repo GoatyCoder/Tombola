@@ -9,6 +9,10 @@ const state = {
   activeEntry: null,
 };
 
+function isIntegerValue(value) {
+  return typeof value === 'number' && isFinite(value) && Math.floor(value) === value;
+}
+
 const elements = {
   board: document.querySelector('#board'),
   manualTrigger: document.querySelector('#manual-trigger'),
@@ -27,13 +31,15 @@ const elements = {
 };
 
 async function loadNumbers() {
-  const ingestNumbers = (data) => {
+  function ingestNumbers(data) {
     if (!data || !Array.isArray(data.numbers)) {
       throw new Error('Struttura dati non valida.');
     }
-    state.numbers = [...data.numbers].sort((a, b) => a.number - b.number);
+    state.numbers = data.numbers.slice().sort(function (a, b) {
+      return a.number - b.number;
+    });
     renderBoard();
-  };
+  }
 
   try {
     if (window.__TOMBOLA_DATA) {
@@ -59,23 +65,26 @@ function renderBoard() {
   elements.board.innerHTML = '';
   const fragment = document.createDocumentFragment();
 
-  state.numbers.forEach((entry) => {
+  state.numbers.forEach(function (entry) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'board-cell';
     button.dataset.number = entry.number;
     if (!entry.dialect) button.classList.add('missing');
 
-    const caption = entry.dialect || entry.italian || '—';
+    const caption = entry.dialect || (entry.italian != null ? entry.italian : '—');
+    const italianForAria = entry.italian != null ? entry.italian : 'non disponibile';
     button.innerHTML = `
       <span class="cell-number">${entry.number}</span>
       <span class="cell-caption" title="${caption}">${caption}</span>
     `;
     button.setAttribute(
       'aria-label',
-      `Numero ${entry.number}. ${entry.dialect ? `Dialetto: ${entry.dialect}` : `Italiano: ${entry.italian ?? 'non disponibile'}`}`
+      `Numero ${entry.number}. ${entry.dialect ? `Dialetto: ${entry.dialect}` : `Italiano: ${italianForAria}`}`
     );
-    button.addEventListener('click', () => showEntry(entry));
+    button.addEventListener('click', function () {
+      showEntry(entry);
+    });
 
     fragment.appendChild(button);
   });
@@ -86,13 +95,23 @@ function renderBoard() {
 function showEntry(entry) {
   state.activeEntry = entry;
   elements.numberHeading.textContent = entry.number;
-  elements.detailItalian.textContent = entry.italian ?? '—';
+  elements.detailItalian.textContent = entry.italian != null ? entry.italian : '—';
   const hasDialect = Boolean(entry.dialect);
   elements.detailDialect.textContent = hasDialect ? entry.dialect : 'In attesa di registrazione';
   elements.missingHint.textContent = DEFAULT_MISSING_TEXT;
   elements.missingHint.hidden = hasDialect;
   openModal(elements.numberModal);
   speakEntry(entry);
+}
+
+function findEntryByNumber(targetNumber) {
+  for (let index = 0; index < state.numbers.length; index += 1) {
+    const current = state.numbers[index];
+    if (current.number === targetNumber) {
+      return current;
+    }
+  }
+  return null;
 }
 
 function speakEntry(entry) {
@@ -119,7 +138,7 @@ function speakEntry(entry) {
 function openModal(modal) {
   if (!modal) return;
   modal.hidden = false;
-  requestAnimationFrame(() => {
+  requestAnimationFrame(function () {
     modal.classList.add('visible');
     document.body.classList.add('modal-open');
   });
@@ -128,7 +147,7 @@ function openModal(modal) {
 function closeModal(modal) {
   if (!modal || modal.hidden) return;
   modal.classList.remove('visible');
-  const onTransitionEnd = () => {
+  const onTransitionEnd = function () {
     modal.hidden = true;
     modal.removeEventListener('transitionend', onTransitionEnd);
     if (!document.querySelector('.modal-backdrop.visible')) {
@@ -158,10 +177,10 @@ async function openScanner() {
     await state.html5QrCode.start(
       { deviceId: cameras[0].id },
       { fps: 10, qrbox: { width: 240, height: 240 } },
-      (decodedText) => {
+      function (decodedText) {
         const parsedNumber = Number.parseInt(decodedText, 10);
-        if (Number.isInteger(parsedNumber)) {
-          const entry = state.numbers.find((item) => item.number === parsedNumber);
+        if (isIntegerValue(parsedNumber)) {
+          const entry = findEntryByNumber(parsedNumber);
           if (entry) {
             closeScanner();
             showEntry(entry);
@@ -172,7 +191,7 @@ async function openScanner() {
           elements.scannerStatus.textContent = `QR non valido: ${decodedText}`;
         }
       },
-      (errorMessage) => {
+      function (errorMessage) {
         elements.scannerStatus.textContent = errorMessage;
       }
     );
@@ -201,12 +220,12 @@ async function closeScanner() {
 function handleManualSubmit(event) {
   event.preventDefault();
   const value = Number.parseInt(elements.manualInput.value, 10);
-  if (!Number.isInteger(value) || value < 1 || value > 90) {
+  if (!isIntegerValue(value) || value < 1 || value > 90) {
     elements.manualInput.setCustomValidity('Inserisci un numero compreso tra 1 e 90');
     elements.manualInput.reportValidity();
     return;
   }
-  const entry = state.numbers.find((item) => item.number === value);
+  const entry = findEntryByNumber(value);
   if (!entry) {
     elements.manualInput.setCustomValidity('Numero non disponibile');
     elements.manualInput.reportValidity();
@@ -219,33 +238,39 @@ function handleManualSubmit(event) {
 }
 
 function setupModalInteractions() {
-  document.querySelectorAll('.modal-backdrop').forEach((backdrop) => {
-    backdrop.addEventListener('mousedown', (event) => {
-      if (event.target === backdrop) {
-        if (backdrop === elements.scannerModal) {
+  var backdrops = document.querySelectorAll('.modal-backdrop');
+  for (var i = 0; i < backdrops.length; i += 1) {
+    (function (backdrop) {
+      backdrop.addEventListener('mousedown', function (event) {
+        if (event.target === backdrop) {
+          if (backdrop === elements.scannerModal) {
+            closeScanner();
+          } else {
+            closeModal(backdrop);
+          }
+        }
+      });
+    })(backdrops[i]);
+  }
+
+  var closeButtons = document.querySelectorAll('[data-close]');
+  for (var j = 0; j < closeButtons.length; j += 1) {
+    (function (button) {
+      button.addEventListener('click', function () {
+        const modal = button.closest('.modal-backdrop');
+        if (modal === elements.scannerModal) {
           closeScanner();
         } else {
-          closeModal(backdrop);
+          closeModal(modal);
         }
-      }
-    });
-  });
+      });
+    })(closeButtons[j]);
+  }
 
-  document.querySelectorAll('[data-close]').forEach((button) => {
-    button.addEventListener('click', () => {
-      const modal = button.closest('.modal-backdrop');
-      if (modal === elements.scannerModal) {
-        closeScanner();
-      } else {
-        closeModal(modal);
-      }
-    });
-  });
-
-  document.addEventListener('keydown', (event) => {
+  document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') {
-      const openModals = Array.from(document.querySelectorAll('.modal-backdrop.visible'));
-      const activeModal = openModals.pop();
+      const openModals = document.querySelectorAll('.modal-backdrop.visible');
+      const activeModal = openModals.length ? openModals[openModals.length - 1] : null;
       if (!activeModal) return;
       if (activeModal === elements.scannerModal) {
         closeScanner();
@@ -257,24 +282,30 @@ function setupModalInteractions() {
 }
 
 function setupEventListeners() {
-  elements.manualTrigger.addEventListener('click', () => {
+  elements.manualTrigger.addEventListener('click', function () {
     openModal(elements.manualModal);
-    setTimeout(() => elements.manualInput.focus({ preventScroll: true }), 120);
+    setTimeout(function () {
+      try {
+        elements.manualInput.focus({ preventScroll: true });
+      } catch (error) {
+        elements.manualInput.focus();
+      }
+    }, 120);
   });
 
-  elements.scannerTrigger.addEventListener('click', () => {
+  elements.scannerTrigger.addEventListener('click', function () {
     openScanner();
   });
 
   elements.manualForm.addEventListener('submit', handleManualSubmit);
 
-  elements.playButton.addEventListener('click', () => {
+  elements.playButton.addEventListener('click', function () {
     if (state.activeEntry) {
       speakEntry(state.activeEntry);
     }
   });
 
-  document.addEventListener('visibilitychange', () => {
+  document.addEventListener('visibilitychange', function () {
     if (document.hidden && state.isScanning) {
       closeScanner();
     }
