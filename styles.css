@@ -107,10 +107,6 @@ img {
   color: var(--muted);
 }
 
-.app-footer__tagline span {
-  color: var(--accent);
-}
-
 .board-panel {
   background: var(--surface);
   border-radius: 1.75rem;
