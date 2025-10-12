@@ -4,6 +4,7 @@ const state = {
   currentUtterance: null,
   cellsByNumber: new Map(),
   drawnNumbers: new Set(),
+  isAnimatingDraw: false,
 };
 
 const elements = {
@@ -21,6 +22,10 @@ const elements = {
   drawButton: document.querySelector('#draw-button'),
   resetButton: document.querySelector('#reset-button'),
   drawStatus: document.querySelector('#draw-status'),
+  drawOverlay: document.querySelector('#draw-animation'),
+  drawOverlayNumber: document.querySelector('#draw-animation-number'),
+  drawOverlayBall: document.querySelector('#draw-animation-ball'),
+  drawOverlayLabel: document.querySelector('#draw-animation-label'),
 };
 
 async function loadNumbers() {
@@ -159,7 +164,11 @@ function markNumberDrawn(number, options = {}) {
   }
 }
 
-function handleDraw() {
+async function handleDraw() {
+  if (state.isAnimatingDraw) {
+    return;
+  }
+
   const remaining = state.numbers.filter(
     (entry) => !state.drawnNumbers.has(entry.number)
   );
@@ -172,8 +181,25 @@ function handleDraw() {
   const randomIndex = Math.floor(Math.random() * remaining.length);
   const entry = remaining[randomIndex];
   markNumberDrawn(entry.number, { animate: true });
-  updateDrawStatus(entry);
+
+  state.isAnimatingDraw = true;
+  let restoreDrawButton = false;
+  if (elements.drawButton) {
+    restoreDrawButton = !elements.drawButton.disabled;
+    elements.drawButton.disabled = true;
+  }
+
+  try {
+    await showDrawAnimation(entry);
+  } finally {
+    state.isAnimatingDraw = false;
+    if (elements.drawButton && restoreDrawButton) {
+      elements.drawButton.disabled = false;
+    }
+  }
+
   handleSelection(entry, state.cellsByNumber.get(entry.number), { fromDraw: true });
+  updateDrawStatus(entry);
 }
 
 function resetGame() {
@@ -193,6 +219,17 @@ function resetGame() {
   if (!elements.modal.hasAttribute('hidden')) {
     closeModal({ returnFocus: false });
   }
+
+  if (elements.drawOverlay && !elements.drawOverlay.hasAttribute('hidden')) {
+    elements.drawOverlay.classList.remove('draw-overlay--visible');
+    elements.drawOverlay.setAttribute('hidden', '');
+    elements.drawOverlay.setAttribute('aria-hidden', 'true');
+    if (elements.drawOverlayBall) {
+      elements.drawOverlayBall.classList.remove('draw-overlay__ball--animate');
+    }
+  }
+
+  state.isAnimatingDraw = false;
 
   if (state.currentUtterance && 'speechSynthesis' in window) {
     window.speechSynthesis.cancel();
@@ -266,6 +303,74 @@ function closeModal(options = {}) {
   if (returnFocus && state.selected) {
     state.selected.focus();
   }
+}
+
+function showDrawAnimation(entry) {
+  return new Promise((resolve) => {
+    const { drawOverlay, drawOverlayNumber, drawOverlayBall } = elements;
+    if (!drawOverlay || !drawOverlayNumber) {
+      resolve();
+      return;
+    }
+
+    const prefersReducedMotion =
+      window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    drawOverlayNumber.textContent = entry.number;
+    if (elements.drawOverlayLabel) {
+      elements.drawOverlayLabel.textContent = `Estrazione del numero ${entry.number}`;
+    }
+    drawOverlay.setAttribute('aria-hidden', 'false');
+    drawOverlay.removeAttribute('hidden');
+
+    const activate = () => {
+      drawOverlay.classList.add('draw-overlay--visible');
+
+      if (drawOverlayBall) {
+        drawOverlayBall.classList.remove('draw-overlay__ball--animate');
+        // force reflow to restart the animation when needed
+        void drawOverlayBall.offsetWidth;
+
+        if (!prefersReducedMotion) {
+          drawOverlayBall.classList.add('draw-overlay__ball--animate');
+        }
+      }
+    };
+
+    requestAnimationFrame(activate);
+
+    const finish = () => {
+      if (drawOverlayBall) {
+        drawOverlayBall.classList.remove('draw-overlay__ball--animate');
+      }
+      drawOverlay.classList.remove('draw-overlay--visible');
+      setTimeout(() => {
+        drawOverlay.setAttribute('hidden', '');
+        drawOverlay.setAttribute('aria-hidden', 'true');
+        resolve();
+      }, 220);
+    };
+
+    if (prefersReducedMotion || !drawOverlayBall) {
+      if (elements.drawOverlayLabel) {
+        elements.drawOverlayLabel.textContent = `Numero ${entry.number}!`;
+      }
+      setTimeout(finish, 450);
+      return;
+    }
+
+    drawOverlayBall.addEventListener(
+      'animationend',
+      () => {
+        if (elements.drawOverlayLabel) {
+          elements.drawOverlayLabel.textContent = `Numero ${entry.number}!`;
+        }
+        setTimeout(finish, 200);
+      },
+      { once: true }
+    );
+  });
 }
 
 function speakEntry(entry) {

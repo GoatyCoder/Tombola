@@ -62,6 +62,24 @@
       </section>
     </main>
 
+    <div
+      id="draw-animation"
+      class="draw-overlay"
+      aria-hidden="true"
+      hidden
+    >
+      <div class="draw-overlay__backdrop" aria-hidden="true"></div>
+      <div class="draw-overlay__content" role="status" aria-live="assertive">
+        <div class="draw-overlay__bag" aria-hidden="true"></div>
+        <div class="draw-overlay__ball" id="draw-animation-ball" aria-hidden="true">
+          <span id="draw-animation-number"></span>
+        </div>
+        <p class="draw-overlay__label" id="draw-animation-label">
+          Estrazione in corso…
+        </p>
+      </div>
+    </div>
+
     <div id="number-modal" class="modal" role="dialog" aria-modal="true" hidden>
       <div class="modal__dialog">
         <button type="button" class="modal__close" aria-label="Chiudi" id="modal-close">&times;</button>
