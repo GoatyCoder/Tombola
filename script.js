@@ -7,6 +7,7 @@ const state = {
   drawHistory: [],
   isAnimatingDraw: false,
   historyOpen: false,
+  audioEnabled: true,
 };
 
 const elements = {
@@ -36,7 +37,10 @@ const elements = {
   historyPanel: document.querySelector('#history-panel'),
   historyToggle: document.querySelector('#history-toggle'),
   historyScrim: document.querySelector('#history-scrim'),
+  audioToggle: document.querySelector('#audio-toggle'),
 };
+
+const AUDIO_STORAGE_KEY = 'tombola-audio-enabled';
 
 const MOBILE_HISTORY_QUERY = '(max-width: 540px)';
 const historyMediaMatcher =
@@ -142,6 +146,68 @@ function toggleHistoryPanel() {
   } else {
     openHistoryPanel();
   }
+}
+
+function updateAudioToggle() {
+  const { audioToggle } = elements;
+  if (!audioToggle) {
+    return;
+  }
+
+  const enabled = Boolean(state.audioEnabled);
+  audioToggle.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+  audioToggle.classList.toggle('board-panel__audio-toggle--off', !enabled);
+  audioToggle.textContent = enabled ? 'Audio attivo' : 'Audio disattivato';
+  const actionLabel = enabled ? 'Disattiva annuncio audio' : 'Attiva annuncio audio';
+  audioToggle.setAttribute('aria-label', actionLabel);
+  audioToggle.title = actionLabel;
+}
+
+function setAudioEnabled(enabled) {
+  const nextValue = Boolean(enabled);
+  state.audioEnabled = nextValue;
+
+  if (
+    !nextValue &&
+    state.currentUtterance &&
+    typeof window !== 'undefined' &&
+    'speechSynthesis' in window
+  ) {
+    window.speechSynthesis.cancel();
+    state.currentUtterance = null;
+  }
+
+  updateAudioToggle();
+
+  try {
+    if (typeof window !== 'undefined' && 'localStorage' in window) {
+      window.localStorage.setItem(AUDIO_STORAGE_KEY, nextValue ? 'true' : 'false');
+    }
+  } catch (error) {
+    console.warn('Impossibile salvare la preferenza audio', error);
+  }
+}
+
+function initializeAudioPreference() {
+  if (typeof window === 'undefined') {
+    state.audioEnabled = true;
+    updateAudioToggle();
+    return;
+  }
+
+  try {
+    if ('localStorage' in window) {
+      const stored = window.localStorage.getItem(AUDIO_STORAGE_KEY);
+      if (stored !== null) {
+        state.audioEnabled = stored === 'true';
+      }
+    }
+  } catch (error) {
+    console.warn('Impossibile leggere la preferenza audio', error);
+    state.audioEnabled = true;
+  }
+
+  updateAudioToggle();
 }
 
 async function loadNumbers() {
@@ -720,7 +786,15 @@ function showDrawAnimation(entry) {
 }
 
 function speakEntry(entry) {
-  if (!('speechSynthesis' in window)) {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+    return;
+  }
+
+  if (!state.audioEnabled) {
+    if (state.currentUtterance) {
+      window.speechSynthesis.cancel();
+      state.currentUtterance = null;
+    }
     return;
   }
 
@@ -728,10 +802,7 @@ function speakEntry(entry) {
     window.speechSynthesis.cancel();
   }
 
-  const parts = [`Numero ${entry.number}`];
-  if (entry.italian) {
-    parts.push(entry.italian);
-  }
+  const parts = [String(entry.number)];
   if (entry.dialect) {
     parts.push(entry.dialect);
   }
@@ -742,6 +813,24 @@ function speakEntry(entry) {
   utterance.pitch = 1.0;
 
   state.currentUtterance = utterance;
+  utterance.addEventListener(
+    'end',
+    () => {
+      if (state.currentUtterance === utterance) {
+        state.currentUtterance = null;
+      }
+    },
+    { once: true }
+  );
+  utterance.addEventListener(
+    'error',
+    () => {
+      if (state.currentUtterance === utterance) {
+        state.currentUtterance = null;
+      }
+    },
+    { once: true }
+  );
   window.speechSynthesis.speak(utterance);
 }
 
@@ -846,6 +935,12 @@ function setupEventListeners() {
     elements.historyToggle.addEventListener('click', toggleHistoryPanel);
   }
 
+  if (elements.audioToggle) {
+    elements.audioToggle.addEventListener('click', () => {
+      setAudioEnabled(!state.audioEnabled);
+    });
+  }
+
   if (elements.historyScrim) {
     elements.historyScrim.addEventListener('click', () => {
       closeHistoryPanel();
@@ -869,6 +964,7 @@ function setupEventListeners() {
 }
 
 function init() {
+  initializeAudioPreference();
   setupEventListeners();
   syncHistoryPanelToLayout({ immediate: true });
   loadNumbers();
