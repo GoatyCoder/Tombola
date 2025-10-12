@@ -178,6 +178,11 @@ async function handleDraw() {
     return;
   }
 
+  const modalWasOpen = elements.modal && !elements.modal.hasAttribute('hidden');
+  if (modalWasOpen) {
+    closeModal({ returnFocus: false });
+  }
+
   const randomIndex = Math.floor(Math.random() * remaining.length);
   const entry = remaining[randomIndex];
   markNumberDrawn(entry.number, { animate: true });
@@ -432,7 +437,7 @@ function showDrawAnimation(entry) {
 
     drawOverlayNumber.textContent = entry.number;
     if (drawOverlayLabel) {
-      drawOverlayLabel.textContent = `Estrazione del numero ${entry.number}`;
+      drawOverlayLabel.textContent = 'Pesca dal sacchetto…';
     }
     drawOverlay.setAttribute('aria-hidden', 'false');
     drawOverlay.removeAttribute('hidden');
