@@ -28,8 +28,18 @@
     <main class="app-main" aria-label="Tabellone principale">
       <section class="board-card">
         <header class="board-card__header">
-          <h2>Tabellone</h2>
-          <p class="board-card__hint">Scorri o ruota il dispositivo per vedere tutti i numeri.</p>
+          <div class="board-card__title">
+            <h2>Tabellone</h2>
+            <p class="board-card__hint">Scorri o ruota il dispositivo per vedere tutti i numeri.</p>
+          </div>
+          <div class="board-card__controls">
+            <button type="button" id="draw-button" class="board-card__draw" disabled>
+              Estrai numero
+            </button>
+            <p class="board-card__status" id="draw-status" aria-live="polite">
+              Caricamento del tabellone…
+            </p>
+          </div>
         </header>
         <div id="board" class="number-grid" role="grid" aria-live="polite"></div>
       </section>

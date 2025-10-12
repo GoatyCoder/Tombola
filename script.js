@@ -2,6 +2,8 @@ const state = {
   numbers: [],
   selected: null,
   currentUtterance: null,
+  cellsByNumber: new Map(),
+  drawnNumbers: new Set(),
 };
 
 const elements = {
@@ -15,6 +17,8 @@ const elements = {
   modalCaption: document.querySelector('#modal-caption'),
   modalClose: document.querySelector('#modal-close'),
   modalPlay: document.querySelector('#modal-play'),
+  drawButton: document.querySelector('#draw-button'),
+  drawStatus: document.querySelector('#draw-status'),
 };
 
 async function loadNumbers() {
@@ -26,16 +30,24 @@ async function loadNumbers() {
     const data = await response.json();
     state.numbers = data.numbers.sort((a, b) => a.number - b.number);
     renderBoard();
+    updateDrawStatus();
   } catch (error) {
     console.error(error);
     elements.board.innerHTML =
       '<p class="board-error">Errore nel caricamento dei dati della tombola.</p>';
+    if (elements.drawStatus) {
+      elements.drawStatus.textContent = 'Errore nel caricamento dei numeri.';
+    }
+    if (elements.drawButton) {
+      elements.drawButton.disabled = true;
+    }
   }
 }
 
 function renderBoard() {
   elements.board.innerHTML = '';
   const fragment = document.createDocumentFragment();
+  state.cellsByNumber = new Map();
 
   state.numbers.forEach((entry) => {
     const cell = elements.template.content.firstElementChild.cloneNode(true);
@@ -47,7 +59,12 @@ function renderBoard() {
     const label = cell.querySelector('.number-card__label');
     label.textContent = entry.number;
 
+    const isDrawn = state.drawnNumbers.has(entry.number);
+    cell.classList.toggle('number-card--drawn', isDrawn);
+    cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
+
     cell.addEventListener('click', () => handleSelection(entry, cell));
+    state.cellsByNumber.set(entry.number, cell);
     fragment.appendChild(cell);
   });
 
@@ -70,8 +87,8 @@ function buildNumberImage(number) {
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
-function handleSelection(entry, cell) {
-  if (!entry) return;
+function handleSelection(entry, cell = state.cellsByNumber.get(entry.number)) {
+  if (!entry || !cell) return;
 
   if (state.selected) {
     state.selected.classList.remove('number-card--active');
@@ -81,6 +98,35 @@ function handleSelection(entry, cell) {
 
   openModal(entry);
   speakEntry(entry);
+}
+
+function markNumberDrawn(number) {
+  if (state.drawnNumbers.has(number)) {
+    return;
+  }
+  state.drawnNumbers.add(number);
+  const cell = state.cellsByNumber.get(number);
+  if (cell) {
+    cell.classList.add('number-card--drawn');
+    cell.setAttribute('aria-pressed', 'true');
+  }
+}
+
+function handleDraw() {
+  const remaining = state.numbers.filter(
+    (entry) => !state.drawnNumbers.has(entry.number)
+  );
+
+  if (!remaining.length) {
+    updateDrawStatus();
+    return;
+  }
+
+  const randomIndex = Math.floor(Math.random() * remaining.length);
+  const entry = remaining[randomIndex];
+  markNumberDrawn(entry.number);
+  updateDrawStatus(entry);
+  handleSelection(entry);
 }
 
 function openModal(entry) {
@@ -116,14 +162,56 @@ function speakEntry(entry) {
     window.speechSynthesis.cancel();
   }
 
-  const textToSpeak = entry.dialect || entry.italian || `Numero ${entry.number}`;
-  const utterance = new SpeechSynthesisUtterance(textToSpeak);
+  const parts = [`Numero ${entry.number}`];
+  if (entry.dialect) {
+    parts.push(`Pronuncia nojano: ${entry.dialect}`);
+  } else if (entry.italian) {
+    parts.push(entry.italian);
+  }
+
+  const utterance = new SpeechSynthesisUtterance(parts.join('. '));
   utterance.lang = 'it-IT';
   utterance.rate = 0.92;
   utterance.pitch = 1.0;
 
   state.currentUtterance = utterance;
   window.speechSynthesis.speak(utterance);
+}
+
+function updateDrawStatus(latestEntry) {
+  if (!elements.drawStatus) {
+    return;
+  }
+
+  const total = state.numbers.length;
+  const drawnCount = state.drawnNumbers.size;
+  let message = 'Caricamento del tabellone…';
+
+  if (total > 0) {
+    if (latestEntry) {
+      const detail = latestEntry.dialect || latestEntry.italian || '';
+      message = `Estratto il numero ${latestEntry.number}`;
+      if (detail) {
+        message += ` — ${detail}`;
+      }
+      message += `. ${drawnCount}/${total} numeri estratti.`;
+    } else if (drawnCount === 0) {
+      message = 'Pronto a estrarre il primo numero!';
+    } else if (drawnCount === total) {
+      message = 'Tutti i numeri sono stati estratti.';
+    } else {
+      message = `${drawnCount}/${total} numeri estratti.`;
+    }
+  }
+
+  elements.drawStatus.textContent = message;
+
+  if (elements.drawButton) {
+    const disable = drawnCount === total || total === 0;
+    elements.drawButton.disabled = disable;
+    elements.drawButton.textContent =
+      disable && total > 0 ? 'Fine estrazioni' : 'Estrai numero';
+  }
 }
 
 function setupEventListeners() {
@@ -149,6 +237,10 @@ function setupEventListeners() {
       closeModal();
     }
   });
+
+  if (elements.drawButton) {
+    elements.drawButton.addEventListener('click', handleDraw);
+  }
 }
 
 function init() {
