@@ -48,18 +48,6 @@ const historyMediaMatcher =
     ? window.matchMedia(MOBILE_HISTORY_QUERY)
     : { matches: false };
 
-const BOARD_COMPACT_QUERY = '(max-width: 820px)';
-const boardLayoutMatcher =
-  typeof window !== 'undefined' && 'matchMedia' in window
-    ? window.matchMedia(BOARD_COMPACT_QUERY)
-    : {
-        matches: false,
-        addEventListener: () => {},
-        removeEventListener: () => {},
-        addListener: () => {},
-        removeListener: () => {},
-      };
-
 function syncHistoryPanelToLayout(options = {}) {
   const { immediate = false } = options;
   const { historyPanel, historyToggle, historyScrim } = elements;
@@ -374,7 +362,7 @@ async function loadNumbers() {
 }
 
 function getBoardColumnCount() {
-  return boardLayoutMatcher.matches ? 5 : 10;
+  return 10;
 }
 
 function syncBoardLayoutMeta() {
@@ -1138,15 +1126,6 @@ function setupEventListeners() {
     });
   }
 
-  if (boardLayoutMatcher && typeof boardLayoutMatcher.addEventListener === 'function') {
-    boardLayoutMatcher.addEventListener('change', () => {
-      syncBoardLayoutMeta();
-    });
-  } else if (boardLayoutMatcher && typeof boardLayoutMatcher.addListener === 'function') {
-    boardLayoutMatcher.addListener(() => {
-      syncBoardLayoutMeta();
-    });
-  }
 }
 
 function init() {
