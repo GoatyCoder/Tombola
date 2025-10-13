@@ -9,6 +9,7 @@ const state = {
   historyOpen: false,
   audioEnabled: true,
   storageErrorMessage: '',
+  boardView: 'detailed',
 };
 
 const elements = {
@@ -36,11 +37,14 @@ const elements = {
   historyToggle: document.querySelector('#history-toggle'),
   historyScrim: document.querySelector('#history-scrim'),
   audioToggle: document.querySelector('#audio-toggle'),
+  viewToggle: document.querySelector('#view-toggle'),
 };
 
 const AUDIO_STORAGE_KEY = 'tombola-audio-enabled';
 const DRAW_STATE_STORAGE_KEY = 'TOMBOLA_DRAW_STATE';
 const EMPTY_DRAW_STATE = Object.freeze({ drawnNumbers: [], drawHistory: [] });
+const BOARD_VIEW_STORAGE_KEY = 'tombola-board-view';
+const PLACEHOLDER_IMAGE = 'images/placeholder.svg';
 
 const MOBILE_HISTORY_QUERY = '(max-width: 540px)';
 const historyMediaMatcher =
@@ -363,78 +367,163 @@ function renderBoard() {
   state.cellsByNumber = new Map();
   state.selected = null;
 
-  const columnLabels = [
-    '1-9',
-    '10-19',
-    '20-29',
-    '30-39',
-    '40-49',
-    '50-59',
-    '60-69',
-    '70-79',
-    '80-90',
-  ];
+  applyBoardViewToBoard();
 
-  const columns = Array.from({ length: 9 }, () => []);
-  state.numbers.forEach((entry) => {
-    const columnIndex = Math.min(Math.floor((entry.number - 1) / 10), 8);
-    columns[columnIndex].push(entry);
-  });
+  const sortedNumbers = [...state.numbers].sort((a, b) => a.number - b.number);
+  const totalRows = Math.ceil(sortedNumbers.length / 10);
+  const highestNumber = sortedNumbers.length
+    ? sortedNumbers[sortedNumbers.length - 1].number
+    : 0;
 
-  columns.forEach((group, columnIndex) => {
-    const column = document.createElement('div');
-    column.className = 'board-grid__column';
-    const columnTitle = document.createElement('p');
-    columnTitle.className = 'board-grid__column-title';
-    columnTitle.textContent = columnLabels[columnIndex];
-    columnTitle.setAttribute('aria-hidden', 'true');
-    column.appendChild(columnTitle);
+  for (let rowIndex = 0; rowIndex < totalRows; rowIndex += 1) {
+    const sliceStart = rowIndex * 10;
+    const sliceEnd = sliceStart + 10;
+    const group = sortedNumbers.slice(sliceStart, sliceEnd);
+    if (!group.length) {
+      continue;
+    }
+
+    const row = document.createElement('div');
+    row.className = 'board-grid__row';
+
+    const rowTitle = document.createElement('p');
+    rowTitle.className = 'board-grid__row-title';
+    const rowStart = rowIndex * 10 + 1;
+    const expectedEnd = rowStart + 9;
+    const labelEnd = Math.max(rowStart, Math.min(expectedEnd, highestNumber));
+    rowTitle.textContent = `${rowStart}-${labelEnd}`;
+    rowTitle.setAttribute('aria-hidden', 'true');
+    row.appendChild(rowTitle);
 
     const cellsContainer = document.createElement('div');
-    cellsContainer.className = 'board-grid__cells';
+    cellsContainer.className = 'board-grid__row-cells';
 
-    group
-      .sort((a, b) => a.number - b.number)
-      .forEach((entry) => {
-        const cell = elements.template.content.firstElementChild.cloneNode(true);
-        cell.dataset.number = entry.number;
-        const image = cell.querySelector('img');
-        image.src = buildNumberImage(entry.number);
-        image.alt = `Segnaposto per il numero ${entry.number}`;
+    group.forEach((entry) => {
+      const cell = elements.template.content.firstElementChild.cloneNode(true);
+      cell.dataset.number = entry.number;
 
-        const label = cell.querySelector('.board-cell__number');
-        label.textContent = entry.number;
+      const image = cell.querySelector('img');
+      applyNumberImage(image, entry);
 
-        const isDrawn = state.drawnNumbers.has(entry.number);
-        cell.classList.toggle('board-cell--drawn', isDrawn);
-        cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
+      const label = cell.querySelector('.board-cell__number');
+      label.textContent = entry.number;
 
-        cell.addEventListener('click', () => handleSelection(entry, cell));
-        state.cellsByNumber.set(entry.number, cell);
-        cellsContainer.appendChild(cell);
-      });
+      const isDrawn = state.drawnNumbers.has(entry.number);
+      cell.classList.toggle('board-cell--drawn', isDrawn);
+      cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
 
-    column.appendChild(cellsContainer);
-    elements.board.appendChild(column);
-  });
-}
+      cell.addEventListener('click', () => handleSelection(entry, cell));
+      state.cellsByNumber.set(entry.number, cell);
+      cellsContainer.appendChild(cell);
+    });
 
-function buildNumberImage(number) {
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'>
-      <rect width='160' height='160' rx='26' fill='#f8fafc' stroke='#cbd5f5' stroke-width='4' />
-      <path d='M28 120h104' stroke='#e2e8f0' stroke-width='6' stroke-linecap='round' />
-      <circle cx='80' cy='54' r='36' fill='#e2e8f0' />
-      <text x='80' y='64' text-anchor='middle' font-size='48' font-family='Signika, sans-serif' fill='#1f2933' font-weight='700'>${number}</text>
-    </svg>`;
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+    row.appendChild(cellsContainer);
+    elements.board.appendChild(row);
+  }
 }
 
 function getNumberImage(entry) {
-  if (entry && entry.image) {
-    return entry.image;
+  if (!entry) {
+    return PLACEHOLDER_IMAGE;
   }
 
-  return buildNumberImage(entry.number);
+  if (entry.image && typeof entry.image === 'string' && entry.image.trim()) {
+    return entry.image.trim();
+  }
+
+  return PLACEHOLDER_IMAGE;
+}
+
+function applyNumberImage(imageElement, entry) {
+  if (!imageElement || !entry) {
+    return;
+  }
+
+  const source = getNumberImage(entry);
+  const hasCustomImage = source !== PLACEHOLDER_IMAGE;
+
+  const handleError = () => {
+    if (imageElement.dataset.placeholder === 'true') {
+      return;
+    }
+    imageElement.dataset.placeholder = 'true';
+    imageElement.src = PLACEHOLDER_IMAGE;
+    imageElement.alt = `Segnaposto per il numero ${entry.number}`;
+  };
+
+  imageElement.dataset.placeholder = hasCustomImage ? 'false' : 'true';
+  imageElement.addEventListener('error', handleError, { once: true });
+  imageElement.src = source;
+  imageElement.alt = hasCustomImage
+    ? `Illustrazione del numero ${entry.number}`
+    : `Segnaposto per il numero ${entry.number}`;
+}
+
+function applyBoardViewToBoard() {
+  if (!elements.board) {
+    return;
+  }
+
+  const view = state.boardView === 'compact' ? 'compact' : 'detailed';
+  elements.board.dataset.view = view;
+}
+
+function updateBoardViewToggle() {
+  const { viewToggle } = elements;
+  if (!viewToggle) {
+    return;
+  }
+
+  const compact = state.boardView === 'compact';
+  const actionLabel = compact
+    ? 'Disattiva vista compatta'
+    : 'Attiva vista compatta';
+
+  viewToggle.setAttribute('aria-pressed', compact ? 'true' : 'false');
+  viewToggle.setAttribute('aria-label', actionLabel);
+  viewToggle.title = actionLabel;
+  viewToggle.textContent = 'Vista compatta';
+}
+
+function setBoardView(view) {
+  const nextView = view === 'compact' ? 'compact' : 'detailed';
+  if (state.boardView === nextView) {
+    applyBoardViewToBoard();
+    updateBoardViewToggle();
+    return;
+  }
+
+  state.boardView = nextView;
+  applyBoardViewToBoard();
+  updateBoardViewToggle();
+
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    if ('localStorage' in window) {
+      window.localStorage.setItem(BOARD_VIEW_STORAGE_KEY, nextView);
+    }
+  } catch (error) {
+    console.warn('Impossibile salvare la preferenza di visualizzazione', error);
+  }
+}
+
+function initializeBoardView() {
+  if (typeof window !== 'undefined' && 'localStorage' in window) {
+    try {
+      const stored = window.localStorage.getItem(BOARD_VIEW_STORAGE_KEY);
+      if (stored === 'compact' || stored === 'detailed') {
+        state.boardView = stored;
+      }
+    } catch (error) {
+      console.warn('Impossibile leggere la preferenza di visualizzazione', error);
+    }
+  }
+
+  applyBoardViewToBoard();
+  updateBoardViewToggle();
 }
 
 
@@ -703,12 +792,15 @@ function openModal(entry, options = {}) {
   elements.modalItalian.textContent = entry.italian || '—';
   elements.modalDialect.textContent = entry.dialect || 'Da completare';
   elements.modalDialect.classList.toggle('missing', !entry.dialect);
-  elements.modalImage.src = getNumberImage(entry);
-  elements.modalImage.alt = entry.image
-    ? entry.italian
-      ? `Illustrazione del numero ${entry.number}: ${entry.italian}`
-      : `Illustrazione del numero ${entry.number}`
-    : `Segnaposto per il numero ${entry.number}`;
+  applyNumberImage(elements.modalImage, entry);
+  const hasCustomImage =
+    typeof entry.image === 'string' && entry.image.trim().length > 0;
+  if (hasCustomImage) {
+    const detail = entry.italian ? `: ${entry.italian}` : '';
+    elements.modalImage.alt = `Illustrazione del numero ${entry.number}${detail}`;
+  } else {
+    elements.modalImage.alt = `Segnaposto per il numero ${entry.number}`;
+  }
   elements.modalCaption.textContent = entry.italian || `Numero ${entry.number}`;
 
   elements.modal.removeAttribute('hidden');
@@ -1078,6 +1170,13 @@ function setupEventListeners() {
     });
   }
 
+  if (elements.viewToggle) {
+    elements.viewToggle.addEventListener('click', () => {
+      const nextView = state.boardView === 'compact' ? 'detailed' : 'compact';
+      setBoardView(nextView);
+    });
+  }
+
   if (elements.historyScrim) {
     elements.historyScrim.addEventListener('click', () => {
       closeHistoryPanel();
@@ -1102,6 +1201,7 @@ function setupEventListeners() {
 
 function init() {
   initializeAudioPreference();
+  initializeBoardView();
   setupEventListeners();
   syncHistoryPanelToLayout({ immediate: true });
   loadNumbers();
