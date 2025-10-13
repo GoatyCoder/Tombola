@@ -363,55 +363,65 @@ function renderBoard() {
   state.cellsByNumber = new Map();
   state.selected = null;
 
-  const columnLabels = [
-    '1-9',
-    '10-19',
-    '20-29',
-    '30-39',
-    '40-49',
-    '50-59',
-    '60-69',
-    '70-79',
-    '80-90',
+  const decinaRanges = [
+    { start: 1, end: 10 },
+    { start: 11, end: 20 },
+    { start: 21, end: 30 },
+    { start: 31, end: 40 },
+    { start: 41, end: 50 },
+    { start: 51, end: 60 },
+    { start: 61, end: 70 },
+    { start: 71, end: 80 },
+    { start: 81, end: 90 },
   ];
 
-  const columns = Array.from({ length: 9 }, () => []);
+  const entriesByNumber = new Map();
   state.numbers.forEach((entry) => {
-    const columnIndex = Math.min(Math.floor((entry.number - 1) / 10), 8);
-    columns[columnIndex].push(entry);
+    entriesByNumber.set(entry.number, entry);
   });
 
-  columns.forEach((group, columnIndex) => {
-    const column = document.createElement('div');
-    column.className = 'board-grid__column';
-    const columnTitle = document.createElement('p');
-    columnTitle.className = 'board-grid__column-title';
-    columnTitle.textContent = columnLabels[columnIndex];
-    columnTitle.setAttribute('aria-hidden', 'true');
-    column.appendChild(columnTitle);
+  decinaRanges.forEach((range, index) => {
+    const row = document.createElement('div');
+    row.className = 'board-grid__row';
+    row.setAttribute('role', 'group');
+    row.setAttribute('aria-label', `Numeri da ${range.start} a ${range.end}`);
+
+    const rowLabel = document.createElement('p');
+    rowLabel.className = 'board-grid__row-label';
+    rowLabel.textContent = `${range.start}-${range.end}`;
+    rowLabel.setAttribute('aria-hidden', 'true');
+    row.appendChild(rowLabel);
 
     const cellsContainer = document.createElement('div');
     cellsContainer.className = 'board-grid__cells';
+    cellsContainer.setAttribute('role', 'group');
+    cellsContainer.setAttribute(
+      'aria-label',
+      `Decina ${index + 1}: numeri da ${range.start} a ${range.end}`,
+    );
 
-    group
-      .sort((a, b) => a.number - b.number)
-      .forEach((entry) => {
-        const cell = elements.template.content.firstElementChild.cloneNode(true);
-        cell.dataset.number = entry.number;
-        const label = cell.querySelector('.board-cell__number');
-        label.textContent = entry.number;
+    for (let number = range.start; number <= range.end; number += 1) {
+      const entry = entriesByNumber.get(number);
+      if (!entry) {
+        continue;
+      }
 
-        const isDrawn = state.drawnNumbers.has(entry.number);
-        cell.classList.toggle('board-cell--drawn', isDrawn);
-        cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
+      const cell = elements.template.content.firstElementChild.cloneNode(true);
+      cell.dataset.number = entry.number;
+      const label = cell.querySelector('.board-cell__number');
+      label.textContent = entry.number;
 
-        cell.addEventListener('click', () => handleSelection(entry, cell));
-        state.cellsByNumber.set(entry.number, cell);
-        cellsContainer.appendChild(cell);
-      });
+      const isDrawn = state.drawnNumbers.has(entry.number);
+      cell.classList.toggle('board-cell--drawn', isDrawn);
+      cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
 
-    column.appendChild(cellsContainer);
-    elements.board.appendChild(column);
+      cell.addEventListener('click', () => handleSelection(entry, cell));
+      state.cellsByNumber.set(entry.number, cell);
+      cellsContainer.appendChild(cell);
+    }
+
+    row.appendChild(cellsContainer);
+    elements.board.appendChild(row);
   });
 }
 
