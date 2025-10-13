@@ -9,6 +9,7 @@ const state = {
   historyOpen: false,
   audioEnabled: true,
   storageErrorMessage: '',
+  lastAnimatedHistoryNumber: null,
 };
 
 const elements = {
@@ -30,6 +31,8 @@ const elements = {
   drawOverlayNumber: document.querySelector('#draw-animation-number'),
   drawOverlayBall: document.querySelector('#draw-animation-ball'),
   drawOverlayLabel: document.querySelector('#draw-animation-label'),
+  drawOverlayContent: document.querySelector('#draw-animation .draw-overlay__content'),
+  drawOverlayBag: document.querySelector('#draw-animation .draw-overlay__bag'),
   historyList: document.querySelector('#draw-history'),
   historyEmpty: document.querySelector('#draw-history-empty'),
   historyPanel: document.querySelector('#history-panel'),
@@ -434,9 +437,15 @@ function renderBoard() {
         label.textContent = entry.number;
 
         const subtitle = cell.querySelector('.board-cell__subtitle');
-        const subtitleText = entry.italian || entry.dialect || '';
         if (subtitle) {
-          subtitle.textContent = subtitleText || '—';
+          const dialectText = (entry.dialect || '').trim();
+          if (dialectText) {
+            subtitle.textContent = dialectText;
+            subtitle.classList.remove('board-cell__subtitle--empty');
+          } else {
+            subtitle.textContent = '—';
+            subtitle.classList.add('board-cell__subtitle--empty');
+          }
         }
 
         const ariaParts = [`Numero ${entry.number}`];
@@ -514,6 +523,10 @@ function markNumberDrawn(entry, options = {}) {
   }
 
   state.drawnNumbers.add(number);
+  if (animate) {
+    state.lastAnimatedHistoryNumber = number;
+  }
+
   state.drawHistory.push({
     number,
     italian: entry.italian || '',
@@ -623,12 +636,21 @@ function updateDrawHistory() {
     const item = draws[index];
     const order = index + 1;
     const isLatest = index === draws.length - 1;
+    const shouldAnimate = item.number === state.lastAnimatedHistoryNumber;
 
     const listItem = document.createElement('li');
     listItem.className = 'history-item';
     if (isLatest) {
       listItem.classList.add('history-item--latest');
       listItem.setAttribute('aria-current', 'true');
+    }
+    if (shouldAnimate) {
+      listItem.classList.add('history-item--just-added');
+      listItem.addEventListener(
+        'animationend',
+        () => listItem.classList.remove('history-item--just-added'),
+        { once: true }
+      );
     }
 
     const orderBadge = document.createElement('span');
@@ -674,9 +696,24 @@ function updateDrawHistory() {
 
     listItem.appendChild(details);
     historyList.appendChild(listItem);
+
+    if (shouldAnimate) {
+      const scrollToTop = () => {
+        historyList.scrollTop = 0;
+      };
+      if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+        window.requestAnimationFrame(scrollToTop);
+      } else {
+        scrollToTop();
+      }
+    }
   }
 
-  historyList.scrollTop = 0;
+  if (state.lastAnimatedHistoryNumber !== null) {
+    state.lastAnimatedHistoryNumber = null;
+  } else {
+    historyList.scrollTop = 0;
+  }
 }
 
 function resetGame() {
@@ -756,6 +793,7 @@ function openModal(entry, options = {}) {
   elements.modalCaption.textContent = entry.italian || `Numero ${entry.number}`;
 
   elements.modal.removeAttribute('hidden');
+  elements.modal.classList.remove('modal--closing');
   elements.modal.classList.add('modal--visible');
   document.body.classList.add('modal-open');
 
@@ -783,21 +821,58 @@ function openModal(entry, options = {}) {
 function closeModal(options = {}) {
   const config = options instanceof Event ? {} : options;
   const { returnFocus = true } = config;
+
+  if (!elements.modal || elements.modal.hasAttribute('hidden')) {
+    if (elements.modalNext) {
+      elements.modalNext.hidden = true;
+    }
+    if (returnFocus && state.selected) {
+      state.selected.focus();
+    }
+    return;
+  }
+
+  let finalized = false;
+
+  const finalize = () => {
+    if (finalized) {
+      return;
+    }
+    finalized = true;
+    elements.modal.setAttribute('hidden', '');
+    elements.modal.classList.remove('modal--closing');
+    document.body.classList.remove('modal-open');
+    if (elements.modalNext) {
+      elements.modalNext.hidden = true;
+    }
+    if (returnFocus && state.selected) {
+      state.selected.focus();
+    }
+  };
+
+  elements.modal.classList.add('modal--closing');
   elements.modal.classList.remove('modal--visible');
-  elements.modal.setAttribute('hidden', '');
-  document.body.classList.remove('modal-open');
-  if (elements.modalNext) {
-    elements.modalNext.hidden = true;
-  }
-  if (returnFocus && state.selected) {
-    state.selected.focus();
-  }
+
+  const handleTransitionEnd = (event) => {
+    if (event.target === elements.modal) {
+      finalize();
+    }
+  };
+
+  elements.modal.addEventListener('transitionend', handleTransitionEnd, { once: true });
+  window.setTimeout(finalize, 260);
 }
 
 function showDrawAnimation(entry) {
   return new Promise((resolve) => {
-    const { drawOverlay, drawOverlayNumber, drawOverlayBall, drawOverlayLabel } =
-      elements;
+    const {
+      drawOverlay,
+      drawOverlayNumber,
+      drawOverlayBall,
+      drawOverlayLabel,
+      drawOverlayContent,
+      drawOverlayBag,
+    } = elements;
     const targetCell = state.cellsByNumber.get(entry.number);
 
     if (!drawOverlay || !drawOverlayNumber || !drawOverlayBall) {
@@ -823,7 +898,6 @@ function showDrawAnimation(entry) {
       if (drawOverlayBall) {
         drawOverlayBall.classList.remove('draw-overlay__ball--animate');
       }
-
       const hide = () => {
         if (overlayHidden) {
           return;
@@ -831,6 +905,15 @@ function showDrawAnimation(entry) {
         overlayHidden = true;
         drawOverlay.setAttribute('hidden', '');
         drawOverlay.setAttribute('aria-hidden', 'true');
+        if (drawOverlayContent) {
+          drawOverlayContent.classList.remove('draw-overlay__content--active');
+        }
+        if (drawOverlayBag) {
+          drawOverlayBag.classList.remove('draw-overlay__bag--animate');
+        }
+        if (drawOverlayLabel) {
+          drawOverlayLabel.classList.remove('draw-overlay__label--reveal');
+        }
       };
 
       if (immediate) {
@@ -928,12 +1011,24 @@ function showDrawAnimation(entry) {
 
     if (prefersReducedMotion) {
       drawOverlay.classList.add('draw-overlay--visible');
+      if (drawOverlayContent) {
+        drawOverlayContent.classList.add('draw-overlay__content--active');
+      }
+      if (drawOverlayBag) {
+        drawOverlayBag.classList.add('draw-overlay__bag--animate');
+      }
+      if (drawOverlayLabel) {
+        drawOverlayLabel.classList.add('draw-overlay__label--reveal');
+      }
       if (targetCell) {
         targetCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
       }
       window.setTimeout(() => {
         if (drawOverlayLabel) {
           drawOverlayLabel.textContent = `Numero ${entry.number}!`;
+          drawOverlayLabel.classList.remove('draw-overlay__label--reveal');
+          void drawOverlayLabel.offsetWidth;
+          drawOverlayLabel.classList.add('draw-overlay__label--reveal');
         }
         finish();
       }, 450);
@@ -941,12 +1036,30 @@ function showDrawAnimation(entry) {
     }
 
     const activate = () => {
+      const restartAnimation = (element, className) => {
+        element.classList.remove(className);
+        // force reflow to restart the animation when needed
+        void element.offsetWidth;
+        element.classList.add(className);
+      };
+
       drawOverlay.classList.add('draw-overlay--visible');
 
-      drawOverlayBall.classList.remove('draw-overlay__ball--animate');
-      // force reflow to restart the animation when needed
-      void drawOverlayBall.offsetWidth;
-      drawOverlayBall.classList.add('draw-overlay__ball--animate');
+      if (drawOverlayContent) {
+        restartAnimation(drawOverlayContent, 'draw-overlay__content--active');
+      }
+
+      if (drawOverlayBag) {
+        restartAnimation(drawOverlayBag, 'draw-overlay__bag--animate');
+      }
+
+      if (drawOverlayLabel) {
+        restartAnimation(drawOverlayLabel, 'draw-overlay__label--reveal');
+      }
+
+      if (drawOverlayBall) {
+        restartAnimation(drawOverlayBall, 'draw-overlay__ball--animate');
+      }
     };
 
     window.requestAnimationFrame(activate);

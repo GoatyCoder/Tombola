@@ -419,6 +419,14 @@ img {
   font-size: 1.35rem;
 }
 
+.history-item--just-added {
+  animation: historyItemEnter 0.55s cubic-bezier(0.22, 0.82, 0.33, 1.02) forwards;
+}
+
+.history-item--just-added .history-item__ball {
+  animation: historyItemBall 0.55s cubic-bezier(0.22, 0.82, 0.33, 1.02) forwards;
+}
+
 .history-scrim {
   position: fixed;
   inset: 0;
@@ -898,6 +906,12 @@ img {
   overflow: hidden;
 }
 
+.board-cell__subtitle--empty {
+  opacity: 0.6;
+  font-style: italic;
+  letter-spacing: 0.04em;
+}
+
 .board-cell--active {
   transform: translateY(-8px);
   box-shadow:
@@ -954,36 +968,53 @@ img {
 }
 
 .board-cell--just-drawn {
-  animation: boardCellPop 0.65s cubic-bezier(0.2, 0.8, 0.3, 1) forwards,
-    boardCellGlow 1.2s ease-out forwards;
+  animation: boardCellPop 0.72s cubic-bezier(0.22, 0.9, 0.3, 1.08) forwards,
+    boardCellGlow 1.35s ease-out forwards;
 }
 
 .board-cell--just-drawn::before {
-  animation: boardCellPulse 0.75s ease-out forwards;
+  animation: boardCellPulse 0.9s cubic-bezier(0.3, 0.8, 0.28, 1) forwards;
+}
+
+.board-cell--just-drawn .board-cell__background {
+  animation: boardCellShimmer 0.9s ease-out forwards;
+}
+
+.board-cell--just-drawn .board-cell__number {
+  animation: boardCellNumberFlash 0.85s cubic-bezier(0.24, 0.82, 0.32, 1.08)
+    forwards;
 }
 
 .board-cell--incoming::before {
-  opacity: 0.9;
-  transform: scale(0.95);
+  opacity: 0;
+  transform: scale(0.78);
   background: radial-gradient(
     circle at 50% 50%,
-    rgba(255, 255, 255, 0.7),
+    rgba(255, 255, 255, 0.8),
     rgba(255, 255, 255, 0)
   );
-  transition: opacity 0.35s ease, transform 0.35s ease;
+  animation: boardCellBeacon 1.1s ease-out infinite;
+}
+
+.board-cell--incoming .board-cell__number {
+  animation: boardCellNumberTarget 1.1s ease-in-out infinite;
 }
 
 @keyframes boardCellPop {
   0% {
-    transform: scale(0.65);
+    transform: translateY(6px) scale(0.82);
     box-shadow: 0 0 0 rgba(15, 23, 42, 0);
   }
-  55% {
-    transform: scale(1.08);
-    box-shadow: 0 32px 64px rgba(15, 23, 42, 0.28);
+  40% {
+    transform: translateY(-10px) scale(1.08);
+    box-shadow: 0 36px 64px rgba(15, 23, 42, 0.28);
+  }
+  68% {
+    transform: translateY(-4px) scale(0.96);
+    box-shadow: 0 18px 32px rgba(15, 23, 42, 0.2);
   }
   100% {
-    transform: translateY(-6px);
+    transform: translateY(-6px) scale(1);
     box-shadow:
       0 30px 58px rgba(15, 23, 42, 0.28),
       0 0 0 3px rgba(255, 255, 255, 0.32);
@@ -992,7 +1023,10 @@ img {
 
 @keyframes boardCellGlow {
   0% {
-    filter: saturate(1.4) brightness(1.1);
+    filter: saturate(1.5) brightness(1.12);
+  }
+  60% {
+    filter: saturate(1.25) brightness(1.05);
   }
   100% {
     filter: saturate(1) brightness(1);
@@ -1001,34 +1035,174 @@ img {
 
 @keyframes boardCellPulse {
   0% {
-    opacity: 0.75;
-    transform: scale(0.55);
+    opacity: 0.8;
+    transform: scale(0.5);
   }
-  60% {
+  55% {
     opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.45);
+  }
+}
+
+@keyframes boardCellShimmer {
+  0% {
+    filter: saturate(1.5) brightness(1.12);
+  }
+  65% {
+    filter: saturate(1.25) brightness(1.05);
+  }
+  100% {
+    filter: saturate(1.1) brightness(1.02);
+  }
+}
+
+@keyframes boardCellNumberFlash {
+  0% {
+    transform: scale(0.85);
+    box-shadow:
+      0 20px 48px rgba(15, 23, 42, 0.32),
+      inset 0 2px 0 rgba(255, 255, 255, 0.95);
+  }
+  52% {
+    transform: scale(1.07);
+    box-shadow:
+      0 30px 62px rgba(15, 23, 42, 0.32),
+      inset 0 2px 0 rgba(255, 255, 255, 0.98);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow:
+      0 14px 32px rgba(15, 23, 42, 0.28),
+      inset 0 2px 0 rgba(255, 255, 255, 0.95);
+  }
+}
+
+@keyframes boardCellBeacon {
+  0% {
+    opacity: 0.05;
+    transform: scale(0.6);
+  }
+  50% {
+    opacity: 0.75;
     transform: scale(1.05);
   }
   100% {
     opacity: 0;
-    transform: scale(1.35);
+    transform: scale(1.45);
+  }
+}
+
+@keyframes boardCellNumberTarget {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes historyItemEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes historyItemBall {
+  0% {
+    transform: scale(0.6);
+    box-shadow:
+      inset 0 -2px 6px rgba(255, 111, 97, 0.3),
+      inset 0 2px 6px rgba(255, 255, 255, 0.7);
+  }
+  55% {
+    transform: scale(1.08);
+    box-shadow:
+      inset 0 -6px 14px rgba(255, 111, 97, 0.35),
+      inset 0 4px 10px rgba(255, 255, 255, 0.95);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow:
+      inset 0 -4px 10px rgba(255, 111, 97, 0.24),
+      inset 0 4px 10px rgba(255, 255, 255, 0.9);
+  }
+}
+
+@keyframes drawOverlayContentEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(36px) scale(0.88);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-6px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes drawBagBounce {
+  0% {
+    transform: translateY(18px) scale(0.95);
+  }
+  40% {
+    transform: translateY(-8px) scale(1.02);
+  }
+  70% {
+    transform: translateY(4px) scale(0.98);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes drawLabelReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
 @keyframes drawBallRise {
   0% {
     opacity: 0;
-    transform: translate(-50%, 55%) scale(0.5);
+    transform: translate(-50%, 45%) scale(0.6) rotate(-12deg);
   }
-  35% {
+  32% {
     opacity: 1;
-    transform: translate(-50%, 10%) scale(0.78);
+    transform: translate(-50%, 4%) scale(0.85) rotate(8deg);
   }
-  65% {
-    transform: translate(-50%, -18%) scale(1.08);
+  62% {
+    transform: translate(-50%, -20%) scale(1.08) rotate(-4deg);
+  }
+  82% {
+    transform: translate(-50%, -24%) scale(0.98) rotate(2deg);
   }
   100% {
     opacity: 1;
-    transform: translate(-50%, -20%) scale(1);
+    transform: translate(-50%, -20%) scale(1) rotate(0deg);
   }
 }
 
@@ -1063,10 +1237,16 @@ img {
   padding: 3.2rem 1.5rem 2.8rem;
   width: min(420px, 92vw);
   text-align: center;
-  transform: translateY(16px) scale(0.95);
-  transition: transform 0.35s ease, opacity 0.35s ease;
+  transform: translateY(36px) scale(0.9);
   opacity: 0;
   z-index: 1;
+}
+
+.draw-overlay__content--active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  animation: drawOverlayContentEnter 0.6s cubic-bezier(0.22, 0.82, 0.3, 1.08)
+    forwards;
 }
 
 .draw-overlay__content::after {
@@ -1104,6 +1284,12 @@ img {
     inset 0 12px 18px rgba(255, 237, 213, 0.35),
     0 22px 40px rgba(15, 23, 42, 0.22);
   overflow: visible;
+  transform-origin: 50% 100%;
+}
+
+.draw-overlay__bag--animate {
+  transform: translateY(0) scale(1);
+  animation: drawBagBounce 0.9s cubic-bezier(0.24, 0.82, 0.3, 1.08) forwards;
 }
 
 .draw-overlay__bag::before {
@@ -1208,6 +1394,14 @@ img {
   text-transform: uppercase;
   background: linear-gradient(90deg, rgba(245, 158, 11, 0.65), rgba(249, 115, 22, 0.65));
   box-shadow: 0 10px 22px rgba(249, 115, 22, 0.35);
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.draw-overlay__label--reveal {
+  opacity: 1;
+  transform: translateY(0);
+  animation: drawLabelReveal 0.48s ease-out forwards;
 }
 
 @media (max-width: 600px) {
@@ -1238,6 +1432,18 @@ img {
   .draw-overlay__ball--animate {
     animation: none;
   }
+
+  .draw-overlay__content--active,
+  .draw-overlay__bag--animate,
+  .draw-overlay__label--reveal,
+  .history-item--just-added,
+  .history-item--just-added .history-item__ball,
+  .board-cell--just-drawn,
+  .board-cell--just-drawn::before,
+  .board-cell--incoming::before,
+  .board-cell--incoming .board-cell__number {
+    animation: none;
+  }
 }
 
 .modal {
@@ -1250,13 +1456,17 @@ img {
   padding: 1.25rem;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.28s ease;
   z-index: 10;
 }
 
 .modal--visible {
   opacity: 1;
   pointer-events: all;
+}
+
+.modal.modal--closing {
+  pointer-events: none;
 }
 
 .modal__dialog {
@@ -1268,6 +1478,21 @@ img {
   gap: 1.25rem;
   position: relative;
   box-shadow: 0 18px 38px rgba(15, 23, 42, 0.25);
+  transform: translateY(24px) scale(0.94);
+  opacity: 0;
+  transition:
+    transform 0.36s cubic-bezier(0.22, 0.9, 0.3, 1.08),
+    opacity 0.28s ease;
+}
+
+.modal--visible .modal__dialog {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+
+.modal--closing .modal__dialog {
+  transform: translateY(12px) scale(0.96);
+  opacity: 0;
 }
 
 .modal__close {
