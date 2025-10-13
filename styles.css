@@ -428,7 +428,11 @@ img {
   pointer-events: all;
 }
 
-@media (min-width: 960px) {
+@media (min-width: 1280px) {
+  .app-main {
+    width: min(1280px, 100%);
+  }
+
   .board-layout {
     grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
   }
@@ -610,11 +614,9 @@ img {
   }
 
   .board-grid {
-    --board-row-gap: clamp(0.4rem, 1.8vw + 0.2rem, 0.72rem);
-    --board-column-gap: clamp(0.34rem, 2vw + 0.18rem, 0.78rem);
-    --board-cell-size: clamp(58px, 18vw + 12px, 86px);
-    padding: clamp(0.7rem, 2.2vw + 0.35rem, 1rem);
-    width: 100%;
+    --board-row-gap: clamp(0.36rem, 1.6vw + 0.2rem, 0.7rem);
+    --board-column-gap: clamp(0.3rem, 1.7vw + 0.18rem, 0.72rem);
+    padding: clamp(0.6rem, 1.8vw + 0.3rem, 0.95rem);
   }
 
   .board-cell {
@@ -688,18 +690,18 @@ img {
 
 .board-grid {
   --board-columns: 10;
-  --board-row-gap: clamp(0.35rem, 0.55vw + 0.18rem, 0.7rem);
-  --board-column-gap: clamp(0.28rem, 0.7vw + 0.16rem, 0.54rem);
-  --board-cell-size: clamp(48px, 3.3vw + 26px, 82px);
+  --board-row-gap: clamp(0.3rem, 0.45vw + 0.16rem, 0.65rem);
+  --board-column-gap: clamp(0.25rem, 0.6vw + 0.14rem, 0.5rem);
   display: grid;
-  grid-template-columns: repeat(var(--board-columns), minmax(var(--board-cell-size), 1fr));
+  grid-template-columns: repeat(var(--board-columns), minmax(0, 1fr));
   gap: var(--board-row-gap) var(--board-column-gap);
-  padding: clamp(0.65rem, 0.75vw + 0.5rem, 1.35rem);
+  padding: clamp(0.55rem, 0.5vw + 0.4rem, 1.1rem);
   background: linear-gradient(135deg, #ffffff 0%, #f3f5ff 100%);
   border-radius: 1.45rem;
   border: 1px solid rgba(15, 23, 42, 0.08);
   box-shadow: 0 18px 32px rgba(15, 23, 42, 0.12);
-  width: min(900px, 100%);
+  width: 100%;
+  max-width: 900px;
   margin-inline: auto;
   align-items: stretch;
   justify-items: stretch;
@@ -707,10 +709,9 @@ img {
 
 .board-grid[data-columns='5'] {
   --board-columns: 5;
-  --board-row-gap: clamp(0.4rem, 1.1vw + 0.22rem, 0.75rem);
-  --board-column-gap: clamp(0.34rem, 1.4vw + 0.18rem, 0.78rem);
-  --board-cell-size: clamp(54px, 13vw + 18px, 86px);
-  width: min(560px, 100%);
+  --board-row-gap: clamp(0.35rem, 0.9vw + 0.2rem, 0.7rem);
+  --board-column-gap: clamp(0.3rem, 1.1vw + 0.16rem, 0.72rem);
+  max-width: 560px;
 }
 
 .board-cell {
@@ -718,7 +719,6 @@ img {
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: var(--board-cell-size);
   aspect-ratio: 1;
   border-radius: 0.85rem;
   border: 1px solid rgba(15, 23, 42, 0.08);
@@ -1277,7 +1277,6 @@ img {
   .board-grid {
     --board-row-gap: clamp(0.38rem, 1.2vw + 0.2rem, 0.68rem);
     --board-column-gap: clamp(0.3rem, 1.4vw + 0.18rem, 0.7rem);
-    --board-cell-size: clamp(52px, 12vw + 18px, 84px);
     padding-inline: clamp(0.45rem, 2.6vw + 0.2rem, 0.95rem);
   }
 
