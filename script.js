@@ -48,6 +48,18 @@ const historyMediaMatcher =
     ? window.matchMedia(MOBILE_HISTORY_QUERY)
     : { matches: false };
 
+const BOARD_COMPACT_QUERY = '(max-width: 820px)';
+const boardLayoutMatcher =
+  typeof window !== 'undefined' && 'matchMedia' in window
+    ? window.matchMedia(BOARD_COMPACT_QUERY)
+    : {
+        matches: false,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        addListener: () => {},
+        removeListener: () => {},
+      };
+
 function syncHistoryPanelToLayout(options = {}) {
   const { immediate = false } = options;
   const { historyPanel, historyToggle, historyScrim } = elements;
@@ -358,6 +370,32 @@ async function loadNumbers() {
   }
 }
 
+function getBoardColumnCount() {
+  return boardLayoutMatcher.matches ? 5 : 10;
+}
+
+function syncBoardLayoutMeta() {
+  if (!elements.board) {
+    return;
+  }
+
+  const columns = Math.max(1, getBoardColumnCount());
+  elements.board.dataset.columns = String(columns);
+  elements.board.setAttribute('aria-colcount', String(columns));
+
+  const cells = elements.board.querySelectorAll('.board-cell');
+  const totalCells = cells.length || state.numbers.length || 0;
+  const rowCount = columns > 0 ? Math.ceil(totalCells / columns) : 0;
+  elements.board.setAttribute('aria-rowcount', String(rowCount));
+
+  cells.forEach((cell, index) => {
+    const rowIndex = Math.floor(index / columns) + 1;
+    const colIndex = (index % columns) + 1;
+    cell.setAttribute('aria-rowindex', String(rowIndex));
+    cell.setAttribute('aria-colindex', String(colIndex));
+  });
+}
+
 function renderBoard() {
   if (!elements.board) {
     return;
@@ -365,8 +403,6 @@ function renderBoard() {
 
   elements.board.innerHTML = '';
   elements.board.setAttribute('role', 'grid');
-  elements.board.setAttribute('aria-rowcount', '9');
-  elements.board.setAttribute('aria-colcount', '10');
   elements.board.setAttribute('aria-label', 'Tabellone con i numeri da 1 a 90');
 
   state.cellsByNumber = new Map();
@@ -378,54 +414,45 @@ function renderBoard() {
   });
 
   const fragment = document.createDocumentFragment();
+  const columnCount = Math.max(1, getBoardColumnCount());
+  elements.board.dataset.columns = String(columnCount);
+  elements.board.setAttribute('aria-colcount', String(columnCount));
+  elements.board.setAttribute(
+    'aria-rowcount',
+    String(columnCount > 0 ? Math.ceil(state.numbers.length / columnCount) : 0)
+  );
 
-  for (let rowIndex = 0; rowIndex < 9; rowIndex += 1) {
-    const start = rowIndex * 10 + 1;
-    const end = rowIndex === 8 ? 90 : start + 9;
-
-    const row = document.createElement('div');
-    row.className = 'board-row';
-    row.dataset.range = `${start}-${end}`;
-    row.setAttribute('role', 'row');
-
-    const legend = document.createElement('span');
-    const legendId = `board-row-${start}-${end}`;
-    legend.className = 'board-row__legend';
-    legend.id = legendId;
-    legend.textContent = `${start}-${end}`;
-    legend.setAttribute('role', 'rowheader');
-    row.appendChild(legend);
-
-    for (let colIndex = 0; colIndex < 10; colIndex += 1) {
-      const number = start + colIndex;
-      const entry = entriesByNumber.get(number);
-      if (!entry) {
-        continue;
-      }
-
-      const cell = elements.template.content.firstElementChild.cloneNode(true);
-      cell.dataset.number = entry.number;
-      cell.setAttribute('role', 'gridcell');
-      cell.setAttribute('aria-describedby', legendId);
-
-      const label = cell.querySelector('.board-cell__number');
-      if (label) {
-        label.textContent = entry.number;
-      }
-
-      const isDrawn = state.drawnNumbers.has(entry.number);
-      cell.classList.toggle('board-cell--drawn', isDrawn);
-      cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
-
-      cell.addEventListener('click', () => handleSelection(entry, cell));
-      state.cellsByNumber.set(entry.number, cell);
-      row.appendChild(cell);
+  for (let number = 1; number <= 90; number += 1) {
+    const entry = entriesByNumber.get(number);
+    if (!entry) {
+      continue;
     }
 
-    fragment.appendChild(row);
+    const cell = elements.template.content.firstElementChild.cloneNode(true);
+    cell.dataset.number = entry.number;
+    cell.setAttribute('role', 'gridcell');
+
+    const rowIndex = Math.floor((number - 1) / columnCount) + 1;
+    const colIndex = ((number - 1) % columnCount) + 1;
+    cell.setAttribute('aria-rowindex', String(rowIndex));
+    cell.setAttribute('aria-colindex', String(colIndex));
+
+    const label = cell.querySelector('.board-cell__number');
+    if (label) {
+      label.textContent = entry.number;
+    }
+
+    const isDrawn = state.drawnNumbers.has(entry.number);
+    cell.classList.toggle('board-cell--drawn', isDrawn);
+    cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
+
+    cell.addEventListener('click', () => handleSelection(entry, cell));
+    state.cellsByNumber.set(entry.number, cell);
+    fragment.appendChild(cell);
   }
 
   elements.board.appendChild(fragment);
+  syncBoardLayoutMeta();
 }
 
 function buildNumberImage(number) {
@@ -1105,6 +1132,16 @@ function setupEventListeners() {
     historyMediaMatcher.addListener(() => {
       closeHistoryPanel({ immediate: true });
       syncHistoryPanelToLayout({ immediate: true });
+    });
+  }
+
+  if (boardLayoutMatcher && typeof boardLayoutMatcher.addEventListener === 'function') {
+    boardLayoutMatcher.addEventListener('change', () => {
+      syncBoardLayoutMeta();
+    });
+  } else if (boardLayoutMatcher && typeof boardLayoutMatcher.addListener === 'function') {
+    boardLayoutMatcher.addListener(() => {
+      syncBoardLayoutMeta();
     });
   }
 }
