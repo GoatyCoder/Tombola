@@ -48,6 +48,18 @@ const historyMediaMatcher =
     ? window.matchMedia(MOBILE_HISTORY_QUERY)
     : { matches: false };
 
+const columnGradients = [
+  ['#ff9a9e', '#f6416c'],
+  ['#ffdd94', '#fa709a'],
+  ['#70e1f5', '#ffd194'],
+  ['#a18cd1', '#fbc2eb'],
+  ['#84fab0', '#8fd3f4'],
+  ['#f6d365', '#fda085'],
+  ['#fccb90', '#d57eeb'],
+  ['#5ee7df', '#b490ca'],
+  ['#f5576c', '#f093fb'],
+];
+
 function syncHistoryPanelToLayout(options = {}) {
   const { immediate = false } = options;
   const { historyPanel, historyToggle, historyScrim } = elements;
@@ -398,12 +410,44 @@ function renderBoard() {
       .forEach((entry) => {
         const cell = elements.template.content.firstElementChild.cloneNode(true);
         cell.dataset.number = entry.number;
-        const image = cell.querySelector('img');
-        image.src = buildNumberImage(entry.number);
-        image.alt = `Segnaposto per il numero ${entry.number}`;
+        const [gradientStart, gradientEnd] =
+          columnGradients[columnIndex % columnGradients.length];
+        cell.style.setProperty(
+          '--cell-gradient',
+          `linear-gradient(145deg, ${gradientStart}, ${gradientEnd})`
+        );
+
+        const boardImage =
+          typeof entry.image === 'string' && entry.image.trim().length
+            ? entry.image.trim()
+            : null;
+        if (boardImage) {
+          const safeBoardImage = boardImage.replace(/(["\\])/g, '\\$1');
+          cell.style.setProperty('--cell-image', `url("${safeBoardImage}")`);
+          cell.classList.add('board-cell--has-image');
+        } else {
+          cell.style.setProperty('--cell-image', 'none');
+          cell.classList.remove('board-cell--has-image');
+        }
 
         const label = cell.querySelector('.board-cell__number');
         label.textContent = entry.number;
+
+        const subtitle = cell.querySelector('.board-cell__subtitle');
+        const subtitleText = entry.italian || entry.dialect || '';
+        if (subtitle) {
+          subtitle.textContent = subtitleText || '—';
+        }
+
+        const ariaParts = [`Numero ${entry.number}`];
+        if (entry.italian) {
+          ariaParts.push(entry.italian);
+        }
+        if (entry.dialect) {
+          ariaParts.push(entry.dialect);
+        }
+        cell.setAttribute('aria-label', ariaParts.join('. '));
+        cell.title = ariaParts.join(' • ');
 
         const isDrawn = state.drawnNumbers.has(entry.number);
         cell.classList.toggle('board-cell--drawn', isDrawn);
