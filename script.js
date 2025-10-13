@@ -359,48 +359,40 @@ async function loadNumbers() {
 }
 
 function renderBoard() {
+  if (!elements.board) {
+    return;
+  }
+
   elements.board.innerHTML = '';
+  elements.board.setAttribute('role', 'grid');
+  elements.board.setAttribute('aria-rowcount', '9');
+  elements.board.setAttribute('aria-colcount', '10');
+  elements.board.setAttribute('aria-label', 'Tabellone con i numeri da 1 a 90');
+
   state.cellsByNumber = new Map();
   state.selected = null;
-
-  const decinaRanges = [
-    { start: 1, end: 10 },
-    { start: 11, end: 20 },
-    { start: 21, end: 30 },
-    { start: 31, end: 40 },
-    { start: 41, end: 50 },
-    { start: 51, end: 60 },
-    { start: 61, end: 70 },
-    { start: 71, end: 80 },
-    { start: 81, end: 90 },
-  ];
 
   const entriesByNumber = new Map();
   state.numbers.forEach((entry) => {
     entriesByNumber.set(entry.number, entry);
   });
 
-  decinaRanges.forEach((range, index) => {
-    const row = document.createElement('div');
-    row.className = 'board-grid__row';
-    row.setAttribute('role', 'group');
-    row.setAttribute('aria-label', `Numeri da ${range.start} a ${range.end}`);
+  const fragment = document.createDocumentFragment();
 
-    const rowLabel = document.createElement('p');
-    rowLabel.className = 'board-grid__row-label';
-    rowLabel.textContent = `${range.start}-${range.end}`;
-    rowLabel.setAttribute('aria-hidden', 'true');
-    row.appendChild(rowLabel);
+  for (let rowIndex = 0; rowIndex < 9; rowIndex += 1) {
+    const start = rowIndex * 10 + 1;
+    const end = rowIndex === 8 ? 90 : start + 9;
 
-    const cellsContainer = document.createElement('div');
-    cellsContainer.className = 'board-grid__cells';
-    cellsContainer.setAttribute('role', 'group');
-    cellsContainer.setAttribute(
-      'aria-label',
-      `Decina ${index + 1}: numeri da ${range.start} a ${range.end}`,
-    );
+    const heading = document.createElement('span');
+    heading.className = 'board-grid__heading';
+    heading.textContent = `${start}-${end}`;
+    heading.setAttribute('aria-hidden', 'true');
+    heading.style.gridRow = `${rowIndex + 1}`;
+    heading.style.gridColumn = '1';
+    fragment.appendChild(heading);
 
-    for (let number = range.start; number <= range.end; number += 1) {
+    for (let colIndex = 0; colIndex < 10; colIndex += 1) {
+      const number = start + colIndex;
       const entry = entriesByNumber.get(number);
       if (!entry) {
         continue;
@@ -408,8 +400,14 @@ function renderBoard() {
 
       const cell = elements.template.content.firstElementChild.cloneNode(true);
       cell.dataset.number = entry.number;
+      cell.style.gridRow = `${rowIndex + 1}`;
+      cell.style.gridColumn = `${colIndex + 2}`;
+      cell.setAttribute('role', 'gridcell');
+
       const label = cell.querySelector('.board-cell__number');
-      label.textContent = entry.number;
+      if (label) {
+        label.textContent = entry.number;
+      }
 
       const isDrawn = state.drawnNumbers.has(entry.number);
       cell.classList.toggle('board-cell--drawn', isDrawn);
@@ -417,12 +415,11 @@ function renderBoard() {
 
       cell.addEventListener('click', () => handleSelection(entry, cell));
       state.cellsByNumber.set(entry.number, cell);
-      cellsContainer.appendChild(cell);
+      fragment.appendChild(cell);
     }
+  }
 
-    row.appendChild(cellsContainer);
-    elements.board.appendChild(row);
-  });
+  elements.board.appendChild(fragment);
 }
 
 function buildNumberImage(number) {
