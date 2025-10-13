@@ -681,7 +681,7 @@ img {
   }
 
   .board-cell__number {
-    font-size: clamp(1.08rem, 5.5vw, 1.55rem);
+    font-size: clamp(1.35rem, 1vw + 1.2rem, 2.25rem);
   }
 
   .history-panel {
