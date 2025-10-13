@@ -398,10 +398,6 @@ function renderBoard() {
       .forEach((entry) => {
         const cell = elements.template.content.firstElementChild.cloneNode(true);
         cell.dataset.number = entry.number;
-        const image = cell.querySelector('img');
-        image.src = buildNumberImage(entry.number);
-        image.alt = `Segnaposto per il numero ${entry.number}`;
-
         const label = cell.querySelector('.board-cell__number');
         label.textContent = entry.number;
 
