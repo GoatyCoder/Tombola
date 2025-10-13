@@ -383,13 +383,18 @@ function renderBoard() {
     const start = rowIndex * 10 + 1;
     const end = rowIndex === 8 ? 90 : start + 9;
 
-    const heading = document.createElement('span');
-    heading.className = 'board-grid__heading';
-    heading.textContent = `${start}-${end}`;
-    heading.setAttribute('aria-hidden', 'true');
-    heading.style.gridRow = `${rowIndex + 1}`;
-    heading.style.gridColumn = '1';
-    fragment.appendChild(heading);
+    const row = document.createElement('div');
+    row.className = 'board-row';
+    row.dataset.range = `${start}-${end}`;
+    row.setAttribute('role', 'row');
+
+    const legend = document.createElement('span');
+    const legendId = `board-row-${start}-${end}`;
+    legend.className = 'board-row__legend';
+    legend.id = legendId;
+    legend.textContent = `${start}-${end}`;
+    legend.setAttribute('role', 'rowheader');
+    row.appendChild(legend);
 
     for (let colIndex = 0; colIndex < 10; colIndex += 1) {
       const number = start + colIndex;
@@ -400,9 +405,8 @@ function renderBoard() {
 
       const cell = elements.template.content.firstElementChild.cloneNode(true);
       cell.dataset.number = entry.number;
-      cell.style.gridRow = `${rowIndex + 1}`;
-      cell.style.gridColumn = `${colIndex + 2}`;
       cell.setAttribute('role', 'gridcell');
+      cell.setAttribute('aria-describedby', legendId);
 
       const label = cell.querySelector('.board-cell__number');
       if (label) {
@@ -415,8 +419,10 @@ function renderBoard() {
 
       cell.addEventListener('click', () => handleSelection(entry, cell));
       state.cellsByNumber.set(entry.number, cell);
-      fragment.appendChild(cell);
+      row.appendChild(cell);
     }
+
+    fragment.appendChild(row);
   }
 
   elements.board.appendChild(fragment);
