@@ -9,6 +9,9 @@ const state = {
   historyOpen: false,
   audioEnabled: true,
   storageErrorMessage: '',
+  gameStartTime: null,
+  gameEndTime: null,
+  gameTimerInterval: null,
 };
 
 const elements = {
@@ -36,6 +39,10 @@ const elements = {
   historyToggle: document.querySelector('#history-toggle'),
   historyScrim: document.querySelector('#history-scrim'),
   audioToggle: document.querySelector('#audio-toggle'),
+  gameStats: document.querySelector('#game-stats'),
+  gameTime: document.querySelector('#game-time'),
+  gameDrawnCount: document.querySelector('#game-drawn-count'),
+  gameRemainingCount: document.querySelector('#game-remaining-count'),
 };
 
 const AUDIO_STORAGE_KEY = 'tombola-audio-enabled';
@@ -219,6 +226,8 @@ function persistDrawState() {
     const payload = {
       drawnNumbers: Array.from(state.drawnNumbers),
       drawHistory: state.drawHistory.map((item) => ({ ...item })),
+      gameStartTime: state.gameStartTime,
+      gameEndTime: state.gameEndTime,
     };
     window.localStorage.setItem(DRAW_STATE_STORAGE_KEY, JSON.stringify(payload));
     state.storageErrorMessage = '';
@@ -257,6 +266,14 @@ function restoreDrawStateFromStorage() {
     const parsed = JSON.parse(stored);
     const source = parsed && typeof parsed === 'object' ? parsed : EMPTY_DRAW_STATE;
     const history = Array.isArray(source.drawHistory) ? source.drawHistory : [];
+    const storedStartTime =
+      typeof source.gameStartTime === 'number' && Number.isFinite(source.gameStartTime)
+        ? source.gameStartTime
+        : null;
+    const storedEndTime =
+      typeof source.gameEndTime === 'number' && Number.isFinite(source.gameEndTime)
+        ? source.gameEndTime
+        : null;
     const storedNumbers = Array.isArray(source.drawnNumbers)
       ? source.drawnNumbers
           .map((value) => Number(value))
@@ -293,7 +310,7 @@ function restoreDrawStateFromStorage() {
       }
 
       seen.add(number);
-      markNumberDrawn(entry, { animate: false });
+      markNumberDrawn(entry, { animate: false, fromRestore: true });
       latestEntry = entry;
     });
 
@@ -314,9 +331,21 @@ function restoreDrawStateFromStorage() {
         }
 
         seen.add(number);
-        markNumberDrawn(entry, { animate: false });
+        markNumberDrawn(entry, { animate: false, fromRestore: true });
         latestEntry = entry;
       });
+    }
+
+    if (state.drawHistory.length > 0 && storedStartTime) {
+      state.gameStartTime = storedStartTime;
+      if (storedEndTime && storedEndTime >= storedStartTime) {
+        state.gameEndTime = storedEndTime;
+      } else {
+        state.gameEndTime = null;
+      }
+    } else {
+      state.gameStartTime = null;
+      state.gameEndTime = null;
     }
 
     state.storageErrorMessage = '';
@@ -339,6 +368,7 @@ async function loadNumbers() {
     state.drawnNumbers = new Set();
     state.drawHistory = [];
     state.storageErrorMessage = '';
+    resetGameTimer();
     renderBoard();
     updateDrawHistory();
 
@@ -462,7 +492,7 @@ function markNumberDrawn(entry, options = {}) {
     return;
   }
 
-  const { animate = false } = options;
+  const { animate = false, fromRestore = false } = options;
   const number = entry.number;
 
   if (state.drawnNumbers.has(number)) {
@@ -476,7 +506,12 @@ function markNumberDrawn(entry, options = {}) {
     dialect: entry.dialect || '',
   });
   updateDrawHistory();
-  persistDrawState();
+  if (!fromRestore) {
+    if (state.drawHistory.length === state.numbers.length && state.numbers.length > 0) {
+      state.gameEndTime = Date.now();
+    }
+    persistDrawState();
+  }
   if (state.storageErrorMessage) {
     updateDrawStatus();
   }
@@ -523,6 +558,7 @@ async function handleDraw() {
 
   const randomIndex = Math.floor(Math.random() * remaining.length);
   const entry = remaining[randomIndex];
+  beginGameTimer();
   markNumberDrawn(entry, { animate: true });
 
   state.isAnimatingDraw = true;
@@ -635,6 +671,115 @@ function updateDrawHistory() {
   historyList.scrollTop = 0;
 }
 
+function formatDuration(milliseconds) {
+  const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutesTotal = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    const remainderMinutes = Math.floor((totalSeconds % 3600) / 60);
+    return `${hours.toString().padStart(2, '0')}:${remainderMinutes
+      .toString()
+      .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+
+  return `${minutesTotal.toString().padStart(2, '0')}:${seconds
+    .toString()
+    .padStart(2, '0')}`;
+}
+
+function updateGameTimeDisplay() {
+  const { gameTime } = elements;
+  if (!gameTime) {
+    return;
+  }
+
+  if (!state.gameStartTime || state.drawHistory.length === 0) {
+    gameTime.textContent = '—';
+    return;
+  }
+
+  const effectiveEndTime =
+    state.gameEndTime && state.gameEndTime >= state.gameStartTime
+      ? state.gameEndTime
+      : Date.now();
+  const elapsed = Math.max(0, effectiveEndTime - state.gameStartTime);
+  gameTime.textContent = formatDuration(elapsed);
+}
+
+function stopGameTimer() {
+  if (state.gameTimerInterval) {
+    window.clearInterval(state.gameTimerInterval);
+    state.gameTimerInterval = null;
+  }
+}
+
+function resetGameTimer() {
+  stopGameTimer();
+  state.gameStartTime = null;
+  state.gameEndTime = null;
+  updateGameTimeDisplay();
+}
+
+function beginGameTimer() {
+  if (!state.gameStartTime) {
+    state.gameStartTime = Date.now();
+  }
+  state.gameEndTime = null;
+
+  if (!state.gameTimerInterval) {
+    updateGameTimeDisplay();
+    state.gameTimerInterval = window.setInterval(updateGameTimeDisplay, 1000);
+  }
+}
+
+function resumeGameTimer() {
+  if (!state.gameStartTime) {
+    state.gameStartTime = Date.now();
+  }
+
+  if (state.gameEndTime) {
+    updateGameTimeDisplay();
+    return;
+  }
+
+  if (!state.gameTimerInterval) {
+    updateGameTimeDisplay();
+    state.gameTimerInterval = window.setInterval(updateGameTimeDisplay, 1000);
+  }
+}
+
+function updateGameStats() {
+  const total = state.numbers.length;
+  const drawnCount = state.drawHistory.length;
+  const remaining = Math.max(total - drawnCount, 0);
+  const { gameStats, gameDrawnCount, gameRemainingCount } = elements;
+
+  if (gameStats) {
+    gameStats.hidden = total === 0;
+  }
+
+  if (gameDrawnCount) {
+    gameDrawnCount.textContent = total === 0 ? '—' : String(drawnCount);
+  }
+
+  if (gameRemainingCount) {
+    gameRemainingCount.textContent = total === 0 ? '—' : String(remaining);
+  }
+
+  updateGameTimeDisplay();
+
+  if (drawnCount === total && total > 0) {
+    if (!state.gameEndTime) {
+      state.gameEndTime = Date.now();
+      persistDrawState();
+    }
+    stopGameTimer();
+    updateGameTimeDisplay();
+  }
+}
+
 function resetGame() {
   if (!state.numbers.length) {
     return;
@@ -671,6 +816,7 @@ function resetGame() {
   }
   state.currentUtterance = null;
 
+  resetGameTimer();
   state.drawnNumbers.clear();
   state.drawHistory = [];
   updateDrawHistory();
@@ -975,6 +1121,13 @@ function updateDrawStatus(latestEntry) {
   if (!elements.drawStatus) {
     return;
   }
+
+  if (state.drawHistory.length > 0) {
+    resumeGameTimer();
+  } else {
+    resetGameTimer();
+  }
+  updateGameStats();
 
   const total = state.numbers.length;
   const drawnCount = state.drawnNumbers.size;

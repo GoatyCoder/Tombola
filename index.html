@@ -62,6 +62,20 @@
             <p class="board-panel__status" id="draw-status" aria-live="polite">
               Caricamento del tabellone…
             </p>
+            <div class="board-panel__stats" id="game-stats" aria-live="polite" hidden>
+              <div class="game-stat">
+                <span class="game-stat__label">Durata partita</span>
+                <span class="game-stat__value" id="game-time">—</span>
+              </div>
+              <div class="game-stat">
+                <span class="game-stat__label">Numeri estratti</span>
+                <span class="game-stat__value" id="game-drawn-count">—</span>
+              </div>
+              <div class="game-stat">
+                <span class="game-stat__label">Numeri rimanenti</span>
+                <span class="game-stat__value" id="game-remaining-count">—</span>
+              </div>
+            </div>
             <button
               type="button"
               id="history-toggle"
