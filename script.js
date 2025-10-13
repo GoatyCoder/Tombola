@@ -10,6 +10,7 @@ const state = {
   audioEnabled: true,
   storageErrorMessage: '',
   lastAnimatedHistoryNumber: null,
+  activeEntry: null,
 };
 
 const elements = {
@@ -18,12 +19,15 @@ const elements = {
   modal: document.querySelector('#number-modal'),
   modalNumber: document.querySelector('#modal-number'),
   modalItalian: document.querySelector('#modal-italian'),
-  modalDialect: document.querySelector('#modal-dialect'),
-  modalImage: document.querySelector('#modal-image'),
   modalCaption: document.querySelector('#modal-caption'),
+  modalMedia: document.querySelector('#number-modal .modal__media'),
+  modalDialect: document.querySelector('#modal-dialect'),
+  modalDialectText: document.querySelector('#modal-dialect-text'),
+  modalImage: document.querySelector('#modal-image'),
   modalClose: document.querySelector('#modal-close'),
   modalPlay: document.querySelector('#modal-play'),
   modalNext: document.querySelector('#modal-next'),
+  modalActions: document.querySelector('#modal-actions'),
   drawButton: document.querySelector('#draw-button'),
   resetButton: document.querySelector('#reset-button'),
   drawStatus: document.querySelector('#draw-status'),
@@ -193,6 +197,7 @@ function setAudioEnabled(enabled) {
   }
 
   updateAudioToggle();
+  refreshModalPlayButton();
 
   try {
     if (typeof window !== 'undefined' && 'localStorage' in window) {
@@ -223,6 +228,7 @@ function initializeAudioPreference() {
   }
 
   updateAudioToggle();
+  refreshModalPlayButton();
 }
 
 function persistDrawState() {
@@ -377,6 +383,8 @@ function renderBoard() {
   elements.board.innerHTML = '';
   state.cellsByNumber = new Map();
   state.selected = null;
+  state.activeEntry = null;
+  refreshModalPlayButton();
 
   const columnLabels = [
     '1-9',
@@ -472,24 +480,144 @@ function renderBoard() {
   });
 }
 
-function buildNumberImage(number) {
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'>
-      <rect width='160' height='160' rx='26' fill='#f8fafc' stroke='#cbd5f5' stroke-width='4' />
-      <path d='M28 120h104' stroke='#e2e8f0' stroke-width='6' stroke-linecap='round' />
-      <circle cx='80' cy='54' r='36' fill='#e2e8f0' />
-      <text x='80' y='64' text-anchor='middle' font-size='48' font-family='Signika, sans-serif' fill='#1f2933' font-weight='700'>${number}</text>
+const PLACEHOLDER_IMAGE_SRC = 'images/placeholder.svg';
+const PLACEHOLDER_DATA_URI = buildPlaceholderImage();
+const placeholderPreloadImage =
+  typeof Image === 'function' ? new Image() : null;
+if (placeholderPreloadImage) {
+  placeholderPreloadImage.src = PLACEHOLDER_IMAGE_SRC;
+}
+
+function buildPlaceholderImage() {
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 320'>
+      <defs>
+        <linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'>
+          <stop offset='0%' stop-color='#f5f8ff'/>
+          <stop offset='100%' stop-color='#dbe4ff'/>
+        </linearGradient>
+      </defs>
+      <rect width='320' height='320' rx='44' fill='url(#grad)' stroke='#cbd5f5' stroke-width='6'/>
+      <g fill='none' stroke='#94a3b8' stroke-linecap='round' stroke-linejoin='round'>
+        <path d='M96 226c0-36 28-64 64-64s64 28 64 64' stroke-width='10'/>
+        <circle cx='160' cy='128' r='48' stroke-width='10'/>
+        <path d='M160 96c12 0 22 10 22 22' stroke-width='8' opacity='0.5'/>
+      </g>
+      <circle cx='80' cy='82' r='10' fill='#94a3b8' opacity='0.35'/>
+      <circle cx='240' cy='102' r='12' fill='#94a3b8' opacity='0.25'/>
     </svg>`;
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
 function getNumberImage(entry) {
-  if (entry && entry.image) {
-    return entry.image;
+  if (!entry) {
+    return PLACEHOLDER_IMAGE_SRC;
   }
 
-  return buildNumberImage(entry.number);
+  const candidate = entry.image ? String(entry.image).trim() : '';
+  return candidate ? candidate : PLACEHOLDER_IMAGE_SRC;
 }
 
+function refreshModalPlayButton() {
+  if (!elements.modalPlay) {
+    return;
+  }
+
+  const entry = state.activeEntry;
+  const dialect = entry && entry.dialect ? entry.dialect.trim() : '';
+  const speechAvailable = typeof window !== 'undefined' && 'speechSynthesis' in window;
+  const canSpeak = Boolean(dialect) && speechAvailable;
+
+  if (!canSpeak) {
+    elements.modalPlay.hidden = true;
+    elements.modalPlay.disabled = true;
+    elements.modalPlay.classList.remove('modal__dialect-button--disabled');
+    elements.modalPlay.removeAttribute('title');
+    elements.modalPlay.setAttribute('aria-label', 'Annuncio non disponibile');
+    return;
+  }
+
+  elements.modalPlay.hidden = false;
+  const audioEnabled = Boolean(state.audioEnabled);
+  elements.modalPlay.disabled = !audioEnabled;
+  elements.modalPlay.classList.toggle('modal__dialect-button--disabled', !audioEnabled);
+
+  const label = audioEnabled
+    ? `Riproduci annuncio del numero ${entry.number}`
+    : `Audio disattivato: attivalo per ascoltare il numero ${entry.number}`;
+  elements.modalPlay.setAttribute('aria-label', label);
+  elements.modalPlay.title = label;
+}
+
+function handleModalImageError() {
+  if (!elements.modalImage) {
+    return;
+  }
+
+  const stage = elements.modalImage.dataset.fallbackApplied || 'none';
+
+  if (stage === 'data') {
+    return;
+  }
+
+  if (stage === 'file') {
+    elements.modalImage.dataset.fallbackApplied = 'data';
+    elements.modalImage.src = PLACEHOLDER_DATA_URI;
+  } else {
+    elements.modalImage.dataset.fallbackApplied = 'file';
+    elements.modalImage.src = PLACEHOLDER_IMAGE_SRC;
+  }
+
+  if (elements.modalMedia) {
+    elements.modalMedia.classList.add('modal__media--placeholder');
+    elements.modalMedia.classList.remove('modal__media--loading');
+  }
+  elements.modalImage.classList.remove('modal__image--hidden');
+  elements.modalImage.alt = state.activeEntry
+    ? `Illustrazione non disponibile per il numero ${state.activeEntry.number}`
+    : 'Illustrazione non disponibile';
+}
+
+function setModalImage(entry, italianText) {
+  if (!elements.modalImage) {
+    return;
+  }
+
+  const hasCustomImage = Boolean(entry.image && String(entry.image).trim());
+  const { modalImage, modalMedia } = elements;
+
+  const finalizeLoad = () => {
+    modalImage.classList.remove('modal__image--hidden');
+    if (modalMedia) {
+      modalMedia.classList.remove('modal__media--loading');
+    }
+  };
+
+  if (modalMedia) {
+    modalMedia.classList.toggle('modal__media--placeholder', !hasCustomImage);
+    modalMedia.classList.toggle('modal__media--loading', hasCustomImage);
+  }
+
+  modalImage.dataset.fallbackApplied = 'none';
+
+  if (hasCustomImage) {
+    modalImage.classList.add('modal__image--hidden');
+    modalImage.addEventListener('load', finalizeLoad, { once: true });
+  } else {
+    modalImage.classList.remove('modal__image--hidden');
+  }
+
+  modalImage.src = getNumberImage(entry);
+
+  if (hasCustomImage && modalImage.complete && modalImage.naturalWidth > 0) {
+    finalizeLoad();
+  }
+
+  modalImage.alt = hasCustomImage
+    ? italianText
+      ? `Illustrazione del numero ${entry.number}: ${italianText}`
+      : `Illustrazione del numero ${entry.number}`
+    : `Illustrazione non disponibile per il numero ${entry.number}`;
+}
 
 function handleSelection(
   entry,
@@ -505,6 +633,7 @@ function handleSelection(
   }
   state.selected = cell;
   cell.classList.add('board-cell--active');
+  state.activeEntry = entry;
 
   openModal(entry, { fromDraw });
   speakEntry(entry);
@@ -766,6 +895,8 @@ function resetGame() {
   });
 
   state.selected = null;
+  state.activeEntry = null;
+  refreshModalPlayButton();
 
   updateDrawStatus();
   if (elements.drawStatus && !state.storageErrorMessage) {
@@ -781,16 +912,28 @@ function resetGame() {
 function openModal(entry, options = {}) {
   const { fromDraw = false } = options;
   elements.modalNumber.textContent = `Numero ${entry.number}`;
-  elements.modalItalian.textContent = entry.italian || '—';
-  elements.modalDialect.textContent = entry.dialect || 'Da completare';
-  elements.modalDialect.classList.toggle('missing', !entry.dialect);
-  elements.modalImage.src = getNumberImage(entry);
-  elements.modalImage.alt = entry.image
-    ? entry.italian
-      ? `Illustrazione del numero ${entry.number}: ${entry.italian}`
-      : `Illustrazione del numero ${entry.number}`
-    : `Segnaposto per il numero ${entry.number}`;
-  elements.modalCaption.textContent = entry.italian || `Numero ${entry.number}`;
+
+  const italian = (entry.italian || '').trim();
+  const italianDisplay = italian || 'Da completare';
+  if (elements.modalItalian) {
+    elements.modalItalian.textContent = italianDisplay;
+  }
+  if (elements.modalCaption) {
+    elements.modalCaption.classList.toggle('missing', !italian);
+  }
+
+  const dialect = (entry.dialect || '').trim();
+  const dialectDisplay = dialect || 'Da completare';
+  if (elements.modalDialectText) {
+    elements.modalDialectText.textContent = dialectDisplay;
+  }
+  if (elements.modalDialect) {
+    elements.modalDialect.classList.toggle('missing', !dialect);
+  }
+
+  setModalImage(entry, italian);
+
+  refreshModalPlayButton();
 
   elements.modal.removeAttribute('hidden');
   elements.modal.classList.remove('modal--closing');
@@ -798,24 +941,35 @@ function openModal(entry, options = {}) {
   document.body.classList.add('modal-open');
 
   let focusTarget = elements.modalClose;
+  let shouldShowNext = false;
 
   if (elements.modalNext) {
     const total = state.numbers.length;
     const drawnCount = state.drawnNumbers.size;
     const remaining = Math.max(total - drawnCount, 0);
-    const shouldShow = fromDraw && remaining > 0;
+    shouldShowNext = fromDraw && remaining > 0;
 
-    elements.modalNext.hidden = !shouldShow;
-    elements.modalNext.disabled = !shouldShow;
+    elements.modalNext.hidden = !shouldShowNext;
+    elements.modalNext.disabled = !shouldShowNext;
 
-    if (shouldShow) {
+    if (shouldShowNext) {
       elements.modalNext.textContent =
         remaining === 1 ? 'Estrai ultimo numero' : 'Estrai successivo';
       focusTarget = elements.modalNext;
     }
   }
 
-  focusTarget.focus();
+  if (elements.modalActions) {
+    elements.modalActions.hidden = !shouldShowNext;
+  }
+
+  if (!focusTarget || typeof focusTarget.focus !== 'function') {
+    focusTarget = elements.modalClose || elements.modal;
+  }
+
+  if (focusTarget && typeof focusTarget.focus === 'function') {
+    focusTarget.focus();
+  }
 }
 
 function closeModal(options = {}) {
@@ -826,6 +980,11 @@ function closeModal(options = {}) {
     if (elements.modalNext) {
       elements.modalNext.hidden = true;
     }
+    if (elements.modalActions) {
+      elements.modalActions.hidden = true;
+    }
+    state.activeEntry = null;
+    refreshModalPlayButton();
     if (returnFocus && state.selected) {
       state.selected.focus();
     }
@@ -845,6 +1004,11 @@ function closeModal(options = {}) {
     if (elements.modalNext) {
       elements.modalNext.hidden = true;
     }
+    if (elements.modalActions) {
+      elements.modalActions.hidden = true;
+    }
+    state.activeEntry = null;
+    refreshModalPlayButton();
     if (returnFocus && state.selected) {
       state.selected.focus();
     }
@@ -1178,16 +1342,24 @@ function updateDrawStatus(latestEntry) {
 }
 
 function setupEventListeners() {
-  elements.modalClose.addEventListener('click', closeModal);
-  elements.modalPlay.addEventListener('click', () => {
-    if (state.selected) {
-      const number = Number(state.selected.dataset.number);
-      const entry = state.numbers.find((item) => item.number === number);
-      if (entry) {
-        speakEntry(entry);
+  if (elements.modalClose) {
+    elements.modalClose.addEventListener('click', closeModal);
+  }
+
+  if (elements.modalImage) {
+    elements.modalImage.addEventListener('error', handleModalImageError);
+  }
+
+  if (elements.modalPlay) {
+    elements.modalPlay.addEventListener('click', () => {
+      if (elements.modalPlay.disabled) {
+        return;
       }
-    }
-  });
+      if (state.activeEntry) {
+        speakEntry(state.activeEntry);
+      }
+    });
+  }
 
   if (elements.modalNext) {
     elements.modalNext.addEventListener('click', () => {
@@ -1196,18 +1368,20 @@ function setupEventListeners() {
     });
   }
 
-  elements.modal.addEventListener('click', (event) => {
-    if (event.target === elements.modal) {
-      closeModal();
-    }
-  });
+  if (elements.modal) {
+    elements.modal.addEventListener('click', (event) => {
+      if (event.target === elements.modal) {
+        closeModal();
+      }
+    });
+  }
 
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') {
       return;
     }
 
-    if (!elements.modal.hasAttribute('hidden')) {
+    if (elements.modal && !elements.modal.hasAttribute('hidden')) {
       closeModal();
       return;
     }

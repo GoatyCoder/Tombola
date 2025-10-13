@@ -130,25 +130,35 @@
       <div class="modal__dialog">
         <button type="button" class="modal__close" aria-label="Chiudi" id="modal-close">&times;</button>
         <figure class="modal__figure">
-          <img id="modal-image" alt="" decoding="async" />
-          <figcaption id="modal-caption" class="modal__caption"></figcaption>
+          <div class="modal__media">
+            <img id="modal-image" class="modal__image" alt="" decoding="async" />
+          </div>
+          <figcaption id="modal-caption" class="modal__caption">
+            <span class="modal__caption-label">Italiano</span>
+            <span id="modal-italian" class="modal__caption-text"></span>
+          </figcaption>
         </figure>
         <div class="modal__details">
           <p id="modal-number" class="modal__number"></p>
           <dl class="modal__definitions">
-            <div>
-              <dt>Italiano</dt>
-              <dd id="modal-italian"></dd>
-            </div>
-            <div>
+            <div class="modal__definition">
               <dt>Dialetto</dt>
-              <dd id="modal-dialect"></dd>
+              <dd id="modal-dialect" class="modal__dialect">
+                <span id="modal-dialect-text" class="modal__dialect-text"></span>
+                <button
+                  type="button"
+                  class="modal__dialect-button"
+                  id="modal-play"
+                  aria-label="Riproduci annuncio in dialetto"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M7 5.5v13l10-6.5-10-6.5z" fill="currentColor" />
+                  </svg>
+                </button>
+              </dd>
             </div>
           </dl>
-          <div class="modal__actions">
-            <button type="button" class="modal__action" id="modal-play">
-              Ascolta annuncio
-            </button>
+          <div class="modal__actions" id="modal-actions" hidden>
             <button
               type="button"
               class="modal__action modal__action--secondary"
