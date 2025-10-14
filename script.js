@@ -2,6 +2,7 @@ const state = {
   numbers: [],
   selected: null,
   currentUtterance: null,
+  currentAudioSegment: null,
   cellsByNumber: new Map(),
   drawnNumbers: new Set(),
   drawHistory: [],
@@ -41,6 +42,8 @@ const elements = {
 const AUDIO_STORAGE_KEY = 'tombola-audio-enabled';
 const DRAW_STATE_STORAGE_KEY = 'TOMBOLA_DRAW_STATE';
 const EMPTY_DRAW_STATE = Object.freeze({ drawnNumbers: [], drawHistory: [] });
+
+const audioController = createAudioPlaybackController();
 
 const MOBILE_HISTORY_QUERY = '(max-width: 540px)';
 const historyMediaMatcher =
@@ -163,18 +166,226 @@ function updateAudioToggle() {
   audioToggle.title = actionLabel;
 }
 
+function createAudioPlaybackController() {
+  if (typeof window === 'undefined') {
+    return {
+      play() {},
+      stop() {
+        state.currentUtterance = null;
+        state.currentAudioSegment = null;
+      },
+    };
+  }
+
+  const supportsSpeechSynthesis = 'speechSynthesis' in window;
+  const supportsAudioElement = typeof Audio === 'function';
+
+  let queue = [];
+  let activeAudioElement = null;
+  let activeAudioCleanup = null;
+  let activeUtterance = null;
+
+  const resetState = () => {
+    if (activeAudioCleanup) {
+      activeAudioCleanup();
+      activeAudioCleanup = null;
+    }
+
+    if (activeAudioElement) {
+      activeAudioElement.pause();
+      activeAudioElement.currentTime = 0;
+      activeAudioElement = null;
+    }
+    activeUtterance = null;
+    state.currentUtterance = null;
+    state.currentAudioSegment = null;
+  };
+
+  const stop = () => {
+    queue = [];
+    if (supportsSpeechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    resetState();
+  };
+
+  const playNext = () => {
+    if (!queue.length) {
+      resetState();
+      return;
+    }
+
+    const segment = queue.shift();
+    if (!segment) {
+      playNext();
+      return;
+    }
+
+    state.currentAudioSegment = segment;
+
+    if (segment.audioUrl && supportsAudioElement) {
+      const audio = new Audio(segment.audioUrl);
+      audio.preload = 'auto';
+      activeAudioElement = audio;
+
+      function finalizePlayback(fallbackToSpeech = false) {
+        if (activeAudioCleanup) {
+          activeAudioCleanup();
+          activeAudioCleanup = null;
+        }
+
+        if (activeAudioElement === audio) {
+          activeAudioElement.pause();
+          activeAudioElement.currentTime = 0;
+          activeAudioElement = null;
+        }
+
+        if (fallbackToSpeech && supportsSpeechSynthesis && segment.text) {
+          queue.unshift({ ...segment, audioUrl: null });
+        }
+
+        state.currentAudioSegment = null;
+        playNext();
+      }
+
+      function handleEnded() {
+        finalizePlayback(false);
+      }
+
+      function handleFailed() {
+        finalizePlayback(true);
+      }
+
+      audio.addEventListener('ended', handleEnded);
+      audio.addEventListener('error', handleFailed);
+      activeAudioCleanup = () => {
+        audio.removeEventListener('ended', handleEnded);
+        audio.removeEventListener('error', handleFailed);
+      };
+
+      const playPromise = audio.play();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(() => {
+          handleFailed();
+        });
+      }
+      return;
+    }
+
+    if (supportsSpeechSynthesis && segment.text) {
+      const utterance = new SpeechSynthesisUtterance(segment.text);
+      utterance.lang = segment.lang || 'it-IT';
+      if (typeof segment.rate === 'number') {
+        utterance.rate = segment.rate;
+      }
+      if (typeof segment.pitch === 'number') {
+        utterance.pitch = segment.pitch;
+      }
+
+      activeUtterance = utterance;
+      state.currentUtterance = utterance;
+
+      const handleComplete = () => {
+        if (state.currentUtterance === utterance) {
+          state.currentUtterance = null;
+        }
+        if (activeUtterance === utterance) {
+          activeUtterance = null;
+        }
+        state.currentAudioSegment = null;
+        playNext();
+      };
+
+      utterance.addEventListener('end', handleComplete, { once: true });
+      utterance.addEventListener('error', handleComplete, { once: true });
+
+      window.speechSynthesis.speak(utterance);
+      return;
+    }
+
+    // Unable to play this segment: skip it and continue.
+    state.currentAudioSegment = null;
+    playNext();
+  };
+
+  const play = (segments = []) => {
+    const preparedSegments = Array.isArray(segments)
+      ? segments.filter((segment) =>
+          Boolean(
+            segment &&
+              (typeof segment.audioUrl === 'string' || (segment.text && segment.text.length))
+          )
+        )
+      : [];
+
+    if (!preparedSegments.length) {
+      stop();
+      return;
+    }
+
+    if (!state.audioEnabled) {
+      stop();
+      return;
+    }
+
+    stop();
+    queue = preparedSegments;
+    playNext();
+  };
+
+  return { play, stop };
+}
+
+function getEntryAudioSegments(entry) {
+  if (!entry) {
+    return [];
+  }
+
+  const audioSources = entry.audio && typeof entry.audio === 'object' ? entry.audio : null;
+  const segments = [];
+
+  segments.push({
+    type: 'number',
+    text: `Numero ${entry.number}`,
+    audioUrl: audioSources && typeof audioSources.number === 'string' ? audioSources.number : null,
+    lang: 'it-IT',
+    rate: 0.92,
+    pitch: 1.0,
+  });
+
+  if (entry.italian) {
+    segments.push({
+      type: 'italian',
+      text: entry.italian,
+      audioUrl:
+        audioSources && typeof audioSources.italian === 'string' ? audioSources.italian : null,
+      lang: 'it-IT',
+      rate: 0.96,
+      pitch: 1.0,
+    });
+  }
+
+  if (entry.dialect) {
+    segments.push({
+      type: 'dialect',
+      text: entry.dialect,
+      audioUrl:
+        audioSources && typeof audioSources.dialect === 'string' ? audioSources.dialect : null,
+      lang: 'it-IT',
+      rate: 0.9,
+      pitch: 1.0,
+    });
+  }
+
+  return segments;
+}
+
 function setAudioEnabled(enabled) {
   const nextValue = Boolean(enabled);
   state.audioEnabled = nextValue;
 
-  if (
-    !nextValue &&
-    state.currentUtterance &&
-    typeof window !== 'undefined' &&
-    'speechSynthesis' in window
-  ) {
-    window.speechSynthesis.cancel();
-    state.currentUtterance = null;
+  if (!nextValue) {
+    audioController.stop();
   }
 
   updateAudioToggle();
@@ -923,52 +1134,27 @@ function showDrawAnimation(entry) {
 }
 
 function speakEntry(entry) {
-  if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+  if (!entry) {
+    audioController.stop();
     return;
   }
 
   if (!state.audioEnabled) {
-    if (state.currentUtterance) {
-      window.speechSynthesis.cancel();
-      state.currentUtterance = null;
-    }
+    audioController.stop();
     return;
   }
 
-  if (state.currentUtterance) {
-    window.speechSynthesis.cancel();
+  if (typeof window === 'undefined') {
+    return;
   }
 
-  const parts = [String(entry.number)];
-  if (entry.dialect) {
-    parts.push(entry.dialect);
+  const segments = getEntryAudioSegments(entry);
+  if (!segments.length) {
+    audioController.stop();
+    return;
   }
 
-  const utterance = new SpeechSynthesisUtterance(parts.join('. '));
-  utterance.lang = 'it-IT';
-  utterance.rate = 0.92;
-  utterance.pitch = 1.0;
-
-  state.currentUtterance = utterance;
-  utterance.addEventListener(
-    'end',
-    () => {
-      if (state.currentUtterance === utterance) {
-        state.currentUtterance = null;
-      }
-    },
-    { once: true }
-  );
-  utterance.addEventListener(
-    'error',
-    () => {
-      if (state.currentUtterance === utterance) {
-        state.currentUtterance = null;
-      }
-    },
-    { once: true }
-  );
-  window.speechSynthesis.speak(utterance);
+  audioController.play(segments);
 }
 
 function updateDrawStatus(latestEntry) {
