@@ -13,6 +13,9 @@
   --surface-muted: #f1f5f9;
   --border-color: rgba(15, 23, 42, 0.08);
   --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.12);
+  --board-cell-radius: 0.85rem;
+  --board-cell-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+  --board-number-size: clamp(1.35rem, 1vw + 1.2rem, 2.25rem);
 }
 
 * {
@@ -676,12 +679,12 @@ img {
   }
 
   .board-cell {
-    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
-    border-radius: 0.75rem;
+    box-shadow: var(--board-cell-shadow);
+    border-radius: var(--board-cell-radius);
   }
 
   .board-cell__number {
-    font-size: clamp(1.35rem, 1vw + 1.2rem, 2.25rem);
+    font-size: var(--board-number-size);
   }
 
   .history-panel {
@@ -769,10 +772,10 @@ img {
   justify-content: center;
   width: 100%;
   aspect-ratio: 1;
-  border-radius: 0.85rem;
+  border-radius: var(--board-cell-radius);
   border: 1px solid rgba(15, 23, 42, 0.08);
   background: linear-gradient(160deg, #ffffff 0%, #f7f9ff 100%);
-  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+  box-shadow: var(--board-cell-shadow);
   cursor: pointer;
   transition: border-color 0.2s ease, box-shadow 0.25s ease, transform 0.2s ease,
     background 0.25s ease;
@@ -799,7 +802,7 @@ img {
 }
 
 .board-cell__number {
-  font-size: clamp(1.35rem, 1vw + 1.2rem, 2.25rem);
+  font-size: var(--board-number-size);
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--text-color);
@@ -1285,6 +1288,10 @@ img {
 }
 
 @media (max-width: 600px) {
+  :root {
+    --board-number-size: clamp(1.05rem, 5.4vw, 1.65rem);
+  }
+
   .app-main {
     padding-inline: 0.65rem;
   }
@@ -1338,16 +1345,28 @@ img {
   }
 
   .board-cell {
-    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.15);
-    border-radius: 0.8rem;
+    box-shadow: var(--board-cell-shadow);
+    border-radius: var(--board-cell-radius);
   }
 
   .board-cell__number {
-    font-size: clamp(1.24rem, 7.6vw, 1.82rem);
+    font-size: var(--board-number-size);
   }
 
   .modal__dialog {
     padding: 1.25rem;
     border-radius: 1.3rem;
+  }
+}
+
+@media (max-width: 420px) {
+  :root {
+    --board-number-size: clamp(0.95rem, 6.6vw, 1.4rem);
+  }
+}
+
+@media (max-width: 360px) {
+  :root {
+    --board-number-size: clamp(0.88rem, 7.4vw, 1.2rem);
   }
 }
