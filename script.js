@@ -13,6 +13,7 @@ const state = {
   lastSponsorKey: null,
   sponsors: [],
   sponsorLoadPromise: null,
+  sponsorShowcaseRendered: false,
 };
 
 const elements = {
@@ -38,6 +39,8 @@ const elements = {
   drawSponsorHeading: document.querySelector('#draw-sponsor-heading'),
   drawSponsor: document.querySelector('#draw-sponsor'),
   drawSponsorLogo: document.querySelector('#draw-sponsor-logo'),
+  sponsorShowcase: document.querySelector('#sponsor-showcase'),
+  sponsorShowcaseList: document.querySelector('#sponsor-showcase-list'),
   historyList: document.querySelector('#draw-history'),
   historyEmpty: document.querySelector('#draw-history-empty'),
   historyPanel: document.querySelector('#history-panel'),
@@ -91,6 +94,7 @@ function normalizeSponsor(rawSponsor) {
 
 function loadSponsors() {
   if (state.sponsors.length > 0) {
+    renderSponsorShowcase(state.sponsors);
     return Promise.resolve(state.sponsors);
   }
 
@@ -111,6 +115,9 @@ function loadSponsors() {
       state.lastSponsorKey = null;
       if (!state.sponsors.length) {
         applySponsorToOverlay(null);
+        renderSponsorShowcase([], { force: true });
+      } else {
+        renderSponsorShowcase(state.sponsors, { force: true });
       }
       return state.sponsors;
     })
@@ -119,6 +126,7 @@ function loadSponsors() {
       state.sponsors = [];
       state.lastSponsorKey = null;
       applySponsorToOverlay(null);
+      renderSponsorShowcase([], { force: true });
       return state.sponsors;
     })
     .finally(() => {
@@ -144,6 +152,91 @@ function pickRandomSponsor(previousKey = null) {
   const pool = available.length > 0 ? available : sponsors;
   const index = Math.floor(Math.random() * pool.length);
   return pool[index] || null;
+}
+
+function getSponsorAccessibleLabel(sponsor) {
+  if (!sponsor || typeof sponsor.url !== 'string' || !sponsor.url.trim()) {
+    return 'Apri il sito dello sponsor';
+  }
+
+  try {
+    const base = typeof window !== 'undefined' && window.location ? window.location.origin : undefined;
+    const url = new URL(sponsor.url, base || 'https://example.com');
+    const host = url.hostname.replace(/^www\./i, '');
+    if (host) {
+      return `Apri il sito di ${host}`;
+    }
+  } catch (error) {
+    // Ignore parsing issues and fall back to a generic label
+  }
+
+  return 'Apri il sito dello sponsor';
+}
+
+function renderSponsorShowcase(sponsors, options = {}) {
+  const { force = false } = options;
+  const { sponsorShowcase, sponsorShowcaseList } = elements;
+
+  if (!sponsorShowcase || !sponsorShowcaseList) {
+    return;
+  }
+
+  if (!Array.isArray(sponsors) || sponsors.length === 0) {
+    sponsorShowcaseList.innerHTML = '';
+    sponsorShowcase.hidden = true;
+    sponsorShowcase.setAttribute('aria-hidden', 'true');
+    state.sponsorShowcaseRendered = false;
+    return;
+  }
+
+  if (state.sponsorShowcaseRendered && !force) {
+    return;
+  }
+
+  const randomized = sponsors.slice();
+  for (let index = randomized.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [randomized[index], randomized[swapIndex]] = [randomized[swapIndex], randomized[index]];
+  }
+
+  sponsorShowcaseList.innerHTML = '';
+
+  randomized.forEach((sponsor) => {
+    if (!sponsor) {
+      return;
+    }
+
+    const anchor = document.createElement('a');
+    anchor.className = 'sponsor-gallery__item';
+    anchor.href = sponsor.url || '#';
+    anchor.target = sponsor.url ? '_blank' : '_self';
+    anchor.rel = 'noopener noreferrer';
+
+    const label = getSponsorAccessibleLabel(sponsor);
+    if (label) {
+      anchor.setAttribute('aria-label', label);
+      anchor.title = label;
+    } else {
+      anchor.removeAttribute('title');
+    }
+
+    const logo = document.createElement('img');
+    logo.alt = '';
+    logo.src = sponsor.logo || '';
+    if ('decoding' in logo) {
+      logo.decoding = 'async';
+    }
+    if ('loading' in logo) {
+      logo.loading = 'lazy';
+    }
+
+    anchor.appendChild(logo);
+    sponsorShowcaseList.appendChild(anchor);
+  });
+
+  sponsorShowcase.hidden = false;
+  sponsorShowcase.removeAttribute('aria-hidden');
+  state.sponsorShowcaseRendered = true;
 }
 
 function sleep(duration) {
