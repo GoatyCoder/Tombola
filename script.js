@@ -52,7 +52,7 @@ const EMPTY_DRAW_STATE = Object.freeze({ drawnNumbers: [], drawHistory: [] });
 const SPONSOR_DATA_PATH = 'sponsors.json';
 const DRAW_TIMELINE = Object.freeze({
   stageIntro: 620,
-  incomingHold: 2100,
+  incomingHold: 2800,
   celebrationHold: 2400,
   flightDelay: 320,
   flightDuration: 1450,
@@ -81,13 +81,12 @@ function normalizeSponsor(rawSponsor) {
 
   const logo = typeof rawSponsor.logo === 'string' ? rawSponsor.logo.trim() : '';
   const url = typeof rawSponsor.url === 'string' ? rawSponsor.url.trim() : '';
-  const alt = typeof rawSponsor.alt === 'string' ? rawSponsor.alt.trim() : '';
 
   if (!logo || !url) {
     return null;
   }
 
-  return { logo, url, alt };
+  return { logo, url };
 }
 
 function loadSponsors() {
@@ -226,22 +225,15 @@ function applySponsorToOverlay(sponsor) {
   drawSponsor.href = sponsor.url || '#';
   drawSponsor.target = sponsor.url ? '_blank' : '_self';
   drawSponsor.rel = 'noopener noreferrer';
-  const ariaLabel = sponsor.alt
-    ? `${sponsor.alt}. Apri il sito dello sponsor`
-    : 'Apri il sito dello sponsor';
-  drawSponsor.setAttribute('aria-label', ariaLabel);
-  if (sponsor.alt) {
-    drawSponsor.setAttribute('title', sponsor.alt);
-  } else {
-    drawSponsor.removeAttribute('title');
-  }
+  drawSponsor.setAttribute('aria-label', 'Apri il sito dello sponsor');
+  drawSponsor.removeAttribute('title');
 
   if (drawSponsorLogo) {
     if ('loading' in drawSponsorLogo) {
       drawSponsorLogo.loading = 'lazy';
     }
     drawSponsorLogo.src = sponsor.logo || '';
-    drawSponsorLogo.alt = sponsor.alt || 'Logo sponsor';
+    drawSponsorLogo.alt = '';
   }
 
   if (drawSponsorHeading) {
@@ -1087,7 +1079,7 @@ async function showDrawAnimation(entry) {
     }
   };
 
-  drawOverlayNumber.textContent = entry.number;
+  drawOverlayNumber.textContent = '';
   if (drawOverlayLabel) {
     drawOverlayLabel.textContent = "Preparati all'estrazione…";
   }
@@ -1108,6 +1100,7 @@ async function showDrawAnimation(entry) {
       }
       const fromRect = drawOverlayBall.getBoundingClientRect();
       await sleep(DRAW_TIMELINE.reducedMotionHold);
+      drawOverlayNumber.textContent = entry.number;
       if (drawOverlayLabel) {
         drawOverlayLabel.textContent = `Numero ${entry.number}!`;
       }
@@ -1126,6 +1119,7 @@ async function showDrawAnimation(entry) {
     }
 
     await sleep(DRAW_TIMELINE.incomingHold);
+    drawOverlayNumber.textContent = entry.number;
     if (drawOverlayLabel) {
       drawOverlayLabel.textContent = `Numero ${entry.number}!`;
     }
