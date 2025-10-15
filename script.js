@@ -10,7 +10,9 @@ const state = {
   audioEnabled: true,
   storageErrorMessage: '',
   currentSponsor: null,
-  lastSponsorId: null,
+  lastSponsorKey: null,
+  sponsors: [],
+  sponsorLoadPromise: null,
 };
 
 const elements = {
@@ -46,30 +48,14 @@ const elements = {
 const AUDIO_STORAGE_KEY = 'tombola-audio-enabled';
 const DRAW_STATE_STORAGE_KEY = 'TOMBOLA_DRAW_STATE';
 const EMPTY_DRAW_STATE = Object.freeze({ drawnNumbers: [], drawHistory: [] });
-
-const SPONSORS = Object.freeze([
-  {
-    id: 'panificio-stella',
-    name: 'Panificio Stella',
-    url: 'https://www.panificiostella.it/',
-    logo: 'images/sponsor-panificio-stella.svg',
-    alt: 'Logo Panificio Stella',
-  },
-  {
-    id: 'agrumi-del-sud',
-    name: 'Agrumi del Sud',
-    url: 'https://www.agrumidelsud.it/',
-    logo: 'images/sponsor-agrumi-del-sud.svg',
-    alt: 'Logo Agrumi del Sud',
-  },
-  {
-    id: 'cantina-nojana',
-    name: 'Cantina Nojana',
-    url: 'https://www.cantinanojana.it/',
-    logo: 'images/sponsor-cantina-nojana.svg',
-    alt: 'Logo Cantina Nojana',
-  },
-]);
+const SPONSOR_DATA_PATH = 'sponsors.json';
+const DRAW_ANIMATION_TIMINGS = Object.freeze({
+  overlayHideDelay: 560,
+  flightDelay: 560,
+  flightDuration: 1500,
+  revealPause: 900,
+  reducedMotionHold: 2200,
+});
 
 const MOBILE_HISTORY_QUERY = '(max-width: 540px)';
 const historyMediaMatcher =
@@ -77,17 +63,83 @@ const historyMediaMatcher =
     ? window.matchMedia(MOBILE_HISTORY_QUERY)
     : { matches: false };
 
-function pickRandomSponsor(previousId = null) {
-  if (!Array.isArray(SPONSORS) || SPONSORS.length === 0) {
+function getSponsorKey(sponsor) {
+  if (!sponsor || typeof sponsor !== 'object') {
     return null;
   }
 
-  if (SPONSORS.length === 1) {
-    return SPONSORS[0];
+  return sponsor.url || sponsor.logo || null;
+}
+
+function normalizeSponsor(rawSponsor) {
+  if (!rawSponsor || typeof rawSponsor !== 'object') {
+    return null;
   }
 
-  const available = SPONSORS.filter((item) => item && item.id !== previousId);
-  const pool = available.length > 0 ? available : SPONSORS;
+  const logo = typeof rawSponsor.logo === 'string' ? rawSponsor.logo.trim() : '';
+  const url = typeof rawSponsor.url === 'string' ? rawSponsor.url.trim() : '';
+  const alt = typeof rawSponsor.alt === 'string' ? rawSponsor.alt.trim() : '';
+
+  if (!logo || !url) {
+    return null;
+  }
+
+  return { logo, url, alt };
+}
+
+function loadSponsors() {
+  if (state.sponsors.length > 0) {
+    return Promise.resolve(state.sponsors);
+  }
+
+  if (state.sponsorLoadPromise) {
+    return state.sponsorLoadPromise;
+  }
+
+  const request = fetch(SPONSOR_DATA_PATH)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error('Impossibile caricare gli sponsor');
+      }
+      return response.json();
+    })
+    .then((data) => {
+      const rawList = Array.isArray(data?.sponsors) ? data.sponsors : Array.isArray(data) ? data : [];
+      state.sponsors = rawList.map(normalizeSponsor).filter(Boolean);
+      state.lastSponsorKey = null;
+      if (!state.sponsors.length) {
+        applySponsorToOverlay(null);
+      }
+      return state.sponsors;
+    })
+    .catch((error) => {
+      console.warn('Impossibile caricare gli sponsor', error);
+      state.sponsors = [];
+      state.lastSponsorKey = null;
+      applySponsorToOverlay(null);
+      return state.sponsors;
+    })
+    .finally(() => {
+      state.sponsorLoadPromise = null;
+    });
+
+  state.sponsorLoadPromise = request;
+  return request;
+}
+
+function pickRandomSponsor(previousKey = null) {
+  const sponsors = Array.isArray(state.sponsors) ? state.sponsors : [];
+
+  if (sponsors.length === 0) {
+    return null;
+  }
+
+  if (sponsors.length === 1) {
+    return sponsors[0];
+  }
+
+  const available = sponsors.filter((item) => item && getSponsorKey(item) !== previousKey);
+  const pool = available.length > 0 ? available : sponsors;
   const index = Math.floor(Math.random() * pool.length);
   return pool[index] || null;
 }
@@ -102,15 +154,20 @@ function applySponsorToOverlay(sponsor) {
   if (!sponsor) {
     drawSponsor.hidden = true;
     drawSponsor.removeAttribute('aria-label');
+    drawSponsor.removeAttribute('title');
     drawSponsor.href = '#';
     drawSponsor.target = '_self';
     drawSponsor.rel = 'noopener noreferrer';
     if (drawSponsorLogo) {
       drawSponsorLogo.removeAttribute('src');
       drawSponsorLogo.alt = '';
+      if ('loading' in drawSponsorLogo) {
+        drawSponsorLogo.loading = 'lazy';
+      }
     }
     if (drawSponsorName) {
       drawSponsorName.textContent = '';
+      drawSponsorName.hidden = true;
     }
     return;
   }
@@ -119,25 +176,43 @@ function applySponsorToOverlay(sponsor) {
   drawSponsor.href = sponsor.url || '#';
   drawSponsor.target = sponsor.url ? '_blank' : '_self';
   drawSponsor.rel = 'noopener noreferrer';
-  drawSponsor.setAttribute('aria-label', `Visita il sito di ${sponsor.name}`);
+  const ariaLabel = sponsor.alt
+    ? `${sponsor.alt}. Apri il sito dello sponsor`
+    : 'Apri il sito dello sponsor';
+  drawSponsor.setAttribute('aria-label', ariaLabel);
+  if (sponsor.alt) {
+    drawSponsor.setAttribute('title', sponsor.alt);
+  } else {
+    drawSponsor.removeAttribute('title');
+  }
 
   if (drawSponsorLogo) {
     if ('loading' in drawSponsorLogo) {
       drawSponsorLogo.loading = 'lazy';
     }
     drawSponsorLogo.src = sponsor.logo || '';
-    drawSponsorLogo.alt = sponsor.alt || sponsor.name || 'Logo sponsor';
+    drawSponsorLogo.alt = sponsor.alt || 'Logo sponsor';
   }
 
   if (drawSponsorName) {
-    drawSponsorName.textContent = sponsor.name || '';
+    drawSponsorName.textContent = '';
+    drawSponsorName.hidden = true;
   }
 }
 
-function prepareSponsorForNextDraw() {
-  const sponsor = pickRandomSponsor(state.lastSponsorId);
+async function prepareSponsorForNextDraw() {
+  const sponsors = await loadSponsors();
+
+  if (!Array.isArray(sponsors) || sponsors.length === 0) {
+    state.currentSponsor = null;
+    state.lastSponsorKey = null;
+    applySponsorToOverlay(null);
+    return;
+  }
+
+  const sponsor = pickRandomSponsor(state.lastSponsorKey);
   state.currentSponsor = sponsor;
-  state.lastSponsorId = sponsor ? sponsor.id || null : null;
+  state.lastSponsorKey = getSponsorKey(sponsor);
   applySponsorToOverlay(sponsor);
 }
 
@@ -596,16 +671,17 @@ async function handleDraw() {
   const entry = remaining[randomIndex];
   markNumberDrawn(entry, { animate: true });
 
-  prepareSponsorForNextDraw();
-
   state.isAnimatingDraw = true;
   let restoreDrawButton = false;
-  if (elements.drawButton) {
-    restoreDrawButton = !elements.drawButton.disabled;
-    elements.drawButton.disabled = true;
-  }
 
   try {
+    await prepareSponsorForNextDraw();
+
+    if (elements.drawButton) {
+      restoreDrawButton = !elements.drawButton.disabled;
+      elements.drawButton.disabled = true;
+    }
+
     await showDrawAnimation(entry);
   } finally {
     state.isAnimatingDraw = false;
@@ -740,7 +816,7 @@ function resetGame() {
   state.isAnimatingDraw = false;
 
   state.currentSponsor = null;
-  state.lastSponsorId = null;
+  state.lastSponsorKey = null;
   applySponsorToOverlay(null);
 
   if (state.currentUtterance && 'speechSynthesis' in window) {
@@ -869,7 +945,7 @@ function showDrawAnimation(entry) {
       if (immediate) {
         hide();
       } else {
-        window.setTimeout(hide, 320);
+        window.setTimeout(hide, DRAW_ANIMATION_TIMINGS.overlayHideDelay);
       }
     };
 
@@ -929,7 +1005,7 @@ function showDrawAnimation(entry) {
             },
           ],
           {
-            duration: 900,
+            duration: DRAW_ANIMATION_TIMINGS.flightDuration,
             easing: 'cubic-bezier(0.2, 0.9, 0.3, 1.05)',
             fill: 'forwards',
           }
@@ -946,7 +1022,7 @@ function showDrawAnimation(entry) {
 
       if (!prefersReducedMotion) {
         targetCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-        window.setTimeout(animateTowardCell, 360);
+        window.setTimeout(animateTowardCell, DRAW_ANIMATION_TIMINGS.flightDelay);
       } else {
         animateTowardCell();
       }
@@ -962,14 +1038,20 @@ function showDrawAnimation(entry) {
     if (prefersReducedMotion) {
       drawOverlay.classList.add('draw-overlay--visible');
       if (targetCell) {
+        targetCell.classList.add('board-cell--incoming');
         targetCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
       }
+
+      const labelDelay = Math.min(1000, Math.max(480, DRAW_ANIMATION_TIMINGS.reducedMotionHold - 900));
       window.setTimeout(() => {
         if (drawOverlayLabel) {
           drawOverlayLabel.textContent = `Numero ${entry.number}!`;
         }
+      }, labelDelay);
+
+      window.setTimeout(() => {
         finish();
-      }, 650);
+      }, DRAW_ANIMATION_TIMINGS.reducedMotionHold);
       return;
     }
 
@@ -991,8 +1073,10 @@ function showDrawAnimation(entry) {
           drawOverlayLabel.textContent = `Numero ${entry.number}!`;
         }
         const fromRect = drawOverlayBall.getBoundingClientRect();
-        cleanupOverlay();
-        startFlight(fromRect);
+        window.setTimeout(() => {
+          cleanupOverlay();
+          startFlight(fromRect);
+        }, DRAW_ANIMATION_TIMINGS.revealPause);
       },
       { once: true }
     );
@@ -1182,6 +1266,7 @@ function init() {
   setupEventListeners();
   syncHistoryPanelToLayout({ immediate: true });
   loadNumbers();
+  loadSponsors();
 }
 
 if (document.readyState === 'loading') {

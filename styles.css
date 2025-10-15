@@ -841,14 +841,17 @@ img {
     opacity: 0;
     transform: translate(-50%, 55%) scale(0.5);
   }
-  38% {
+  32% {
     opacity: 1;
-    transform: translate(-50%, 14%) scale(0.78);
+    transform: translate(-50%, 18%) scale(0.78);
   }
-  70% {
-    transform: translate(-50%, -14%) scale(1.1);
+  58% {
+    transform: translate(-50%, -10%) scale(1.14);
   }
-  88% {
+  76% {
+    transform: translate(-50%, -26%) scale(1.05);
+  }
+  90% {
     transform: translate(-50%, -22%) scale(1.02);
   }
   100% {
@@ -993,7 +996,7 @@ img {
 }
 
 .draw-overlay__ball--animate {
-  animation: drawBallRise 1.45s cubic-bezier(0.33, 0.91, 0.24, 1.04) forwards;
+  animation: drawBallRise 2.4s cubic-bezier(0.33, 0.91, 0.24, 1.04) forwards;
 }
 
 .draw-flight-ball {
