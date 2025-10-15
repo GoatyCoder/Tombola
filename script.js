@@ -34,9 +34,10 @@ const elements = {
   drawOverlayNumber: document.querySelector('#draw-animation-number'),
   drawOverlayBall: document.querySelector('#draw-animation-ball'),
   drawOverlayLabel: document.querySelector('#draw-animation-label'),
+  drawSponsorBlock: document.querySelector('#draw-sponsor-block'),
+  drawSponsorHeading: document.querySelector('#draw-sponsor-heading'),
   drawSponsor: document.querySelector('#draw-sponsor'),
   drawSponsorLogo: document.querySelector('#draw-sponsor-logo'),
-  drawSponsorName: document.querySelector('#draw-sponsor-name'),
   historyList: document.querySelector('#draw-history'),
   historyEmpty: document.querySelector('#draw-history-empty'),
   historyPanel: document.querySelector('#history-panel'),
@@ -49,12 +50,14 @@ const AUDIO_STORAGE_KEY = 'tombola-audio-enabled';
 const DRAW_STATE_STORAGE_KEY = 'TOMBOLA_DRAW_STATE';
 const EMPTY_DRAW_STATE = Object.freeze({ drawnNumbers: [], drawHistory: [] });
 const SPONSOR_DATA_PATH = 'sponsors.json';
-const DRAW_ANIMATION_TIMINGS = Object.freeze({
-  overlayHideDelay: 560,
-  flightDelay: 560,
-  flightDuration: 1500,
-  revealPause: 900,
-  reducedMotionHold: 2200,
+const DRAW_TIMELINE = Object.freeze({
+  stageIntro: 650,
+  labelReveal: 1200,
+  celebrationHold: 2200,
+  flightDelay: 200,
+  flightDuration: 1350,
+  overlayHideDelay: 280,
+  reducedMotionHold: 1700,
 });
 
 const MOBILE_HISTORY_QUERY = '(max-width: 540px)';
@@ -144,14 +147,21 @@ function pickRandomSponsor(previousKey = null) {
   return pool[index] || null;
 }
 
-function applySponsorToOverlay(sponsor) {
-  const { drawSponsor, drawSponsorLogo, drawSponsorName } = elements;
+function sleep(duration) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, duration);
+  });
+}
 
-  if (!drawSponsor) {
+function applySponsorToOverlay(sponsor) {
+  const { drawSponsor, drawSponsorLogo, drawSponsorBlock, drawSponsorHeading } = elements;
+
+  if (!drawSponsor || !drawSponsorBlock) {
     return;
   }
 
   if (!sponsor) {
+    drawSponsorBlock.hidden = true;
     drawSponsor.hidden = true;
     drawSponsor.removeAttribute('aria-label');
     drawSponsor.removeAttribute('title');
@@ -165,13 +175,13 @@ function applySponsorToOverlay(sponsor) {
         drawSponsorLogo.loading = 'lazy';
       }
     }
-    if (drawSponsorName) {
-      drawSponsorName.textContent = '';
-      drawSponsorName.hidden = true;
+    if (drawSponsorHeading) {
+      drawSponsorHeading.hidden = true;
     }
     return;
   }
 
+  drawSponsorBlock.hidden = false;
   drawSponsor.hidden = false;
   drawSponsor.href = sponsor.url || '#';
   drawSponsor.target = sponsor.url ? '_blank' : '_self';
@@ -194,9 +204,8 @@ function applySponsorToOverlay(sponsor) {
     drawSponsorLogo.alt = sponsor.alt || 'Logo sponsor';
   }
 
-  if (drawSponsorName) {
-    drawSponsorName.textContent = '';
-    drawSponsorName.hidden = true;
+  if (drawSponsorHeading) {
+    drawSponsorHeading.hidden = false;
   }
 }
 
@@ -633,13 +642,23 @@ function markNumberDrawn(entry, options = {}) {
     cell.setAttribute('aria-pressed', 'true');
     if (animate) {
       cell.classList.add('board-cell--just-drawn');
-      const handleAnimationEnd = (event) => {
-        if (event.animationName === 'boardCellPop') {
-          cell.classList.remove('board-cell--just-drawn');
-          cell.removeEventListener('animationend', handleAnimationEnd);
+      let fallbackTimeout = null;
+      const finalize = () => {
+        cell.classList.remove('board-cell--just-drawn');
+        cell.removeEventListener('animationend', handleAnimationEnd);
+        if (fallbackTimeout !== null) {
+          window.clearTimeout(fallbackTimeout);
+          fallbackTimeout = null;
         }
       };
+      const handleAnimationEnd = (event) => {
+        if (event?.animationName && event.animationName !== 'boardCellCelebrate') {
+          return;
+        }
+        finalize();
+      };
       cell.addEventListener('animationend', handleAnimationEnd);
+      fallbackTimeout = window.setTimeout(finalize, 900);
     }
   }
 }
@@ -809,7 +828,7 @@ function resetGame() {
     elements.drawOverlay.setAttribute('hidden', '');
     elements.drawOverlay.setAttribute('aria-hidden', 'true');
     if (elements.drawOverlayBall) {
-      elements.drawOverlayBall.classList.remove('draw-overlay__ball--animate');
+      elements.drawOverlayBall.classList.remove('draw-overlay__ball--active');
     }
   }
 
@@ -903,184 +922,178 @@ function closeModal(options = {}) {
   }
 }
 
-function showDrawAnimation(entry) {
+function animateBallFlight(entry, fromRect, targetCell, options = {}) {
   return new Promise((resolve) => {
-    const { drawOverlay, drawOverlayNumber, drawOverlayBall, drawOverlayLabel } =
-      elements;
-    const targetCell = state.cellsByNumber.get(entry.number);
-
-    if (!drawOverlay || !drawOverlayNumber || !drawOverlayBall) {
-      if (targetCell) {
-        targetCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-      }
+    if (!targetCell || !fromRect) {
       resolve();
       return;
     }
 
-    const prefersReducedMotion =
-      window.matchMedia &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const { prefersReducedMotion = false, duration = DRAW_TIMELINE.flightDuration } = options;
 
-    let overlayHidden = false;
+    targetCell.classList.add('board-cell--incoming');
 
-    const cleanupOverlay = (immediate = false) => {
-      if (!drawOverlay || overlayHidden) {
-        return;
-      }
-
-      drawOverlay.classList.remove('draw-overlay--visible');
-      if (drawOverlayBall) {
-        drawOverlayBall.classList.remove('draw-overlay__ball--animate');
-      }
-
-      const hide = () => {
-        if (overlayHidden) {
-          return;
-        }
-        overlayHidden = true;
-        drawOverlay.setAttribute('hidden', '');
-        drawOverlay.setAttribute('aria-hidden', 'true');
-      };
-
-      if (immediate) {
-        hide();
-      } else {
-        window.setTimeout(hide, DRAW_ANIMATION_TIMINGS.overlayHideDelay);
-      }
-    };
-
-    const finish = () => {
-      cleanupOverlay(true);
-      if (targetCell) {
-        targetCell.classList.remove('board-cell--incoming');
-      }
+    const finalize = () => {
+      targetCell.classList.remove('board-cell--incoming');
       resolve();
     };
 
-    const startFlight = (fromRect) => {
-      if (!targetCell) {
-        finish();
-        return;
-      }
-
-      targetCell.classList.add('board-cell--incoming');
-
-      const flightBall = document.createElement('div');
-      flightBall.className = 'draw-overlay__ball draw-flight-ball';
-      const numberSpan = document.createElement('span');
-      numberSpan.textContent = entry.number;
-      flightBall.appendChild(numberSpan);
-
-      const startX = fromRect.left + fromRect.width / 2;
-      const startY = fromRect.top + fromRect.height / 2;
-      flightBall.style.width = `${fromRect.width}px`;
-      flightBall.style.height = `${fromRect.height}px`;
-      flightBall.style.left = `${startX}px`;
-      flightBall.style.top = `${startY}px`;
-      document.body.appendChild(flightBall);
-
-      if (typeof flightBall.animate !== 'function') {
-        flightBall.remove();
-        finish();
-        return;
-      }
-
-      const animateTowardCell = () => {
-        const targetRect = targetCell.getBoundingClientRect();
-        const endX = targetRect.left + targetRect.width / 2;
-        const endY = targetRect.top + targetRect.height / 2;
-        const deltaX = endX - startX;
-        const deltaY = endY - startY;
-        const scale = Math.max(
-          Math.min(targetRect.width / fromRect.width || 1, 1.2),
-          0.55
-        );
-
-        const animation = flightBall.animate(
-          [
-            { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
-            {
-              transform: `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(${scale})`,
-              opacity: 0.94,
-            },
-          ],
-          {
-            duration: DRAW_ANIMATION_TIMINGS.flightDuration,
-            easing: 'cubic-bezier(0.2, 0.9, 0.3, 1.05)',
-            fill: 'forwards',
-          }
-        );
-
-        const complete = () => {
-          flightBall.remove();
-          finish();
-        };
-
-        animation.addEventListener('finish', complete, { once: true });
-        animation.addEventListener('cancel', complete, { once: true });
-      };
-
-      if (!prefersReducedMotion) {
-        targetCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-        window.setTimeout(animateTowardCell, DRAW_ANIMATION_TIMINGS.flightDelay);
-      } else {
-        animateTowardCell();
-      }
-    };
-
-    drawOverlayNumber.textContent = entry.number;
-    if (drawOverlayLabel) {
-      drawOverlayLabel.textContent = 'Pesca dal sacchetto…';
+    try {
+      targetCell.scrollIntoView({
+        behavior: prefersReducedMotion ? 'auto' : 'smooth',
+        block: 'center',
+        inline: 'center',
+      });
+    } catch (error) {
+      targetCell.scrollIntoView();
     }
-    drawOverlay.setAttribute('aria-hidden', 'false');
-    drawOverlay.removeAttribute('hidden');
 
     if (prefersReducedMotion) {
-      drawOverlay.classList.add('draw-overlay--visible');
-      if (targetCell) {
-        targetCell.classList.add('board-cell--incoming');
-        targetCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-      }
-
-      const labelDelay = Math.min(1000, Math.max(480, DRAW_ANIMATION_TIMINGS.reducedMotionHold - 900));
-      window.setTimeout(() => {
-        if (drawOverlayLabel) {
-          drawOverlayLabel.textContent = `Numero ${entry.number}!`;
-        }
-      }, labelDelay);
-
-      window.setTimeout(() => {
-        finish();
-      }, DRAW_ANIMATION_TIMINGS.reducedMotionHold);
+      window.setTimeout(finalize, 220);
       return;
     }
 
-    const activate = () => {
-      drawOverlay.classList.add('draw-overlay--visible');
+    const flightBall = document.createElement('div');
+    flightBall.className = 'draw-flight-ball';
+    const numberSpan = document.createElement('span');
+    numberSpan.textContent = entry.number;
+    flightBall.appendChild(numberSpan);
 
-      drawOverlayBall.classList.remove('draw-overlay__ball--animate');
-      // force reflow to restart the animation when needed
-      void drawOverlayBall.offsetWidth;
-      drawOverlayBall.classList.add('draw-overlay__ball--animate');
+    const startX = fromRect.left + fromRect.width / 2;
+    const startY = fromRect.top + fromRect.height / 2;
+    flightBall.style.width = `${fromRect.width}px`;
+    flightBall.style.height = `${fromRect.height}px`;
+    flightBall.style.left = `${startX}px`;
+    flightBall.style.top = `${startY}px`;
+    document.body.appendChild(flightBall);
+
+    if (typeof flightBall.animate !== 'function') {
+      flightBall.remove();
+      window.setTimeout(finalize, 220);
+      return;
+    }
+
+    const targetRect = targetCell.getBoundingClientRect();
+    const endX = targetRect.left + targetRect.width / 2;
+    const endY = targetRect.top + targetRect.height / 2;
+    const deltaX = endX - startX;
+    const deltaY = endY - startY;
+    const scale = Math.max(Math.min(targetRect.width / fromRect.width || 1, 1.35), 0.6);
+
+    const animation = flightBall.animate(
+      [
+        { transform: 'translate(-50%, -50%) scale(0.98)', opacity: 0.98 },
+        {
+          transform: `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(${scale})`,
+          opacity: 0.94,
+        },
+      ],
+      {
+        duration,
+        easing: 'cubic-bezier(0.18, 0.82, 0.24, 1.06)',
+        fill: 'forwards',
+      }
+    );
+
+    const cleanup = () => {
+      flightBall.remove();
+      finalize();
     };
 
-    window.requestAnimationFrame(activate);
-
-    drawOverlayBall.addEventListener(
-      'animationend',
-      () => {
-        if (drawOverlayLabel) {
-          drawOverlayLabel.textContent = `Numero ${entry.number}!`;
-        }
-        const fromRect = drawOverlayBall.getBoundingClientRect();
-        window.setTimeout(() => {
-          cleanupOverlay();
-          startFlight(fromRect);
-        }, DRAW_ANIMATION_TIMINGS.revealPause);
-      },
-      { once: true }
-    );
+    animation.addEventListener('finish', cleanup, { once: true });
+    animation.addEventListener('cancel', cleanup, { once: true });
   });
+}
+
+async function showDrawAnimation(entry) {
+  const { drawOverlay, drawOverlayNumber, drawOverlayBall, drawOverlayLabel } = elements;
+  const targetCell = state.cellsByNumber.get(entry.number);
+
+  if (!drawOverlay || !drawOverlayNumber || !drawOverlayBall) {
+    if (targetCell) {
+      targetCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+    }
+    return;
+  }
+
+  const prefersReducedMotion =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const hideOverlay = (immediate = false) => {
+    drawOverlay.classList.remove('draw-overlay--visible');
+    drawOverlay.classList.remove('draw-overlay--leaving');
+    drawOverlayBall.classList.remove('draw-overlay__ball--active');
+    const finalize = () => {
+      drawOverlay.setAttribute('aria-hidden', 'true');
+      drawOverlay.hidden = true;
+    };
+    if (immediate) {
+      finalize();
+    } else {
+      window.setTimeout(finalize, 20);
+    }
+  };
+
+  drawOverlayNumber.textContent = entry.number;
+  if (drawOverlayLabel) {
+    drawOverlayLabel.textContent = "Preparati all'estrazione…";
+  }
+
+  drawOverlay.hidden = false;
+  drawOverlay.setAttribute('aria-hidden', 'false');
+  drawOverlay.classList.remove('draw-overlay--leaving');
+  drawOverlay.classList.add('draw-overlay--visible');
+
+  drawOverlayBall.classList.remove('draw-overlay__ball--active');
+  void drawOverlayBall.offsetWidth;
+  drawOverlayBall.classList.add('draw-overlay__ball--active');
+
+  try {
+    if (prefersReducedMotion) {
+      if (drawOverlayLabel) {
+        drawOverlayLabel.textContent = `Numero ${entry.number}!`;
+      }
+      const fromRect = drawOverlayBall.getBoundingClientRect();
+      await sleep(DRAW_TIMELINE.reducedMotionHold);
+      await animateBallFlight(entry, fromRect, targetCell, {
+        prefersReducedMotion: true,
+        duration: 260,
+      });
+      drawOverlay.classList.add('draw-overlay--leaving');
+      await sleep(DRAW_TIMELINE.overlayHideDelay);
+      return;
+    }
+
+    await sleep(DRAW_TIMELINE.stageIntro);
+    if (drawOverlayLabel) {
+      drawOverlayLabel.textContent = 'Numero in arrivo…';
+    }
+
+    await sleep(DRAW_TIMELINE.labelReveal);
+    if (drawOverlayLabel) {
+      drawOverlayLabel.textContent = `Numero ${entry.number}!`;
+    }
+
+    await sleep(DRAW_TIMELINE.celebrationHold);
+    const fromRect = drawOverlayBall.getBoundingClientRect();
+
+    drawOverlay.classList.add('draw-overlay--leaving');
+    if (drawOverlayLabel) {
+      drawOverlayLabel.textContent = 'Segna sul tabellone…';
+    }
+
+    await sleep(DRAW_TIMELINE.flightDelay);
+    await animateBallFlight(entry, fromRect, targetCell, {
+      duration: DRAW_TIMELINE.flightDuration,
+      prefersReducedMotion,
+    });
+
+    await sleep(DRAW_TIMELINE.overlayHideDelay);
+  } finally {
+    hideOverlay(true);
+  }
 }
 
 function speakEntry(entry) {
