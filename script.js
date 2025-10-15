@@ -9,6 +9,8 @@ const state = {
   historyOpen: false,
   audioEnabled: true,
   storageErrorMessage: '',
+  currentSponsor: null,
+  lastSponsorId: null,
 };
 
 const elements = {
@@ -30,6 +32,9 @@ const elements = {
   drawOverlayNumber: document.querySelector('#draw-animation-number'),
   drawOverlayBall: document.querySelector('#draw-animation-ball'),
   drawOverlayLabel: document.querySelector('#draw-animation-label'),
+  drawSponsor: document.querySelector('#draw-sponsor'),
+  drawSponsorLogo: document.querySelector('#draw-sponsor-logo'),
+  drawSponsorName: document.querySelector('#draw-sponsor-name'),
   historyList: document.querySelector('#draw-history'),
   historyEmpty: document.querySelector('#draw-history-empty'),
   historyPanel: document.querySelector('#history-panel'),
@@ -42,11 +47,99 @@ const AUDIO_STORAGE_KEY = 'tombola-audio-enabled';
 const DRAW_STATE_STORAGE_KEY = 'TOMBOLA_DRAW_STATE';
 const EMPTY_DRAW_STATE = Object.freeze({ drawnNumbers: [], drawHistory: [] });
 
+const SPONSORS = Object.freeze([
+  {
+    id: 'panificio-stella',
+    name: 'Panificio Stella',
+    url: 'https://www.panificiostella.it/',
+    logo: 'images/sponsor-panificio-stella.svg',
+    alt: 'Logo Panificio Stella',
+  },
+  {
+    id: 'agrumi-del-sud',
+    name: 'Agrumi del Sud',
+    url: 'https://www.agrumidelsud.it/',
+    logo: 'images/sponsor-agrumi-del-sud.svg',
+    alt: 'Logo Agrumi del Sud',
+  },
+  {
+    id: 'cantina-nojana',
+    name: 'Cantina Nojana',
+    url: 'https://www.cantinanojana.it/',
+    logo: 'images/sponsor-cantina-nojana.svg',
+    alt: 'Logo Cantina Nojana',
+  },
+]);
+
 const MOBILE_HISTORY_QUERY = '(max-width: 540px)';
 const historyMediaMatcher =
   typeof window !== 'undefined' && 'matchMedia' in window
     ? window.matchMedia(MOBILE_HISTORY_QUERY)
     : { matches: false };
+
+function pickRandomSponsor(previousId = null) {
+  if (!Array.isArray(SPONSORS) || SPONSORS.length === 0) {
+    return null;
+  }
+
+  if (SPONSORS.length === 1) {
+    return SPONSORS[0];
+  }
+
+  const available = SPONSORS.filter((item) => item && item.id !== previousId);
+  const pool = available.length > 0 ? available : SPONSORS;
+  const index = Math.floor(Math.random() * pool.length);
+  return pool[index] || null;
+}
+
+function applySponsorToOverlay(sponsor) {
+  const { drawSponsor, drawSponsorLogo, drawSponsorName } = elements;
+
+  if (!drawSponsor) {
+    return;
+  }
+
+  if (!sponsor) {
+    drawSponsor.hidden = true;
+    drawSponsor.removeAttribute('aria-label');
+    drawSponsor.href = '#';
+    drawSponsor.target = '_self';
+    drawSponsor.rel = 'noopener noreferrer';
+    if (drawSponsorLogo) {
+      drawSponsorLogo.removeAttribute('src');
+      drawSponsorLogo.alt = '';
+    }
+    if (drawSponsorName) {
+      drawSponsorName.textContent = '';
+    }
+    return;
+  }
+
+  drawSponsor.hidden = false;
+  drawSponsor.href = sponsor.url || '#';
+  drawSponsor.target = sponsor.url ? '_blank' : '_self';
+  drawSponsor.rel = 'noopener noreferrer';
+  drawSponsor.setAttribute('aria-label', `Visita il sito di ${sponsor.name}`);
+
+  if (drawSponsorLogo) {
+    if ('loading' in drawSponsorLogo) {
+      drawSponsorLogo.loading = 'lazy';
+    }
+    drawSponsorLogo.src = sponsor.logo || '';
+    drawSponsorLogo.alt = sponsor.alt || sponsor.name || 'Logo sponsor';
+  }
+
+  if (drawSponsorName) {
+    drawSponsorName.textContent = sponsor.name || '';
+  }
+}
+
+function prepareSponsorForNextDraw() {
+  const sponsor = pickRandomSponsor(state.lastSponsorId);
+  state.currentSponsor = sponsor;
+  state.lastSponsorId = sponsor ? sponsor.id || null : null;
+  applySponsorToOverlay(sponsor);
+}
 
 function syncHistoryPanelToLayout(options = {}) {
   const { immediate = false } = options;
@@ -503,6 +596,8 @@ async function handleDraw() {
   const entry = remaining[randomIndex];
   markNumberDrawn(entry, { animate: true });
 
+  prepareSponsorForNextDraw();
+
   state.isAnimatingDraw = true;
   let restoreDrawButton = false;
   if (elements.drawButton) {
@@ -644,6 +739,10 @@ function resetGame() {
 
   state.isAnimatingDraw = false;
 
+  state.currentSponsor = null;
+  state.lastSponsorId = null;
+  applySponsorToOverlay(null);
+
   if (state.currentUtterance && 'speechSynthesis' in window) {
     window.speechSynthesis.cancel();
   }
@@ -770,7 +869,7 @@ function showDrawAnimation(entry) {
       if (immediate) {
         hide();
       } else {
-        window.setTimeout(hide, 200);
+        window.setTimeout(hide, 320);
       }
     };
 
@@ -830,7 +929,7 @@ function showDrawAnimation(entry) {
             },
           ],
           {
-            duration: 720,
+            duration: 900,
             easing: 'cubic-bezier(0.2, 0.9, 0.3, 1.05)',
             fill: 'forwards',
           }
@@ -847,7 +946,7 @@ function showDrawAnimation(entry) {
 
       if (!prefersReducedMotion) {
         targetCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-        window.setTimeout(animateTowardCell, 240);
+        window.setTimeout(animateTowardCell, 360);
       } else {
         animateTowardCell();
       }
@@ -870,7 +969,7 @@ function showDrawAnimation(entry) {
           drawOverlayLabel.textContent = `Numero ${entry.number}!`;
         }
         finish();
-      }, 450);
+      }, 650);
       return;
     }
 
