@@ -720,10 +720,11 @@ async function handleDraw() {
 
   const randomIndex = Math.floor(Math.random() * remaining.length);
   const entry = remaining[randomIndex];
-  markNumberDrawn(entry, { animate: true });
 
   state.isAnimatingDraw = true;
   let restoreDrawButton = false;
+  let markRecorded = false;
+  let preparationError = null;
 
   try {
     await prepareSponsorForNextDraw();
@@ -733,12 +734,30 @@ async function handleDraw() {
       elements.drawButton.disabled = true;
     }
 
-    await showDrawAnimation(entry);
+    try {
+      await showDrawAnimation(entry);
+    } catch (animationError) {
+      console.warn('Errore durante l\'animazione di estrazione', animationError);
+    }
+
+    markNumberDrawn(entry, { animate: true });
+    markRecorded = true;
+  } catch (error) {
+    preparationError = error;
   } finally {
     state.isAnimatingDraw = false;
     if (elements.drawButton && restoreDrawButton) {
       elements.drawButton.disabled = false;
     }
+  }
+
+  if (!markRecorded) {
+    markNumberDrawn(entry, { animate: true });
+    markRecorded = true;
+  }
+
+  if (preparationError) {
+    console.warn('Impossibile preparare l\'estrazione', preparationError);
   }
 
   handleSelection(entry, state.cellsByNumber.get(entry.number), { fromDraw: true });
