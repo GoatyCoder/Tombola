@@ -334,6 +334,20 @@ function applySponsorToOverlay(sponsor) {
   }
 }
 
+function setOverlayBallLoading(isLoading) {
+  const { drawOverlayBall } = elements;
+
+  if (!drawOverlayBall) {
+    return;
+  }
+
+  if (isLoading) {
+    drawOverlayBall.classList.add('draw-overlay__ball--loading');
+  } else {
+    drawOverlayBall.classList.remove('draw-overlay__ball--loading');
+  }
+}
+
 async function prepareSponsorForNextDraw() {
   const sponsors = await loadSponsors();
 
@@ -1191,6 +1205,7 @@ async function showDrawAnimation(entry) {
     }
   };
 
+  setOverlayBallLoading(false);
   drawOverlayNumber.textContent = '';
   if (drawOverlayLabel) {
     drawOverlayLabel.textContent = "Preparati all'estrazione…";
@@ -1210,8 +1225,10 @@ async function showDrawAnimation(entry) {
       if (drawOverlayLabel) {
         drawOverlayLabel.textContent = 'Numero in arrivo…';
       }
+      setOverlayBallLoading(true);
       const fromRect = drawOverlayBall.getBoundingClientRect();
       await sleep(DRAW_TIMELINE.reducedMotionHold);
+      setOverlayBallLoading(false);
       drawOverlayNumber.textContent = entry.number;
       if (drawOverlayLabel) {
         drawOverlayLabel.textContent = `Numero ${entry.number}!`;
@@ -1229,8 +1246,10 @@ async function showDrawAnimation(entry) {
     if (drawOverlayLabel) {
       drawOverlayLabel.textContent = 'Numero in arrivo…';
     }
+    setOverlayBallLoading(true);
 
     await sleep(DRAW_TIMELINE.incomingHold);
+    setOverlayBallLoading(false);
     drawOverlayNumber.textContent = entry.number;
     if (drawOverlayLabel) {
       drawOverlayLabel.textContent = `Numero ${entry.number}!`;
@@ -1252,6 +1271,7 @@ async function showDrawAnimation(entry) {
 
     await sleep(DRAW_TIMELINE.overlayHideDelay);
   } finally {
+    setOverlayBallLoading(false);
     hideOverlay(true);
   }
 }

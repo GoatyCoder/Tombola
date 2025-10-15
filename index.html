@@ -113,7 +113,14 @@
         <div class="draw-overlay__stage">
           <div class="draw-overlay__halo" aria-hidden="true"></div>
           <div class="draw-overlay__ball" id="draw-animation-ball" aria-hidden="true">
-            <span id="draw-animation-number"></span>
+            <div class="draw-overlay__loader" id="draw-animation-loader" aria-hidden="true">
+              <div class="draw-overlay__loader-track">
+                <span class="draw-overlay__loader-dot"></span>
+                <span class="draw-overlay__loader-dot"></span>
+                <span class="draw-overlay__loader-dot"></span>
+              </div>
+            </div>
+            <span id="draw-animation-number" class="draw-overlay__number"></span>
           </div>
           <p class="draw-overlay__label" id="draw-animation-label">
             Estrazione in corso…
@@ -121,7 +128,7 @@
         </div>
         <div id="draw-sponsor-block" class="draw-overlay__sponsor-block" hidden>
           <p id="draw-sponsor-heading" class="draw-overlay__sponsor-heading">
-            Estrazione offerta da
+            Grazie al contributo di
           </p>
           <a
             id="draw-sponsor"
@@ -185,7 +192,7 @@
       aria-hidden="true"
     >
       <div class="app-footer__content">
-        <h2 class="app-footer__title">Sponsor della serata</h2>
+        <h2 class="app-footer__title">Grazie al contributo di</h2>
         <div class="sponsor-gallery" id="sponsor-showcase-list"></div>
       </div>
     </footer>

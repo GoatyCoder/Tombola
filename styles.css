@@ -993,12 +993,99 @@ img {
   }
 }
 
-.draw-overlay__ball span {
+.draw-overlay__number {
   position: relative;
   z-index: 1;
   display: block;
   line-height: 1;
   text-shadow: 0 12px 28px rgba(15, 23, 42, 0.22);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.draw-overlay__loader {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.86);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.draw-overlay__loader-track {
+  position: relative;
+  width: 64%;
+  aspect-ratio: 1;
+  animation: drawLoaderSpin 2.6s linear infinite;
+}
+
+.draw-overlay__loader-dot {
+  --angle: 0deg;
+  --orbit: 132%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 26%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 30% 30%,
+    #ffffff 0%,
+    #ffe5dc 55%,
+    rgba(255, 111, 97, 0.45) 100%
+  );
+  box-shadow: 0 12px 22px rgba(255, 111, 97, 0.28);
+  transform: translate(-50%, -50%) rotate(var(--angle))
+    translateY(calc(-1 * var(--orbit))) rotate(calc(-1 * var(--angle)));
+  animation: drawLoaderPulse 1.8s ease-in-out infinite;
+}
+
+.draw-overlay__loader-dot:nth-child(1) {
+  --angle: 0deg;
+}
+
+.draw-overlay__loader-dot:nth-child(2) {
+  --angle: 120deg;
+  animation-delay: 0.18s;
+}
+
+.draw-overlay__loader-dot:nth-child(3) {
+  --angle: 240deg;
+  animation-delay: 0.36s;
+}
+
+.draw-overlay__ball--loading .draw-overlay__loader {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.draw-overlay__ball--loading .draw-overlay__number {
+  opacity: 0;
+  transform: scale(0.84);
+}
+
+@keyframes drawLoaderSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes drawLoaderPulse {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) rotate(var(--angle))
+      translateY(calc(-1 * var(--orbit))) rotate(calc(-1 * var(--angle))) scale(0.92);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translate(-50%, -50%) rotate(var(--angle))
+      translateY(calc(-1 * var(--orbit))) rotate(calc(-1 * var(--angle))) scale(1.06);
+    opacity: 1;
+  }
 }
 
 .draw-overlay__ball--active {
@@ -1142,6 +1229,8 @@ img {
   .draw-overlay__ball::before,
   .draw-overlay__ball--active,
   .draw-overlay__sponsor-block,
+  .draw-overlay__loader-track,
+  .draw-overlay__loader-dot,
   .board-cell--just-drawn {
     animation: none !important;
   }
