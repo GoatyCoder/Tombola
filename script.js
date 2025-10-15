@@ -51,12 +51,12 @@ const DRAW_STATE_STORAGE_KEY = 'TOMBOLA_DRAW_STATE';
 const EMPTY_DRAW_STATE = Object.freeze({ drawnNumbers: [], drawHistory: [] });
 const SPONSOR_DATA_PATH = 'sponsors.json';
 const DRAW_TIMELINE = Object.freeze({
-  stageIntro: 650,
-  labelReveal: 1200,
-  celebrationHold: 2200,
-  flightDelay: 200,
-  flightDuration: 1350,
-  overlayHideDelay: 280,
+  stageIntro: 620,
+  incomingHold: 2100,
+  celebrationHold: 2400,
+  flightDelay: 320,
+  flightDuration: 1450,
+  overlayHideDelay: 320,
   reducedMotionHold: 1700,
 });
 
@@ -150,6 +150,46 @@ function pickRandomSponsor(previousKey = null) {
 function sleep(duration) {
   return new Promise((resolve) => {
     window.setTimeout(resolve, duration);
+  });
+}
+
+function waitForScrollIdle(options = {}) {
+  if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') {
+    return Promise.resolve();
+  }
+
+  const { timeout = 900, idleThreshold = 140 } = options;
+  const nowFn =
+    typeof performance !== 'undefined' && typeof performance.now === 'function'
+      ? () => performance.now()
+      : () => Date.now();
+
+  return new Promise((resolve) => {
+    let lastX = window.scrollX;
+    let lastY = window.scrollY;
+    let lastChange = nowFn();
+    const deadline = lastChange + timeout;
+
+    const check = (timestamp) => {
+      const currentTime = typeof timestamp === 'number' ? timestamp : nowFn();
+      const currentX = window.scrollX;
+      const currentY = window.scrollY;
+
+      if (currentX !== lastX || currentY !== lastY) {
+        lastX = currentX;
+        lastY = currentY;
+        lastChange = currentTime;
+      }
+
+      if (currentTime - lastChange >= idleThreshold || currentTime >= deadline) {
+        resolve();
+        return;
+      }
+
+      window.requestAnimationFrame(check);
+    };
+
+    window.requestAnimationFrame(check);
   });
 }
 
@@ -922,86 +962,97 @@ function closeModal(options = {}) {
   }
 }
 
-function animateBallFlight(entry, fromRect, targetCell, options = {}) {
-  return new Promise((resolve) => {
-    if (!targetCell || !fromRect) {
-      resolve();
-      return;
-    }
+async function animateBallFlight(entry, fromRect, targetCell, options = {}) {
+  if (!targetCell || !fromRect) {
+    return;
+  }
 
-    const { prefersReducedMotion = false, duration = DRAW_TIMELINE.flightDuration } = options;
+  const { prefersReducedMotion = false, duration = DRAW_TIMELINE.flightDuration } = options;
 
-    targetCell.classList.add('board-cell--incoming');
+  targetCell.classList.add('board-cell--incoming');
 
-    const finalize = () => {
-      targetCell.classList.remove('board-cell--incoming');
+  const finalize = () => {
+    targetCell.classList.remove('board-cell--incoming');
+  };
+
+  try {
+    targetCell.scrollIntoView({
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      block: 'center',
+      inline: 'center',
+    });
+  } catch (error) {
+    targetCell.scrollIntoView();
+  }
+
+  await waitForScrollIdle({
+    timeout: prefersReducedMotion ? 320 : 900,
+    idleThreshold: prefersReducedMotion ? 80 : 160,
+  });
+
+  if (prefersReducedMotion) {
+    await sleep(220);
+    finalize();
+    return;
+  }
+
+  const flightBall = document.createElement('div');
+  flightBall.className = 'draw-flight-ball';
+  flightBall.setAttribute('aria-hidden', 'true');
+  const numberSpan = document.createElement('span');
+  numberSpan.textContent = entry.number;
+  flightBall.appendChild(numberSpan);
+
+  const startX = fromRect.left + fromRect.width / 2;
+  const startY = fromRect.top + fromRect.height / 2;
+  flightBall.style.width = `${fromRect.width}px`;
+  flightBall.style.height = `${fromRect.height}px`;
+  flightBall.style.left = `${startX}px`;
+  flightBall.style.top = `${startY}px`;
+  document.body.appendChild(flightBall);
+
+  if (typeof flightBall.animate !== 'function') {
+    await sleep(duration);
+    flightBall.remove();
+    finalize();
+    return;
+  }
+
+  const targetRect = targetCell.getBoundingClientRect();
+  const endX = targetRect.left + targetRect.width / 2;
+  const endY = targetRect.top + targetRect.height / 2;
+  const deltaX = endX - startX;
+  const deltaY = endY - startY;
+  const scale = Math.max(Math.min(targetRect.width / fromRect.width || 1, 1.35), 0.6);
+
+  await new Promise((resolve) => {
+    const cleanup = () => {
+      flightBall.remove();
+      finalize();
       resolve();
     };
 
     try {
-      targetCell.scrollIntoView({
-        behavior: prefersReducedMotion ? 'auto' : 'smooth',
-        block: 'center',
-        inline: 'center',
-      });
-    } catch (error) {
-      targetCell.scrollIntoView();
-    }
-
-    if (prefersReducedMotion) {
-      window.setTimeout(finalize, 220);
-      return;
-    }
-
-    const flightBall = document.createElement('div');
-    flightBall.className = 'draw-flight-ball';
-    const numberSpan = document.createElement('span');
-    numberSpan.textContent = entry.number;
-    flightBall.appendChild(numberSpan);
-
-    const startX = fromRect.left + fromRect.width / 2;
-    const startY = fromRect.top + fromRect.height / 2;
-    flightBall.style.width = `${fromRect.width}px`;
-    flightBall.style.height = `${fromRect.height}px`;
-    flightBall.style.left = `${startX}px`;
-    flightBall.style.top = `${startY}px`;
-    document.body.appendChild(flightBall);
-
-    if (typeof flightBall.animate !== 'function') {
-      flightBall.remove();
-      window.setTimeout(finalize, 220);
-      return;
-    }
-
-    const targetRect = targetCell.getBoundingClientRect();
-    const endX = targetRect.left + targetRect.width / 2;
-    const endY = targetRect.top + targetRect.height / 2;
-    const deltaX = endX - startX;
-    const deltaY = endY - startY;
-    const scale = Math.max(Math.min(targetRect.width / fromRect.width || 1, 1.35), 0.6);
-
-    const animation = flightBall.animate(
-      [
-        { transform: 'translate(-50%, -50%) scale(0.98)', opacity: 0.98 },
+      const animation = flightBall.animate(
+        [
+          { transform: 'translate(-50%, -50%) scale(0.98)', opacity: 0.98 },
+          {
+            transform: `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(${scale})`,
+            opacity: 0.94,
+          },
+        ],
         {
-          transform: `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(${scale})`,
-          opacity: 0.94,
-        },
-      ],
-      {
-        duration,
-        easing: 'cubic-bezier(0.18, 0.82, 0.24, 1.06)',
-        fill: 'forwards',
-      }
-    );
+          duration,
+          easing: 'cubic-bezier(0.18, 0.82, 0.24, 1.06)',
+          fill: 'forwards',
+        }
+      );
 
-    const cleanup = () => {
-      flightBall.remove();
-      finalize();
-    };
-
-    animation.addEventListener('finish', cleanup, { once: true });
-    animation.addEventListener('cancel', cleanup, { once: true });
+      animation.addEventListener('finish', cleanup, { once: true });
+      animation.addEventListener('cancel', cleanup, { once: true });
+    } catch (error) {
+      cleanup();
+    }
   });
 }
 
@@ -1053,10 +1104,13 @@ async function showDrawAnimation(entry) {
   try {
     if (prefersReducedMotion) {
       if (drawOverlayLabel) {
-        drawOverlayLabel.textContent = `Numero ${entry.number}!`;
+        drawOverlayLabel.textContent = 'Numero in arrivo…';
       }
       const fromRect = drawOverlayBall.getBoundingClientRect();
       await sleep(DRAW_TIMELINE.reducedMotionHold);
+      if (drawOverlayLabel) {
+        drawOverlayLabel.textContent = `Numero ${entry.number}!`;
+      }
       await animateBallFlight(entry, fromRect, targetCell, {
         prefersReducedMotion: true,
         duration: 260,
@@ -1071,7 +1125,7 @@ async function showDrawAnimation(entry) {
       drawOverlayLabel.textContent = 'Numero in arrivo…';
     }
 
-    await sleep(DRAW_TIMELINE.labelReveal);
+    await sleep(DRAW_TIMELINE.incomingHold);
     if (drawOverlayLabel) {
       drawOverlayLabel.textContent = `Numero ${entry.number}!`;
     }
