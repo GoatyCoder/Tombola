@@ -359,64 +359,42 @@ async function loadNumbers() {
 }
 
 function renderBoard() {
-  elements.board.innerHTML = '';
+  const { board, template } = elements;
+  if (!board || !template) {
+    return;
+  }
+
+  board.innerHTML = '';
   state.cellsByNumber = new Map();
   state.selected = null;
 
-  const columnLabels = [
-    '1-9',
-    '10-19',
-    '20-29',
-    '30-39',
-    '40-49',
-    '50-59',
-    '60-69',
-    '70-79',
-    '80-90',
-  ];
+  const fragment = document.createDocumentFragment();
 
-  const columns = Array.from({ length: 9 }, () => []);
   state.numbers.forEach((entry) => {
-    const columnIndex = Math.min(Math.floor((entry.number - 1) / 10), 8);
-    columns[columnIndex].push(entry);
+    const cell = template.content.firstElementChild.cloneNode(true);
+    cell.dataset.number = entry.number;
+
+    const numberEl = cell.querySelector('.board-cell__number');
+    if (numberEl) {
+      numberEl.textContent = entry.number;
+    }
+
+    const ariaLabelParts = [`Numero ${entry.number}`];
+    if (entry.italian) {
+      ariaLabelParts.push(entry.italian);
+    }
+    cell.setAttribute('aria-label', ariaLabelParts.join(' – '));
+
+    const isDrawn = state.drawnNumbers.has(entry.number);
+    cell.classList.toggle('board-cell--drawn', isDrawn);
+    cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
+
+    cell.addEventListener('click', () => handleSelection(entry, cell));
+    state.cellsByNumber.set(entry.number, cell);
+    fragment.appendChild(cell);
   });
 
-  columns.forEach((group, columnIndex) => {
-    const column = document.createElement('div');
-    column.className = 'board-grid__column';
-    const columnTitle = document.createElement('p');
-    columnTitle.className = 'board-grid__column-title';
-    columnTitle.textContent = columnLabels[columnIndex];
-    columnTitle.setAttribute('aria-hidden', 'true');
-    column.appendChild(columnTitle);
-
-    const cellsContainer = document.createElement('div');
-    cellsContainer.className = 'board-grid__cells';
-
-    group
-      .sort((a, b) => a.number - b.number)
-      .forEach((entry) => {
-        const cell = elements.template.content.firstElementChild.cloneNode(true);
-        cell.dataset.number = entry.number;
-        const image = cell.querySelector('img');
-        image.src = buildNumberImage(entry.number);
-        image.alt = `Segnaposto per il numero ${entry.number}`;
-
-        const label = cell.querySelector('.board-cell__number');
-        label.textContent = entry.number;
-
-        const isDrawn = state.drawnNumbers.has(entry.number);
-        cell.classList.toggle('board-cell--drawn', isDrawn);
-        cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
-
-        cell.addEventListener('click', () => handleSelection(entry, cell));
-        state.cellsByNumber.set(entry.number, cell);
-        cellsContainer.appendChild(cell);
-      });
-
-    column.appendChild(cellsContainer);
-    elements.board.appendChild(column);
-  });
+  board.appendChild(fragment);
 }
 
 function buildNumberImage(number) {
