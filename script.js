@@ -306,31 +306,46 @@ function waitForScrollIdle(options = {}) {
   });
 }
 
-function updateSponsorBlock(blockElements, sponsor) {
+function updateSponsorBlock(blockElements, sponsor, options = {}) {
   if (!blockElements) {
     return;
   }
 
   const { block, anchor, logo, heading } = blockElements;
+  const { showPlaceholder = false, preferLazy = false } = options;
+  const placeholderClass = 'sponsor-block--placeholder';
 
   if (!block || !anchor || !logo) {
     return;
   }
 
   if (!sponsor) {
-    block.hidden = true;
-    block.setAttribute('aria-hidden', 'true');
+    const shouldShowPlaceholder = Boolean(showPlaceholder);
+
+    block.hidden = !shouldShowPlaceholder;
+    block.setAttribute('aria-hidden', shouldShowPlaceholder ? 'false' : 'true');
+    block.classList.toggle(placeholderClass, shouldShowPlaceholder);
+
     anchor.href = '#';
     anchor.target = '_self';
     anchor.rel = 'noopener noreferrer';
     anchor.removeAttribute('aria-label');
     anchor.setAttribute('tabindex', '-1');
+    if (shouldShowPlaceholder) {
+      anchor.setAttribute('aria-hidden', 'true');
+    } else {
+      anchor.removeAttribute('aria-hidden');
+    }
+    anchor.classList.toggle('sponsor-link--placeholder', shouldShowPlaceholder);
+
     if (heading) {
-      heading.hidden = true;
+      heading.hidden = !shouldShowPlaceholder;
     }
+
     if ('loading' in logo) {
-      logo.loading = 'lazy';
+      logo.loading = preferLazy ? 'lazy' : 'eager';
     }
+    logo.hidden = true;
     logo.removeAttribute('src');
     logo.alt = '';
     return;
@@ -338,6 +353,10 @@ function updateSponsorBlock(blockElements, sponsor) {
 
   block.hidden = false;
   block.setAttribute('aria-hidden', 'false');
+  block.classList.remove(placeholderClass);
+
+  anchor.classList.remove('sponsor-link--placeholder');
+  anchor.removeAttribute('aria-hidden');
   anchor.href = sponsor.url || '#';
   anchor.target = sponsor.url ? '_blank' : '_self';
   anchor.rel = 'noopener noreferrer';
@@ -346,9 +365,12 @@ function updateSponsorBlock(blockElements, sponsor) {
   anchor.removeAttribute('title');
 
   if ('loading' in logo) {
-    logo.loading = 'lazy';
+    logo.loading = preferLazy ? 'lazy' : 'eager';
   }
-  logo.src = sponsor.logo || '';
+  logo.hidden = false;
+  if (logo.src !== sponsor.logo) {
+    logo.src = sponsor.logo || '';
+  }
   logo.alt = '';
 
   if (heading) {
@@ -366,11 +388,12 @@ function applySponsorToOverlay(sponsor) {
       logo: drawSponsorLogo,
       heading: drawSponsorHeading,
     },
-    sponsor
+    sponsor,
+    { preferLazy: false }
   );
 }
 
-function applySponsorToModal(sponsor) {
+function applySponsorToModal(sponsor, options = {}) {
   const { modalSponsorBlock, modalSponsor, modalSponsorLogo, modalSponsorHeading } = elements;
 
   updateSponsorBlock(
@@ -380,53 +403,81 @@ function applySponsorToModal(sponsor) {
       logo: modalSponsorLogo,
       heading: modalSponsorHeading,
     },
-    sponsor
+    sponsor,
+    { preferLazy: false, ...options }
   );
 }
 
-function resolveModalSponsor(entry, options = {}) {
-  if (!entry) {
+function persistSponsorForNumber(number, sponsor) {
+  if (!Number.isInteger(number)) {
     return null;
+  }
+
+  const normalized = cloneSponsorData(sponsor);
+  if (!normalized) {
+    return null;
+  }
+
+  state.sponsorByNumber.set(number, normalized);
+  return normalized;
+}
+
+function getStoredSponsorForNumber(number) {
+  if (!Number.isInteger(number)) {
+    return null;
+  }
+
+  const stored = state.sponsorByNumber.get(number);
+  return stored ? cloneSponsorData(stored) : null;
+}
+
+function ensureModalSponsor(entry, options = {}) {
+  if (!entry) {
+    applySponsorToModal(null);
+    return;
   }
 
   const { fromDraw = false } = options;
   const number = entry.number;
 
-  if (state.drawnNumbers.has(number)) {
-    const stored = state.sponsorByNumber.get(number);
-    if (stored) {
-      return cloneSponsorData(stored);
-    }
-
-    if (fromDraw && state.currentSponsor) {
-      return cloneSponsorData(state.currentSponsor);
-    }
-
-    return null;
-  }
-
-  if (!Array.isArray(state.sponsors) || state.sponsors.length === 0) {
-    return null;
-  }
-
-  const previousKey = state.lastSponsorKey || (state.currentSponsor ? getSponsorKey(state.currentSponsor) : null);
-  const candidate = pickRandomSponsor(previousKey);
-  return cloneSponsorData(candidate);
-}
-
-function ensureModalSponsor(entry, options = {}) {
-  const { fromDraw = false } = options;
-  const immediateSponsor = resolveModalSponsor(entry, { fromDraw });
-
-  if (immediateSponsor) {
-    if (entry && state.drawnNumbers.has(entry.number)) {
-      state.sponsorByNumber.set(entry.number, immediateSponsor);
-    }
-    applySponsorToModal(immediateSponsor);
+  const storedSponsor = getStoredSponsorForNumber(number);
+  if (storedSponsor) {
+    applySponsorToModal(storedSponsor);
     return;
   }
 
-  applySponsorToModal(null);
+  if (fromDraw && state.currentSponsor) {
+    const remembered = persistSponsorForNumber(number, state.currentSponsor);
+    applySponsorToModal(remembered);
+    return;
+  }
+
+  const selectRandomSponsor = () => {
+    if (!Array.isArray(state.sponsors) || state.sponsors.length === 0) {
+      return null;
+    }
+
+    const previousKey = state.lastSponsorKey || (state.currentSponsor ? getSponsorKey(state.currentSponsor) : null);
+    const randomSponsor = pickRandomSponsor(previousKey);
+    const normalized = cloneSponsorData(randomSponsor);
+
+    if (normalized) {
+      const key = getSponsorKey(normalized);
+      if (key) {
+        state.lastSponsorKey = key;
+      }
+    }
+
+    return normalized;
+  };
+
+  const immediateRandom = selectRandomSponsor();
+  if (immediateRandom) {
+    applySponsorToModal(immediateRandom);
+    return;
+  }
+
+  applySponsorToModal(null, { showPlaceholder: true });
 
   const pending =
     state.sponsorLoadPromise ||
@@ -435,48 +486,48 @@ function ensureModalSponsor(entry, options = {}) {
       : loadSponsors());
 
   if (!pending || typeof pending.then !== 'function') {
-    if (fromDraw && state.currentSponsor) {
-      const fallback = cloneSponsorData(state.currentSponsor);
-      if (fallback && entry && state.drawnNumbers.has(entry.number)) {
-        state.sponsorByNumber.set(entry.number, fallback);
-      }
-      applySponsorToModal(fallback);
-    }
     return;
   }
 
   pending
     .then(() => {
-      if (!entry) {
-        applySponsorToModal(null);
+      const updatedStored = getStoredSponsorForNumber(number);
+      if (updatedStored) {
+        applySponsorToModal(updatedStored);
         return;
       }
 
-      let refreshed = resolveModalSponsor(entry, { fromDraw });
-
-      if (!refreshed && !state.drawnNumbers.has(entry.number)) {
-        refreshed = cloneSponsorData(pickRandomSponsor(state.lastSponsorKey));
+      if (fromDraw && state.currentSponsor) {
+        const remembered = persistSponsorForNumber(number, state.currentSponsor);
+        if (remembered) {
+          applySponsorToModal(remembered);
+          return;
+        }
       }
 
-      if (!refreshed && fromDraw && state.currentSponsor) {
-        refreshed = cloneSponsorData(state.currentSponsor);
+      const refreshed = selectRandomSponsor();
+      if (refreshed) {
+        applySponsorToModal(refreshed);
+        return;
       }
 
-      if (refreshed && state.drawnNumbers.has(entry.number)) {
-        state.sponsorByNumber.set(entry.number, refreshed);
-      }
-
-      applySponsorToModal(refreshed);
+      applySponsorToModal(null);
     })
     .catch(() => {
-      if (fromDraw && state.currentSponsor) {
-        const fallback = cloneSponsorData(state.currentSponsor);
-        if (fallback && entry && state.drawnNumbers.has(entry.number)) {
-          state.sponsorByNumber.set(entry.number, fallback);
-        }
-        applySponsorToModal(fallback);
+      const fallbackStored = getStoredSponsorForNumber(number);
+      if (fallbackStored) {
+        applySponsorToModal(fallbackStored);
         return;
       }
+
+      if (fromDraw && state.currentSponsor) {
+        const remembered = persistSponsorForNumber(number, state.currentSponsor);
+        if (remembered) {
+          applySponsorToModal(remembered);
+          return;
+        }
+      }
+
       applySponsorToModal(null);
     });
 }
@@ -956,17 +1007,14 @@ function markNumberDrawn(entry, options = {}) {
 
   state.drawnNumbers.add(number);
 
-  const sponsorData = cloneSponsorData(sponsorOverride || state.currentSponsor);
-  if (sponsorData) {
-    state.sponsorByNumber.set(number, sponsorData);
-  }
+  const sponsorData = persistSponsorForNumber(number, sponsorOverride || state.currentSponsor);
 
   if (recordHistory) {
     state.drawHistory.push({
       number,
       italian: entry.italian || '',
       dialect: entry.dialect || '',
-      sponsor: sponsorData || null,
+      sponsor: sponsorData ? cloneSponsorData(sponsorData) : null,
     });
   }
 
@@ -1235,7 +1283,7 @@ function resetGame() {
 function openModal(entry, options = {}) {
   const { fromDraw = false } = options;
 
-  elements.modalNumber.textContent = `Numero ${entry.number}`;
+  elements.modalNumber.textContent = `${entry.number}`;
 
   const italianText = entry.italian || '—';
   const dialectText = entry.dialect || 'Da completare';
