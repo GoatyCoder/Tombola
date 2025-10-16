@@ -180,7 +180,7 @@
         aria-hidden="true"
       >
         <div class="sponsor-section__content">
-          <h2 class="sponsor-section__title">Con il sostegno di</h2>
+          <h2 class="sponsor-section__title">Sponsor e partner</h2>
           <div class="sponsor-gallery" id="sponsor-showcase-list"></div>
         </div>
       </section>
@@ -332,20 +332,31 @@
       </button>
     </template>
 
-    <footer class="app-footer">
+    <footer class="app-footer" role="contentinfo">
       <div class="app-footer__content">
-        <p class="app-footer__credits">
-          Iniziativa a cura dell'Associazione Culturale Amici del Teatro di
-          Noicattaro.
-        </p>
-        <a class="app-footer__builder" href="mailto:GoatyCoder@proton.me">
-          <span>Powered by</span>
-          <img
-            src="images/GoatyCoder_Logo.png"
-            alt="GoatyCoder"
-            loading="lazy"
-          />
-        </a>
+        <div class="app-footer__about">
+          <p class="app-footer__title">Tombola Nojana</p>
+          <p class="app-footer__description">
+            Iniziativa a cura dell'Associazione Culturale Amici del Teatro di
+            Noicattaro.
+          </p>
+        </div>
+        <div class="app-footer__brand">
+          <span class="app-footer__label">Powered by</span>
+          <a
+            class="app-footer__logo-link"
+            href="mailto:GoatyCoder@proton.me"
+            aria-label="Contatta GoatyCoder via email"
+          >
+            <img
+              src="images/GoatyCoder_Logo.png"
+              alt="GoatyCoder"
+              class="app-footer__logo"
+              decoding="async"
+              loading="lazy"
+            />
+          </a>
+        </div>
       </div>
     </footer>
 
