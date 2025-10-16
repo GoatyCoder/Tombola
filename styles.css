@@ -1635,7 +1635,9 @@ img {
 .number-popup__sponsor-link img {
   display: block;
   width: auto;
-  max-height: clamp(46px, 10vw, 68px);
+  height: clamp(46px, 10vw, 68px);
+  max-width: min(100%, clamp(210px, 42vw, 280px));
+  object-fit: contain;
 }
 
 @keyframes sponsorPlaceholderShimmer {
