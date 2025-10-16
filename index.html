@@ -44,15 +44,46 @@
       <section class="board-panel">
         <header class="board-panel__head">
           <div class="board-panel__summary">
-            <p class="board-panel__eyebrow">Smorfia Nojana</p>
-            <h2 class="board-panel__title">Controllo estrazioni</h2>
-            <p class="board-panel__description">
-              Gestisci la partita digitale e tieni a vista l'ultimo numero uscito.
-            </p>
+            <h2 class="sr-only">Controllo estrazioni</h2>
             <div class="board-summary" role="status" aria-live="polite">
               <span id="draw-status" class="sr-only">Caricamento del tabellone…</span>
               <article class="board-summary__card board-summary__card--highlight">
-                <p class="board-summary__label">Ultimo numero</p>
+                <div class="board-summary__header">
+                  <p class="board-summary__label">Ultimo numero</p>
+                  <button
+                    type="button"
+                    id="audio-toggle"
+                    class="board-panel__audio-toggle board-summary__icon-button"
+                    aria-pressed="true"
+                    aria-label="Disattiva annuncio audio"
+                    title="Disattiva annuncio audio"
+                  >
+                    <span class="sr-only" data-audio-label>Audio attivo</span>
+                    <svg
+                      class="board-panel__audio-icon"
+                      viewBox="0 0 24 24"
+                      role="presentation"
+                      aria-hidden="true"
+                    >
+                      <path
+                        class="board-panel__audio-speaker"
+                        d="M5.5 9.5H8l3.5-3.5v12L8 14.5H5.5a1.5 1.5 0 0 1-1.5-1.5v-2a1.5 1.5 0 0 1 1.5-1.5Z"
+                      />
+                      <path
+                        class="board-panel__audio-wave"
+                        d="M15.5 9.5a3 3 0 0 1 0 5"
+                      />
+                      <path
+                        class="board-panel__audio-wave board-panel__audio-wave--strong"
+                        d="M17.8 7.8a6 6 0 0 1 0 8.5"
+                      />
+                      <path
+                        class="board-panel__audio-cross"
+                        d="M16 9l5 5m0-5-5 5"
+                      />
+                    </svg>
+                  </button>
+                </div>
                 <p
                   id="draw-last-number"
                   class="board-summary__number"
@@ -71,16 +102,39 @@
                   <button
                     type="button"
                     id="history-toggle"
-                    class="board-summary__history-button"
+                    class="board-summary__icon-button board-summary__icon-button--history"
                     aria-expanded="false"
                     aria-controls="history-panel"
                     data-label-mobile-open="Chiudi cronologia"
                     data-label-mobile-closed="Apri cronologia"
                     data-label-desktop="Vai alla cronologia"
+                    aria-label="Apri cronologia"
+                    title="Apri cronologia"
                   >
-                    <span class="board-summary__history-text" data-history-label>
-                      Apri cronologia
-                    </span>
+                    <span class="sr-only" data-history-label>Apri cronologia</span>
+                    <svg
+                      class="board-summary__icon"
+                      viewBox="0 0 24 24"
+                      role="presentation"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M6 5.25A2.25 2.25 0 0 1 8.25 3h7.5A2.25 2.25 0 0 1 18 5.25v13.5A2.25 2.25 0 0 1 15.75 21h-7.5A2.25 2.25 0 0 1 6 18.75Z"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <path
+                        d="M9 7.5h6M9 12h6m-6 4.5h4"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
                   </button>
                 </div>
                 <p id="draw-progress-value" class="board-summary__metric">0/0</p>
@@ -110,49 +164,6 @@
                     disabled
                   >
                     Reset partita
-                  </button>
-                </div>
-              </article>
-              <article class="board-summary__card board-summary__card--audio">
-                <div class="board-summary__audio">
-                  <div class="board-summary__audio-text">
-                    <p class="board-summary__label">Audio estrazioni</p>
-                    <p class="board-summary__detail">
-                      Attiva la voce che annuncia il numero in vernacolo.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    id="audio-toggle"
-                    class="board-panel__audio-toggle"
-                    aria-pressed="true"
-                    aria-label="Disattiva annuncio audio"
-                    title="Disattiva annuncio audio"
-                  >
-                    <span class="sr-only" data-audio-label>Audio attivo</span>
-                    <svg
-                      class="board-panel__audio-icon"
-                      viewBox="0 0 24 24"
-                      role="presentation"
-                      aria-hidden="true"
-                    >
-                      <path
-                        class="board-panel__audio-speaker"
-                        d="M5.5 9.5H8l3.5-3.5v12L8 14.5H5.5a1.5 1.5 0 0 1-1.5-1.5v-2a1.5 1.5 0 0 1 1.5-1.5Z"
-                      />
-                      <path
-                        class="board-panel__audio-wave"
-                        d="M15.5 9.5a3 3 0 0 1 0 5"
-                      />
-                      <path
-                        class="board-panel__audio-wave board-panel__audio-wave--strong"
-                        d="M17.8 7.8a6 6 0 0 1 0 8.5"
-                      />
-                      <path
-                        class="board-panel__audio-cross"
-                        d="M16 9l5 5m0-5-5 5"
-                      />
-                    </svg>
                   </button>
                 </div>
               </article>
