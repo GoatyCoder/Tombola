@@ -1630,12 +1630,24 @@ function speakEntry(entry) {
     return;
   }
 
-  const parts = [String(entry.number)];
+  const segments = [];
+  segments.push(`Numero ${entry.number}`);
+
   if (entry.dialect) {
-    parts.push(entry.dialect);
+    segments.push(entry.dialect);
   }
 
-  speakText(parts.join('. '), { lang: 'it-IT', rate: 0.92 });
+  if (entry.italian) {
+    segments.push(entry.italian);
+  }
+
+  const announcement = segments
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+    .map((segment) => segment.replace(/[.!?]\s*$/, ''))
+    .join('. ');
+
+  speakText(announcement, { lang: 'it-IT', rate: 0.92 });
 }
 
 function speakDialectText(entry) {
@@ -1646,7 +1658,6 @@ function speakDialectText(entry) {
   speakText(entry.dialect, {
     lang: 'it-IT',
     rate: 0.92,
-    prefix: `Numero ${entry.number}.`,
   });
 }
 
@@ -1658,7 +1669,6 @@ function speakItalianText(entry) {
   speakText(entry.italian, {
     lang: 'it-IT',
     rate: 0.96,
-    prefix: `Numero ${entry.number}.`,
   });
 }
 
