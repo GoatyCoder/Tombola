@@ -43,14 +43,42 @@
     <main class="app-main" aria-label="Tabellone principale">
       <section class="board-panel">
         <header class="board-panel__head">
-          <div class="board-panel__intro">
+          <div class="board-panel__summary">
             <p class="board-panel__eyebrow">Smorfia Nojana</p>
-            <h2>Tabellone interattivo</h2>
-            <p>
-              Numeri organizzati in colonne chiare e leggibili. Tocca una casella
-              per aprire la scheda con i significati e gli audio in vernacolo e
-              in italiano.
+            <h2 class="board-panel__title">Controllo estrazioni</h2>
+            <p class="board-panel__description">
+              Gestisci la partita digitale e tieni a vista l'ultimo numero uscito.
             </p>
+            <div class="board-summary" role="status" aria-live="polite">
+              <article class="board-summary__card board-summary__card--highlight">
+                <p class="board-summary__label">Ultimo numero</p>
+                <p
+                  id="draw-last-number"
+                  class="board-summary__number"
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
+                  —
+                </p>
+                <p id="draw-last-detail" class="board-summary__detail">
+                  In attesa della prima estrazione
+                </p>
+              </article>
+              <article class="board-summary__card">
+                <p class="board-summary__label">Numeri estratti</p>
+                <p id="draw-progress-value" class="board-summary__metric">0/0</p>
+                <div
+                  id="draw-progress-bar"
+                  class="board-summary__progress"
+                  role="progressbar"
+                  aria-valuemin="0"
+                  aria-valuemax="0"
+                  aria-valuenow="0"
+                >
+                  <span class="board-summary__progress-fill" style="width: 0%"></span>
+                </div>
+              </article>
+            </div>
           </div>
           <div class="board-panel__controls">
             <div class="board-panel__toolbar">
