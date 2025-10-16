@@ -50,39 +50,6 @@
               <article class="board-summary__card board-summary__card--highlight">
                 <div class="board-summary__header">
                   <p class="board-summary__label">Ultimo numero</p>
-                  <button
-                    type="button"
-                    id="audio-toggle"
-                    class="board-panel__audio-toggle board-summary__icon-button"
-                    aria-pressed="true"
-                    aria-label="Disattiva annuncio audio"
-                    title="Disattiva annuncio audio"
-                  >
-                    <span class="sr-only" data-audio-label>Audio attivo</span>
-                    <svg
-                      class="board-panel__audio-icon"
-                      viewBox="0 0 24 24"
-                      role="presentation"
-                      aria-hidden="true"
-                    >
-                      <path
-                        class="board-panel__audio-speaker"
-                        d="M5.5 9.5H8l3.5-3.5v12L8 14.5H5.5a1.5 1.5 0 0 1-1.5-1.5v-2a1.5 1.5 0 0 1 1.5-1.5Z"
-                      />
-                      <path
-                        class="board-panel__audio-wave"
-                        d="M15.5 9.5a3 3 0 0 1 0 5"
-                      />
-                      <path
-                        class="board-panel__audio-wave board-panel__audio-wave--strong"
-                        d="M17.8 7.8a6 6 0 0 1 0 8.5"
-                      />
-                      <path
-                        class="board-panel__audio-cross"
-                        d="M16 9l5 5m0-5-5 5"
-                      />
-                    </svg>
-                  </button>
                 </div>
                 <p
                   id="draw-last-number"
@@ -105,13 +72,12 @@
                     class="board-summary__icon-button board-summary__icon-button--history"
                     aria-expanded="false"
                     aria-controls="history-panel"
-                    data-label-mobile-open="Chiudi cronologia"
-                    data-label-mobile-closed="Apri cronologia"
-                    data-label-desktop="Vai alla cronologia"
-                    aria-label="Apri cronologia"
-                    title="Apri cronologia"
+                    data-label-mobile-open="Chiudi cronologia estrazioni"
+                    data-label-mobile-closed="Apri cronologia estrazioni"
+                    data-label-desktop="Vai alla cronologia estrazioni"
+                    aria-label="Apri cronologia estrazioni"
+                    title="Apri cronologia estrazioni"
                   >
-                    <span class="sr-only" data-history-label>Apri cronologia</span>
                     <svg
                       class="board-summary__icon"
                       viewBox="0 0 24 24"
@@ -119,7 +85,7 @@
                       aria-hidden="true"
                     >
                       <path
-                        d="M6 5.25A2.25 2.25 0 0 1 8.25 3h7.5A2.25 2.25 0 0 1 18 5.25v13.5A2.25 2.25 0 0 1 15.75 21h-7.5A2.25 2.25 0 0 1 6 18.75Z"
+                        d="M5.75 4.5h12.5a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H5.75a.75.75 0 0 1-.75-.75V5.25a.75.75 0 0 1 .75-.75Z"
                         fill="none"
                         stroke="currentColor"
                         stroke-width="1.5"
@@ -127,7 +93,15 @@
                         stroke-linejoin="round"
                       />
                       <path
-                        d="M9 7.5h6M9 12h6m-6 4.5h4"
+                        d="M8 7h8m-8 4h8m-8 4h5"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <path
+                        d="M5 4.5l1.5-2m11 2L19 2.5"
                         fill="none"
                         stroke="currentColor"
                         stroke-width="1.5"
@@ -135,6 +109,9 @@
                         stroke-linejoin="round"
                       />
                     </svg>
+                    <span class="board-summary__icon-button-label" data-history-label>
+                      Apri cronologia estrazioni
+                    </span>
                   </button>
                 </div>
                 <p id="draw-progress-value" class="board-summary__metric">0/0</p>
@@ -203,7 +180,7 @@
         aria-hidden="true"
       >
         <div class="sponsor-section__content">
-          <h2 class="sponsor-section__title">Grazie al contributo di</h2>
+          <h2 class="sponsor-section__title">Con il sostegno di</h2>
           <div class="sponsor-gallery" id="sponsor-showcase-list"></div>
         </div>
       </section>
@@ -237,7 +214,7 @@
         </div>
         <div id="draw-sponsor-block" class="draw-overlay__sponsor-block" hidden>
           <p id="draw-sponsor-heading" class="draw-overlay__sponsor-heading">
-            Grazie al contributo di
+            Con il sostegno di
           </p>
           <a
             id="draw-sponsor"
@@ -333,7 +310,7 @@
             aria-hidden="true"
           >
             <p id="modal-sponsor-heading" class="number-popup__sponsor-heading">
-              Grazie al contributo di
+              Con il sostegno di
             </p>
             <a
               id="modal-sponsor"
@@ -356,9 +333,55 @@
     </template>
 
     <footer class="app-footer">
-      Iniziativa a cura dell'Associazione Culturale Amici del Teatro di
-      Noicattaro.
+      <div class="app-footer__content">
+        <p class="app-footer__credits">
+          Iniziativa a cura dell'Associazione Culturale Amici del Teatro di
+          Noicattaro.
+        </p>
+        <a class="app-footer__builder" href="mailto:GoatyCoder@proton.me">
+          <img
+            src="images/logo-goatycoder.svg"
+            alt="Logo GoatyCoder"
+            loading="lazy"
+          />
+          <span>Web app realizzata da GoatyCoder</span>
+        </a>
+      </div>
     </footer>
+
+    <button
+      type="button"
+      id="audio-toggle"
+      class="board-panel__audio-toggle board-panel__audio-toggle--on audio-fab"
+      aria-pressed="true"
+      aria-label="Disattiva annuncio audio"
+      title="Disattiva annuncio audio"
+    >
+      <span class="sr-only" data-audio-label>Audio attivo</span>
+      <svg
+        class="board-panel__audio-icon"
+        viewBox="0 0 24 24"
+        role="presentation"
+        aria-hidden="true"
+      >
+        <path
+          class="board-panel__audio-speaker"
+          d="M5.5 9.5H8l3.5-3.5v12L8 14.5H5.5a1.5 1.5 0 0 1-1.5-1.5v-2a1.5 1.5 0 0 1 1.5-1.5Z"
+        />
+        <path
+          class="board-panel__audio-wave"
+          d="M15.5 9.5a3 3 0 0 1 0 5"
+        />
+        <path
+          class="board-panel__audio-wave board-panel__audio-wave--strong"
+          d="M17.8 7.8a6 6 0 0 1 0 8.5"
+        />
+        <path
+          class="board-panel__audio-cross"
+          d="M16 9l5 5m0-5-5 5"
+        />
+      </svg>
+    </button>
 
   </body>
 </html>

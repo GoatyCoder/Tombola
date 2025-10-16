@@ -654,7 +654,7 @@ function syncHistoryPanelToLayout(options = {}) {
       finalizeHide();
     } else {
       historyScrim.addEventListener('transitionend', finalizeHide);
-      window.setTimeout(finalizeHide, 420);
+      window.setTimeout(finalizeHide, 520);
     }
   }
 }
