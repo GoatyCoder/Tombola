@@ -671,10 +671,13 @@ function updateAudioToggle() {
   const enabled = Boolean(state.audioEnabled);
   audioToggle.setAttribute('aria-pressed', enabled ? 'true' : 'false');
   audioToggle.classList.toggle('board-panel__audio-toggle--off', !enabled);
-  audioToggle.textContent = enabled ? 'Audio attivo' : 'Audio disattivato';
   const actionLabel = enabled ? 'Disattiva annuncio audio' : 'Attiva annuncio audio';
   audioToggle.setAttribute('aria-label', actionLabel);
   audioToggle.title = actionLabel;
+  const srText = audioToggle.querySelector('[data-audio-label]');
+  if (srText) {
+    srText.textContent = enabled ? 'Audio attivo' : 'Audio disattivato';
+  }
 }
 
 function setAudioEnabled(enabled) {
