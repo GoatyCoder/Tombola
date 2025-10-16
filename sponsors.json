@@ -1,0 +1,16 @@
+{
+  "sponsors": [
+    {
+      "logo": "images/sponsor-panificio-stella.svg",
+      "url": "https://www.panificiostella.it/"
+    },
+    {
+      "logo": "images/sponsor-agrumi-del-sud.svg",
+      "url": "https://www.agrumidelsud.it/"
+    },
+    {
+      "logo": "images/sponsor-cantina-nojana.svg",
+      "url": "https://www.cantinanojana.it/"
+    }
+  ]
+}

@@ -107,53 +107,123 @@
       aria-hidden="true"
     ></div>
 
-    <div
-      id="draw-animation"
-      class="draw-overlay"
-      aria-hidden="true"
-      hidden
-    >
+    <div id="draw-animation" class="draw-overlay" aria-hidden="true" hidden>
       <div class="draw-overlay__backdrop" aria-hidden="true"></div>
       <div class="draw-overlay__content" role="status" aria-live="assertive">
-        <div class="draw-overlay__bag" aria-hidden="true"></div>
-        <div class="draw-overlay__ball" id="draw-animation-ball" aria-hidden="true">
-          <span id="draw-animation-number"></span>
+        <div class="draw-overlay__stage">
+          <div class="draw-overlay__halo" aria-hidden="true"></div>
+          <div class="draw-overlay__ball" id="draw-animation-ball" aria-hidden="true">
+            <div class="draw-overlay__loader" id="draw-animation-loader" aria-hidden="true">
+              <div class="draw-overlay__loader-track">
+                <span class="draw-overlay__loader-dot"></span>
+                <span class="draw-overlay__loader-dot"></span>
+                <span class="draw-overlay__loader-dot"></span>
+              </div>
+            </div>
+            <span id="draw-animation-number" class="draw-overlay__number"></span>
+          </div>
+          <p class="draw-overlay__label" id="draw-animation-label">
+            Estrazione in corso…
+          </p>
         </div>
-        <p class="draw-overlay__label" id="draw-animation-label">
-          Estrazione in corso…
-        </p>
+        <div id="draw-sponsor-block" class="draw-overlay__sponsor-block" hidden>
+          <p id="draw-sponsor-heading" class="draw-overlay__sponsor-heading">
+            Grazie al contributo di
+          </p>
+          <a
+            id="draw-sponsor"
+            class="draw-overlay__sponsor"
+            href="#"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <img id="draw-sponsor-logo" alt="" decoding="async" />
+          </a>
+        </div>
       </div>
     </div>
 
-    <div id="number-modal" class="modal" role="dialog" aria-modal="true" hidden>
-      <div class="modal__dialog">
-        <button type="button" class="modal__close" aria-label="Chiudi" id="modal-close">&times;</button>
-        <figure class="modal__figure">
-          <img id="modal-image" alt="" decoding="async" />
-          <figcaption id="modal-caption" class="modal__caption"></figcaption>
-        </figure>
-        <div class="modal__details">
-          <p id="modal-number" class="modal__number"></p>
-          <dl class="modal__definitions">
-            <div>
-              <dt>Italiano</dt>
-              <dd id="modal-italian"></dd>
-            </div>
-            <div>
-              <dt>Dialetto</dt>
-              <dd id="modal-dialect"></dd>
-            </div>
-          </dl>
-          <div class="modal__actions">
-            <button type="button" class="modal__action" id="modal-play">
-              Ascolta annuncio
-            </button>
-            <button
-              type="button"
-              class="modal__action modal__action--secondary"
-              id="modal-next"
-              hidden
+    <div
+      id="number-modal"
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-number"
+      hidden
+    >
+      <div class="number-popup">
+        <button
+          type="button"
+          class="number-popup__close"
+          aria-label="Chiudi"
+          id="modal-close"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <div class="number-popup__hero">
+          <div class="number-popup__image-frame" id="modal-image-frame">
+            <img id="modal-image" alt="" decoding="async" loading="lazy" />
+          </div>
+          <div
+            id="modal-sponsor-block"
+            class="number-popup__sponsor"
+            hidden
+            aria-hidden="true"
+          >
+            <p id="modal-sponsor-heading" class="number-popup__sponsor-heading">
+              Grazie al contributo di
+            </p>
+            <a
+              id="modal-sponsor"
+              class="number-popup__sponsor-link"
+              href="#"
+              target="_blank"
+              rel="noopener noreferrer"
             >
+              <img id="modal-sponsor-logo" alt="" decoding="async" loading="lazy" />
+            </a>
+          </div>
+        </div>
+        <div class="number-popup__content">
+          <p id="modal-number" class="number-popup__number"></p>
+          <div class="number-popup__phrases">
+            <div class="number-popup__phrase number-popup__phrase--dialect">
+              <h3 class="number-popup__phrase-title">In nojano</h3>
+              <div class="number-popup__text-row">
+                <p
+                  id="modal-dialect"
+                  class="number-popup__text number-popup__text--dialect"
+                ></p>
+                <button
+                  type="button"
+                  class="number-popup__play"
+                  id="modal-dialect-play"
+                  aria-label="Ascolta pronuncia in nojano"
+                >
+                  <span aria-hidden="true"></span>
+                </button>
+              </div>
+            </div>
+            <div class="number-popup__phrase number-popup__phrase--italian">
+              <h3 class="number-popup__phrase-title">In italiano</h3>
+              <div class="number-popup__text-row">
+                <p
+                  id="modal-italian"
+                  class="number-popup__text number-popup__text--italian"
+                ></p>
+                <button
+                  type="button"
+                  class="number-popup__play number-popup__play--secondary"
+                  id="modal-italian-play"
+                  aria-label="Ascolta pronuncia in italiano"
+                >
+                  <span aria-hidden="true"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="number-popup__actions">
+            <button type="button" class="number-popup__action" id="modal-next" hidden>
               Estrai successivo
             </button>
           </div>
@@ -166,5 +236,17 @@
         <span class="board-cell__number" aria-hidden="true"></span>
       </button>
     </template>
+
+    <footer
+      class="app-footer"
+      id="sponsor-showcase"
+      hidden
+      aria-hidden="true"
+    >
+      <div class="app-footer__content">
+        <h2 class="app-footer__title">Grazie al contributo di</h2>
+        <div class="sponsor-gallery" id="sponsor-showcase-list"></div>
+      </div>
+    </footer>
   </body>
 </html>

@@ -5,10 +5,16 @@ const state = {
   cellsByNumber: new Map(),
   drawnNumbers: new Set(),
   drawHistory: [],
+  sponsorByNumber: new Map(),
   isAnimatingDraw: false,
   historyOpen: false,
   audioEnabled: true,
   storageErrorMessage: '',
+  currentSponsor: null,
+  lastSponsorKey: null,
+  sponsors: [],
+  sponsorLoadPromise: null,
+  sponsorShowcaseRendered: false,
 };
 
 const elements = {
@@ -19,10 +25,15 @@ const elements = {
   modalItalian: document.querySelector('#modal-italian'),
   modalDialect: document.querySelector('#modal-dialect'),
   modalImage: document.querySelector('#modal-image'),
-  modalCaption: document.querySelector('#modal-caption'),
+  modalImageFrame: document.querySelector('#modal-image-frame'),
   modalClose: document.querySelector('#modal-close'),
-  modalPlay: document.querySelector('#modal-play'),
+  modalDialectPlay: document.querySelector('#modal-dialect-play'),
+  modalItalianPlay: document.querySelector('#modal-italian-play'),
   modalNext: document.querySelector('#modal-next'),
+  modalSponsorBlock: document.querySelector('#modal-sponsor-block'),
+  modalSponsorHeading: document.querySelector('#modal-sponsor-heading'),
+  modalSponsor: document.querySelector('#modal-sponsor'),
+  modalSponsorLogo: document.querySelector('#modal-sponsor-logo'),
   drawButton: document.querySelector('#draw-button'),
   resetButton: document.querySelector('#reset-button'),
   drawStatus: document.querySelector('#draw-status'),
@@ -30,6 +41,12 @@ const elements = {
   drawOverlayNumber: document.querySelector('#draw-animation-number'),
   drawOverlayBall: document.querySelector('#draw-animation-ball'),
   drawOverlayLabel: document.querySelector('#draw-animation-label'),
+  drawSponsorBlock: document.querySelector('#draw-sponsor-block'),
+  drawSponsorHeading: document.querySelector('#draw-sponsor-heading'),
+  drawSponsor: document.querySelector('#draw-sponsor'),
+  drawSponsorLogo: document.querySelector('#draw-sponsor-logo'),
+  sponsorShowcase: document.querySelector('#sponsor-showcase'),
+  sponsorShowcaseList: document.querySelector('#sponsor-showcase-list'),
   historyList: document.querySelector('#draw-history'),
   historyEmpty: document.querySelector('#draw-history-empty'),
   historyPanel: document.querySelector('#history-panel'),
@@ -41,12 +58,382 @@ const elements = {
 const AUDIO_STORAGE_KEY = 'tombola-audio-enabled';
 const DRAW_STATE_STORAGE_KEY = 'TOMBOLA_DRAW_STATE';
 const EMPTY_DRAW_STATE = Object.freeze({ drawnNumbers: [], drawHistory: [] });
+const SPONSOR_DATA_PATH = 'sponsors.json';
+const DRAW_TIMELINE = Object.freeze({
+  stageIntro: 620,
+  incomingHold: 2800,
+  celebrationHold: 2400,
+  flightDelay: 320,
+  flightDuration: 1450,
+  overlayHideDelay: 320,
+  reducedMotionHold: 1700,
+});
 
 const MOBILE_HISTORY_QUERY = '(max-width: 540px)';
 const historyMediaMatcher =
   typeof window !== 'undefined' && 'matchMedia' in window
     ? window.matchMedia(MOBILE_HISTORY_QUERY)
     : { matches: false };
+
+function getSponsorKey(sponsor) {
+  if (!sponsor || typeof sponsor !== 'object') {
+    return null;
+  }
+
+  return sponsor.url || sponsor.logo || null;
+}
+
+function normalizeSponsor(rawSponsor) {
+  if (!rawSponsor || typeof rawSponsor !== 'object') {
+    return null;
+  }
+
+  const logo = typeof rawSponsor.logo === 'string' ? rawSponsor.logo.trim() : '';
+  const url = typeof rawSponsor.url === 'string' ? rawSponsor.url.trim() : '';
+
+  if (!logo || !url) {
+    return null;
+  }
+
+  return { logo, url };
+}
+
+function cloneSponsorData(sponsor) {
+  if (!sponsor || typeof sponsor !== 'object') {
+    return null;
+  }
+
+  const logo = typeof sponsor.logo === 'string' ? sponsor.logo.trim() : '';
+  const url = typeof sponsor.url === 'string' ? sponsor.url.trim() : '';
+
+  if (!logo || !url) {
+    return null;
+  }
+
+  return { logo, url };
+}
+
+function loadSponsors() {
+  if (state.sponsors.length > 0) {
+    renderSponsorShowcase(state.sponsors);
+    return Promise.resolve(state.sponsors);
+  }
+
+  if (state.sponsorLoadPromise) {
+    return state.sponsorLoadPromise;
+  }
+
+  const request = fetch(SPONSOR_DATA_PATH)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error('Impossibile caricare gli sponsor');
+      }
+      return response.json();
+    })
+    .then((data) => {
+      const rawList = Array.isArray(data?.sponsors) ? data.sponsors : Array.isArray(data) ? data : [];
+      state.sponsors = rawList.map(normalizeSponsor).filter(Boolean);
+      state.lastSponsorKey = null;
+      if (!state.sponsors.length) {
+        applySponsorToOverlay(null);
+        renderSponsorShowcase([], { force: true });
+      } else {
+        renderSponsorShowcase(state.sponsors, { force: true });
+      }
+      return state.sponsors;
+    })
+    .catch((error) => {
+      console.warn('Impossibile caricare gli sponsor', error);
+      state.sponsors = [];
+      state.lastSponsorKey = null;
+      applySponsorToOverlay(null);
+      renderSponsorShowcase([], { force: true });
+      return state.sponsors;
+    })
+    .finally(() => {
+      state.sponsorLoadPromise = null;
+    });
+
+  state.sponsorLoadPromise = request;
+  return request;
+}
+
+function pickRandomSponsor(previousKey = null) {
+  const sponsors = Array.isArray(state.sponsors) ? state.sponsors : [];
+
+  if (sponsors.length === 0) {
+    return null;
+  }
+
+  if (sponsors.length === 1) {
+    return sponsors[0];
+  }
+
+  const available = sponsors.filter((item) => item && getSponsorKey(item) !== previousKey);
+  const pool = available.length > 0 ? available : sponsors;
+  const index = Math.floor(Math.random() * pool.length);
+  return pool[index] || null;
+}
+
+function getSponsorAccessibleLabel(sponsor) {
+  if (!sponsor || typeof sponsor.url !== 'string' || !sponsor.url.trim()) {
+    return 'Apri il sito dello sponsor';
+  }
+
+  try {
+    const base = typeof window !== 'undefined' && window.location ? window.location.origin : undefined;
+    const url = new URL(sponsor.url, base || 'https://example.com');
+    const host = url.hostname.replace(/^www\./i, '');
+    if (host) {
+      return `Apri il sito di ${host}`;
+    }
+  } catch (error) {
+    // Ignore parsing issues and fall back to a generic label
+  }
+
+  return 'Apri il sito dello sponsor';
+}
+
+function renderSponsorShowcase(sponsors, options = {}) {
+  const { force = false } = options;
+  const { sponsorShowcase, sponsorShowcaseList } = elements;
+
+  if (!sponsorShowcase || !sponsorShowcaseList) {
+    return;
+  }
+
+  if (!Array.isArray(sponsors) || sponsors.length === 0) {
+    sponsorShowcaseList.innerHTML = '';
+    sponsorShowcase.hidden = true;
+    sponsorShowcase.setAttribute('aria-hidden', 'true');
+    state.sponsorShowcaseRendered = false;
+    return;
+  }
+
+  if (state.sponsorShowcaseRendered && !force) {
+    return;
+  }
+
+  const randomized = sponsors.slice();
+  for (let index = randomized.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [randomized[index], randomized[swapIndex]] = [randomized[swapIndex], randomized[index]];
+  }
+
+  sponsorShowcaseList.innerHTML = '';
+
+  randomized.forEach((sponsor) => {
+    if (!sponsor) {
+      return;
+    }
+
+    const anchor = document.createElement('a');
+    anchor.className = 'sponsor-gallery__item';
+    anchor.href = sponsor.url || '#';
+    anchor.target = sponsor.url ? '_blank' : '_self';
+    anchor.rel = 'noopener noreferrer';
+
+    const label = getSponsorAccessibleLabel(sponsor);
+    if (label) {
+      anchor.setAttribute('aria-label', label);
+      anchor.title = label;
+    } else {
+      anchor.removeAttribute('title');
+    }
+
+    const logo = document.createElement('img');
+    logo.alt = '';
+    logo.src = sponsor.logo || '';
+    if ('decoding' in logo) {
+      logo.decoding = 'async';
+    }
+    if ('loading' in logo) {
+      logo.loading = 'lazy';
+    }
+
+    anchor.appendChild(logo);
+    sponsorShowcaseList.appendChild(anchor);
+  });
+
+  sponsorShowcase.hidden = false;
+  sponsorShowcase.removeAttribute('aria-hidden');
+  state.sponsorShowcaseRendered = true;
+}
+
+function sleep(duration) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, duration);
+  });
+}
+
+function waitForScrollIdle(options = {}) {
+  if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') {
+    return Promise.resolve();
+  }
+
+  const { timeout = 900, idleThreshold = 140 } = options;
+  const nowFn =
+    typeof performance !== 'undefined' && typeof performance.now === 'function'
+      ? () => performance.now()
+      : () => Date.now();
+
+  return new Promise((resolve) => {
+    let lastX = window.scrollX;
+    let lastY = window.scrollY;
+    let lastChange = nowFn();
+    const deadline = lastChange + timeout;
+
+    const check = (timestamp) => {
+      const currentTime = typeof timestamp === 'number' ? timestamp : nowFn();
+      const currentX = window.scrollX;
+      const currentY = window.scrollY;
+
+      if (currentX !== lastX || currentY !== lastY) {
+        lastX = currentX;
+        lastY = currentY;
+        lastChange = currentTime;
+      }
+
+      if (currentTime - lastChange >= idleThreshold || currentTime >= deadline) {
+        resolve();
+        return;
+      }
+
+      window.requestAnimationFrame(check);
+    };
+
+    window.requestAnimationFrame(check);
+  });
+}
+
+function updateSponsorBlock(blockElements, sponsor) {
+  if (!blockElements) {
+    return;
+  }
+
+  const { block, anchor, logo, heading } = blockElements;
+
+  if (!block || !anchor || !logo) {
+    return;
+  }
+
+  if (!sponsor) {
+    block.hidden = true;
+    block.setAttribute('aria-hidden', 'true');
+    anchor.href = '#';
+    anchor.target = '_self';
+    anchor.rel = 'noopener noreferrer';
+    anchor.removeAttribute('aria-label');
+    anchor.setAttribute('tabindex', '-1');
+    if (heading) {
+      heading.hidden = true;
+    }
+    if ('loading' in logo) {
+      logo.loading = 'lazy';
+    }
+    logo.removeAttribute('src');
+    logo.alt = '';
+    return;
+  }
+
+  block.hidden = false;
+  block.setAttribute('aria-hidden', 'false');
+  anchor.href = sponsor.url || '#';
+  anchor.target = sponsor.url ? '_blank' : '_self';
+  anchor.rel = 'noopener noreferrer';
+  anchor.removeAttribute('tabindex');
+  anchor.setAttribute('aria-label', getSponsorAccessibleLabel(sponsor));
+  anchor.removeAttribute('title');
+
+  if ('loading' in logo) {
+    logo.loading = 'lazy';
+  }
+  logo.src = sponsor.logo || '';
+  logo.alt = '';
+
+  if (heading) {
+    heading.hidden = false;
+  }
+}
+
+function applySponsorToOverlay(sponsor) {
+  const { drawSponsor, drawSponsorLogo, drawSponsorBlock, drawSponsorHeading } = elements;
+
+  updateSponsorBlock(
+    {
+      block: drawSponsorBlock,
+      anchor: drawSponsor,
+      logo: drawSponsorLogo,
+      heading: drawSponsorHeading,
+    },
+    sponsor
+  );
+}
+
+function applySponsorToModal(sponsor) {
+  const { modalSponsorBlock, modalSponsor, modalSponsorLogo, modalSponsorHeading } = elements;
+
+  updateSponsorBlock(
+    {
+      block: modalSponsorBlock,
+      anchor: modalSponsor,
+      logo: modalSponsorLogo,
+      heading: modalSponsorHeading,
+    },
+    sponsor
+  );
+}
+
+function resolveModalSponsor(entry) {
+  if (!entry) {
+    return null;
+  }
+
+  const number = entry.number;
+
+  if (state.drawnNumbers.has(number)) {
+    const stored = state.sponsorByNumber.get(number);
+    return stored ? cloneSponsorData(stored) : null;
+  }
+
+  if (!Array.isArray(state.sponsors) || state.sponsors.length === 0) {
+    return null;
+  }
+
+  const previousKey = state.lastSponsorKey || (state.currentSponsor ? getSponsorKey(state.currentSponsor) : null);
+  const candidate = pickRandomSponsor(previousKey);
+  return cloneSponsorData(candidate);
+}
+
+function setOverlayBallLoading(isLoading) {
+  const { drawOverlayBall } = elements;
+
+  if (!drawOverlayBall) {
+    return;
+  }
+
+  if (isLoading) {
+    drawOverlayBall.classList.add('draw-overlay__ball--loading');
+  } else {
+    drawOverlayBall.classList.remove('draw-overlay__ball--loading');
+  }
+}
+
+async function prepareSponsorForNextDraw() {
+  const sponsors = await loadSponsors();
+
+  if (!Array.isArray(sponsors) || sponsors.length === 0) {
+    state.currentSponsor = null;
+    state.lastSponsorKey = null;
+    applySponsorToOverlay(null);
+    return;
+  }
+
+  const sponsor = pickRandomSponsor(state.lastSponsorKey);
+  state.currentSponsor = sponsor;
+  state.lastSponsorKey = getSponsorKey(sponsor);
+  applySponsorToOverlay(sponsor);
+}
 
 function syncHistoryPanelToLayout(options = {}) {
   const { immediate = false } = options;
@@ -267,6 +654,11 @@ function restoreDrawStateFromStorage() {
     const seen = new Set();
     let latestEntry = null;
 
+    state.drawnNumbers = new Set();
+    state.sponsorByNumber.clear();
+
+    const normalizedHistory = [];
+
     history.forEach((item) => {
       if (
         !item ||
@@ -293,8 +685,13 @@ function restoreDrawStateFromStorage() {
       }
 
       seen.add(number);
-      markNumberDrawn(entry, { animate: false });
-      latestEntry = entry;
+      const sponsorData = cloneSponsorData(item.sponsor);
+      normalizedHistory.push({
+        number,
+        italian: entry.italian || '',
+        dialect: entry.dialect || '',
+        sponsor: sponsorData || null,
+      });
     });
 
     if (limitSet) {
@@ -314,9 +711,34 @@ function restoreDrawStateFromStorage() {
         }
 
         seen.add(number);
-        markNumberDrawn(entry, { animate: false });
-        latestEntry = entry;
+        normalizedHistory.push({
+          number,
+          italian: entry.italian || '',
+          dialect: entry.dialect || '',
+          sponsor: null,
+        });
       });
+    }
+
+    normalizedHistory.forEach((record) => {
+      const entry = numbersMap.get(record.number);
+      if (!entry) {
+        return;
+      }
+
+      markNumberDrawn(entry, {
+        animate: false,
+        sponsor: record.sponsor,
+        recordHistory: false,
+      });
+      latestEntry = entry;
+    });
+
+    state.drawHistory = normalizedHistory;
+    updateDrawHistory();
+
+    if (normalizedHistory.length > 0) {
+      persistDrawState();
     }
 
     state.storageErrorMessage = '';
@@ -338,6 +760,7 @@ async function loadNumbers() {
     state.numbers = data.numbers.sort((a, b) => a.number - b.number);
     state.drawnNumbers = new Set();
     state.drawHistory = [];
+    state.sponsorByNumber = new Map();
     state.storageErrorMessage = '';
     renderBoard();
     updateDrawHistory();
@@ -415,6 +838,14 @@ function getNumberImage(entry) {
   return buildNumberImage(entry.number);
 }
 
+function getEntryByNumber(number) {
+  if (!Number.isInteger(number)) {
+    return null;
+  }
+
+  return state.numbers.find((item) => item.number === number) || null;
+}
+
 
 function handleSelection(
   entry,
@@ -440,7 +871,7 @@ function markNumberDrawn(entry, options = {}) {
     return;
   }
 
-  const { animate = false } = options;
+  const { animate = false, sponsor: sponsorOverride = null, recordHistory = true } = options;
   const number = entry.number;
 
   if (state.drawnNumbers.has(number)) {
@@ -448,13 +879,24 @@ function markNumberDrawn(entry, options = {}) {
   }
 
   state.drawnNumbers.add(number);
-  state.drawHistory.push({
-    number,
-    italian: entry.italian || '',
-    dialect: entry.dialect || '',
-  });
-  updateDrawHistory();
-  persistDrawState();
+
+  const sponsorData = cloneSponsorData(sponsorOverride || state.currentSponsor);
+  state.sponsorByNumber.set(number, sponsorData);
+
+  if (recordHistory) {
+    state.drawHistory.push({
+      number,
+      italian: entry.italian || '',
+      dialect: entry.dialect || '',
+      sponsor: sponsorData || null,
+    });
+  }
+
+  if (recordHistory) {
+    updateDrawHistory();
+    persistDrawState();
+  }
+
   if (state.storageErrorMessage) {
     updateDrawStatus();
   }
@@ -465,13 +907,23 @@ function markNumberDrawn(entry, options = {}) {
     cell.setAttribute('aria-pressed', 'true');
     if (animate) {
       cell.classList.add('board-cell--just-drawn');
-      const handleAnimationEnd = (event) => {
-        if (event.animationName === 'boardCellPop') {
-          cell.classList.remove('board-cell--just-drawn');
-          cell.removeEventListener('animationend', handleAnimationEnd);
+      let fallbackTimeout = null;
+      const finalize = () => {
+        cell.classList.remove('board-cell--just-drawn');
+        cell.removeEventListener('animationend', handleAnimationEnd);
+        if (fallbackTimeout !== null) {
+          window.clearTimeout(fallbackTimeout);
+          fallbackTimeout = null;
         }
       };
+      const handleAnimationEnd = (event) => {
+        if (event?.animationName && event.animationName !== 'boardCellCelebrate') {
+          return;
+        }
+        finalize();
+      };
       cell.addEventListener('animationend', handleAnimationEnd);
+      fallbackTimeout = window.setTimeout(finalize, 900);
     }
   }
 }
@@ -501,22 +953,44 @@ async function handleDraw() {
 
   const randomIndex = Math.floor(Math.random() * remaining.length);
   const entry = remaining[randomIndex];
-  markNumberDrawn(entry, { animate: true });
 
   state.isAnimatingDraw = true;
   let restoreDrawButton = false;
-  if (elements.drawButton) {
-    restoreDrawButton = !elements.drawButton.disabled;
-    elements.drawButton.disabled = true;
-  }
+  let markRecorded = false;
+  let preparationError = null;
 
   try {
-    await showDrawAnimation(entry);
+    await prepareSponsorForNextDraw();
+
+    if (elements.drawButton) {
+      restoreDrawButton = !elements.drawButton.disabled;
+      elements.drawButton.disabled = true;
+    }
+
+    try {
+      await showDrawAnimation(entry);
+    } catch (animationError) {
+      console.warn('Errore durante l\'animazione di estrazione', animationError);
+    }
+
+    markNumberDrawn(entry, { animate: true });
+    markRecorded = true;
+  } catch (error) {
+    preparationError = error;
   } finally {
     state.isAnimatingDraw = false;
     if (elements.drawButton && restoreDrawButton) {
       elements.drawButton.disabled = false;
     }
+  }
+
+  if (!markRecorded) {
+    markNumberDrawn(entry, { animate: true });
+    markRecorded = true;
+  }
+
+  if (preparationError) {
+    console.warn('Impossibile preparare l\'estrazione', preparationError);
   }
 
   handleSelection(entry, state.cellsByNumber.get(entry.number), { fromDraw: true });
@@ -638,11 +1112,15 @@ function resetGame() {
     elements.drawOverlay.setAttribute('hidden', '');
     elements.drawOverlay.setAttribute('aria-hidden', 'true');
     if (elements.drawOverlayBall) {
-      elements.drawOverlayBall.classList.remove('draw-overlay__ball--animate');
+      elements.drawOverlayBall.classList.remove('draw-overlay__ball--active');
     }
   }
 
   state.isAnimatingDraw = false;
+
+  state.currentSponsor = null;
+  state.lastSponsorKey = null;
+  applySponsorToOverlay(null);
 
   if (state.currentUtterance && 'speechSynthesis' in window) {
     window.speechSynthesis.cancel();
@@ -651,6 +1129,7 @@ function resetGame() {
 
   state.drawnNumbers.clear();
   state.drawHistory = [];
+  state.sponsorByNumber.clear();
   updateDrawHistory();
   clearPersistedDrawState();
   if (state.storageErrorMessage) {
@@ -677,17 +1156,55 @@ function resetGame() {
 
 function openModal(entry, options = {}) {
   const { fromDraw = false } = options;
+
   elements.modalNumber.textContent = `Numero ${entry.number}`;
-  elements.modalItalian.textContent = entry.italian || '—';
-  elements.modalDialect.textContent = entry.dialect || 'Da completare';
-  elements.modalDialect.classList.toggle('missing', !entry.dialect);
+
+  const italianText = entry.italian || '—';
+  const dialectText = entry.dialect || 'Da completare';
+
+  elements.modalItalian.textContent = italianText;
+  elements.modalItalian.classList.toggle('number-popup__text--missing', !entry.italian);
+
+  elements.modalDialect.textContent = dialectText;
+  elements.modalDialect.classList.toggle('number-popup__text--missing', !entry.dialect);
+
+  if (elements.modalItalianPlay) {
+    const hasItalian = Boolean(entry.italian);
+    elements.modalItalianPlay.disabled = !hasItalian;
+    if (hasItalian) {
+      elements.modalItalianPlay.removeAttribute('aria-disabled');
+    } else {
+      elements.modalItalianPlay.setAttribute('aria-disabled', 'true');
+    }
+  }
+
+  if (elements.modalDialectPlay) {
+    const hasDialect = Boolean(entry.dialect);
+    elements.modalDialectPlay.disabled = !hasDialect;
+    if (hasDialect) {
+      elements.modalDialectPlay.removeAttribute('aria-disabled');
+    } else {
+      elements.modalDialectPlay.setAttribute('aria-disabled', 'true');
+    }
+  }
+
+  const hasImage = Boolean(entry.image);
   elements.modalImage.src = getNumberImage(entry);
-  elements.modalImage.alt = entry.image
+  elements.modalImage.alt = hasImage
     ? entry.italian
       ? `Illustrazione del numero ${entry.number}: ${entry.italian}`
       : `Illustrazione del numero ${entry.number}`
     : `Segnaposto per il numero ${entry.number}`;
-  elements.modalCaption.textContent = entry.italian || `Numero ${entry.number}`;
+
+  if (elements.modalImageFrame) {
+    elements.modalImageFrame.classList.toggle(
+      'number-popup__image-frame--placeholder',
+      !hasImage
+    );
+  }
+
+  const sponsor = resolveModalSponsor(entry);
+  applySponsorToModal(sponsor);
 
   elements.modal.removeAttribute('hidden');
   elements.modal.classList.add('modal--visible');
@@ -699,7 +1216,7 @@ function openModal(entry, options = {}) {
     const total = state.numbers.length;
     const drawnCount = state.drawnNumbers.size;
     const remaining = Math.max(total - drawnCount, 0);
-    const shouldShow = fromDraw && remaining > 0;
+    const shouldShow = (fromDraw || state.isAnimatingDraw) && remaining > 0;
 
     elements.modalNext.hidden = !shouldShow;
     elements.modalNext.disabled = !shouldShow;
@@ -723,185 +1240,219 @@ function closeModal(options = {}) {
   if (elements.modalNext) {
     elements.modalNext.hidden = true;
   }
+  applySponsorToModal(null);
+  if (elements.modalImageFrame) {
+    elements.modalImageFrame.classList.remove('number-popup__image-frame--placeholder');
+  }
   if (returnFocus && state.selected) {
     state.selected.focus();
   }
 }
 
-function showDrawAnimation(entry) {
-  return new Promise((resolve) => {
-    const { drawOverlay, drawOverlayNumber, drawOverlayBall, drawOverlayLabel } =
-      elements;
-    const targetCell = state.cellsByNumber.get(entry.number);
+async function animateBallFlight(entry, fromRect, targetCell, options = {}) {
+  if (!targetCell || !fromRect) {
+    return;
+  }
 
-    if (!drawOverlay || !drawOverlayNumber || !drawOverlayBall) {
-      if (targetCell) {
-        targetCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-      }
+  const { prefersReducedMotion = false, duration = DRAW_TIMELINE.flightDuration } = options;
+
+  targetCell.classList.add('board-cell--incoming');
+
+  const finalize = () => {
+    targetCell.classList.remove('board-cell--incoming');
+  };
+
+  try {
+    targetCell.scrollIntoView({
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      block: 'center',
+      inline: 'center',
+    });
+  } catch (error) {
+    targetCell.scrollIntoView();
+  }
+
+  await waitForScrollIdle({
+    timeout: prefersReducedMotion ? 320 : 900,
+    idleThreshold: prefersReducedMotion ? 80 : 160,
+  });
+
+  if (prefersReducedMotion) {
+    await sleep(220);
+    finalize();
+    return;
+  }
+
+  const flightBall = document.createElement('div');
+  flightBall.className = 'draw-flight-ball';
+  flightBall.setAttribute('aria-hidden', 'true');
+  const numberSpan = document.createElement('span');
+  numberSpan.textContent = entry.number;
+  flightBall.appendChild(numberSpan);
+
+  const startX = fromRect.left + fromRect.width / 2;
+  const startY = fromRect.top + fromRect.height / 2;
+  flightBall.style.width = `${fromRect.width}px`;
+  flightBall.style.height = `${fromRect.height}px`;
+  flightBall.style.left = `${startX}px`;
+  flightBall.style.top = `${startY}px`;
+  document.body.appendChild(flightBall);
+
+  if (typeof flightBall.animate !== 'function') {
+    await sleep(duration);
+    flightBall.remove();
+    finalize();
+    return;
+  }
+
+  const targetRect = targetCell.getBoundingClientRect();
+  const endX = targetRect.left + targetRect.width / 2;
+  const endY = targetRect.top + targetRect.height / 2;
+  const deltaX = endX - startX;
+  const deltaY = endY - startY;
+  const scale = Math.max(Math.min(targetRect.width / fromRect.width || 1, 1.35), 0.6);
+
+  await new Promise((resolve) => {
+    const cleanup = () => {
+      flightBall.remove();
+      finalize();
       resolve();
-      return;
-    }
-
-    const prefersReducedMotion =
-      window.matchMedia &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    let overlayHidden = false;
-
-    const cleanupOverlay = (immediate = false) => {
-      if (!drawOverlay || overlayHidden) {
-        return;
-      }
-
-      drawOverlay.classList.remove('draw-overlay--visible');
-      if (drawOverlayBall) {
-        drawOverlayBall.classList.remove('draw-overlay__ball--animate');
-      }
-
-      const hide = () => {
-        if (overlayHidden) {
-          return;
-        }
-        overlayHidden = true;
-        drawOverlay.setAttribute('hidden', '');
-        drawOverlay.setAttribute('aria-hidden', 'true');
-      };
-
-      if (immediate) {
-        hide();
-      } else {
-        window.setTimeout(hide, 200);
-      }
     };
 
-    const finish = () => {
-      cleanupOverlay(true);
-      if (targetCell) {
-        targetCell.classList.remove('board-cell--incoming');
-      }
-      resolve();
-    };
-
-    const startFlight = (fromRect) => {
-      if (!targetCell) {
-        finish();
-        return;
-      }
-
-      targetCell.classList.add('board-cell--incoming');
-
-      const flightBall = document.createElement('div');
-      flightBall.className = 'draw-overlay__ball draw-flight-ball';
-      const numberSpan = document.createElement('span');
-      numberSpan.textContent = entry.number;
-      flightBall.appendChild(numberSpan);
-
-      const startX = fromRect.left + fromRect.width / 2;
-      const startY = fromRect.top + fromRect.height / 2;
-      flightBall.style.width = `${fromRect.width}px`;
-      flightBall.style.height = `${fromRect.height}px`;
-      flightBall.style.left = `${startX}px`;
-      flightBall.style.top = `${startY}px`;
-      document.body.appendChild(flightBall);
-
-      if (typeof flightBall.animate !== 'function') {
-        flightBall.remove();
-        finish();
-        return;
-      }
-
-      const animateTowardCell = () => {
-        const targetRect = targetCell.getBoundingClientRect();
-        const endX = targetRect.left + targetRect.width / 2;
-        const endY = targetRect.top + targetRect.height / 2;
-        const deltaX = endX - startX;
-        const deltaY = endY - startY;
-        const scale = Math.max(
-          Math.min(targetRect.width / fromRect.width || 1, 1.2),
-          0.55
-        );
-
-        const animation = flightBall.animate(
-          [
-            { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
-            {
-              transform: `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(${scale})`,
-              opacity: 0.94,
-            },
-          ],
+    try {
+      const animation = flightBall.animate(
+        [
+          { transform: 'translate(-50%, -50%) scale(0.98)', opacity: 0.98 },
           {
-            duration: 720,
-            easing: 'cubic-bezier(0.2, 0.9, 0.3, 1.05)',
-            fill: 'forwards',
-          }
-        );
-
-        const complete = () => {
-          flightBall.remove();
-          finish();
-        };
-
-        animation.addEventListener('finish', complete, { once: true });
-        animation.addEventListener('cancel', complete, { once: true });
-      };
-
-      if (!prefersReducedMotion) {
-        targetCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-        window.setTimeout(animateTowardCell, 240);
-      } else {
-        animateTowardCell();
-      }
-    };
-
-    drawOverlayNumber.textContent = entry.number;
-    if (drawOverlayLabel) {
-      drawOverlayLabel.textContent = 'Pesca dal sacchetto…';
-    }
-    drawOverlay.setAttribute('aria-hidden', 'false');
-    drawOverlay.removeAttribute('hidden');
-
-    if (prefersReducedMotion) {
-      drawOverlay.classList.add('draw-overlay--visible');
-      if (targetCell) {
-        targetCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-      }
-      window.setTimeout(() => {
-        if (drawOverlayLabel) {
-          drawOverlayLabel.textContent = `Numero ${entry.number}!`;
+            transform: `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(${scale})`,
+            opacity: 0.94,
+          },
+        ],
+        {
+          duration,
+          easing: 'cubic-bezier(0.18, 0.82, 0.24, 1.06)',
+          fill: 'forwards',
         }
-        finish();
-      }, 450);
-      return;
+      );
+
+      animation.addEventListener('finish', cleanup, { once: true });
+      animation.addEventListener('cancel', cleanup, { once: true });
+    } catch (error) {
+      cleanup();
     }
-
-    const activate = () => {
-      drawOverlay.classList.add('draw-overlay--visible');
-
-      drawOverlayBall.classList.remove('draw-overlay__ball--animate');
-      // force reflow to restart the animation when needed
-      void drawOverlayBall.offsetWidth;
-      drawOverlayBall.classList.add('draw-overlay__ball--animate');
-    };
-
-    window.requestAnimationFrame(activate);
-
-    drawOverlayBall.addEventListener(
-      'animationend',
-      () => {
-        if (drawOverlayLabel) {
-          drawOverlayLabel.textContent = `Numero ${entry.number}!`;
-        }
-        const fromRect = drawOverlayBall.getBoundingClientRect();
-        cleanupOverlay();
-        startFlight(fromRect);
-      },
-      { once: true }
-    );
   });
 }
 
-function speakEntry(entry) {
+async function showDrawAnimation(entry) {
+  const { drawOverlay, drawOverlayNumber, drawOverlayBall, drawOverlayLabel } = elements;
+  const targetCell = state.cellsByNumber.get(entry.number);
+
+  if (!drawOverlay || !drawOverlayNumber || !drawOverlayBall) {
+    if (targetCell) {
+      targetCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+    }
+    return;
+  }
+
+  const prefersReducedMotion =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const hideOverlay = (immediate = false) => {
+    drawOverlay.classList.remove('draw-overlay--visible');
+    drawOverlay.classList.remove('draw-overlay--leaving');
+    drawOverlayBall.classList.remove('draw-overlay__ball--active');
+    const finalize = () => {
+      drawOverlay.setAttribute('aria-hidden', 'true');
+      drawOverlay.hidden = true;
+    };
+    if (immediate) {
+      finalize();
+    } else {
+      window.setTimeout(finalize, 20);
+    }
+  };
+
+  setOverlayBallLoading(false);
+  drawOverlayNumber.textContent = '';
+  if (drawOverlayLabel) {
+    drawOverlayLabel.textContent = "Preparati all'estrazione…";
+  }
+
+  drawOverlay.hidden = false;
+  drawOverlay.setAttribute('aria-hidden', 'false');
+  drawOverlay.classList.remove('draw-overlay--leaving');
+  drawOverlay.classList.add('draw-overlay--visible');
+
+  drawOverlayBall.classList.remove('draw-overlay__ball--active');
+  void drawOverlayBall.offsetWidth;
+  drawOverlayBall.classList.add('draw-overlay__ball--active');
+
+  try {
+    if (prefersReducedMotion) {
+      if (drawOverlayLabel) {
+        drawOverlayLabel.textContent = 'Numero in arrivo…';
+      }
+      setOverlayBallLoading(true);
+      const fromRect = drawOverlayBall.getBoundingClientRect();
+      await sleep(DRAW_TIMELINE.reducedMotionHold);
+      setOverlayBallLoading(false);
+      drawOverlayNumber.textContent = entry.number;
+      if (drawOverlayLabel) {
+        drawOverlayLabel.textContent = `Numero ${entry.number}!`;
+      }
+      await animateBallFlight(entry, fromRect, targetCell, {
+        prefersReducedMotion: true,
+        duration: 260,
+      });
+      drawOverlay.classList.add('draw-overlay--leaving');
+      await sleep(DRAW_TIMELINE.overlayHideDelay);
+      return;
+    }
+
+    await sleep(DRAW_TIMELINE.stageIntro);
+    if (drawOverlayLabel) {
+      drawOverlayLabel.textContent = 'Numero in arrivo…';
+    }
+    setOverlayBallLoading(true);
+
+    await sleep(DRAW_TIMELINE.incomingHold);
+    setOverlayBallLoading(false);
+    drawOverlayNumber.textContent = entry.number;
+    if (drawOverlayLabel) {
+      drawOverlayLabel.textContent = `Numero ${entry.number}!`;
+    }
+
+    await sleep(DRAW_TIMELINE.celebrationHold);
+    const fromRect = drawOverlayBall.getBoundingClientRect();
+
+    drawOverlay.classList.add('draw-overlay--leaving');
+    if (drawOverlayLabel) {
+      drawOverlayLabel.textContent = 'Segna sul tabellone…';
+    }
+
+    await sleep(DRAW_TIMELINE.flightDelay);
+    await animateBallFlight(entry, fromRect, targetCell, {
+      duration: DRAW_TIMELINE.flightDuration,
+      prefersReducedMotion,
+    });
+
+    await sleep(DRAW_TIMELINE.overlayHideDelay);
+  } finally {
+    setOverlayBallLoading(false);
+    hideOverlay(true);
+  }
+}
+
+function speakText(text, options = {}) {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+    return;
+  }
+
+  const content = typeof text === 'string' ? text.trim() : '';
+
+  if (!content) {
     return;
   }
 
@@ -917,15 +1468,14 @@ function speakEntry(entry) {
     window.speechSynthesis.cancel();
   }
 
-  const parts = [String(entry.number)];
-  if (entry.dialect) {
-    parts.push(entry.dialect);
-  }
-
-  const utterance = new SpeechSynthesisUtterance(parts.join('. '));
-  utterance.lang = 'it-IT';
-  utterance.rate = 0.92;
-  utterance.pitch = 1.0;
+  const { lang = 'it-IT', rate = 0.92, pitch = 1.0, prefix = '' } = options;
+  const prefixText = typeof prefix === 'string' ? prefix.trim() : '';
+  const utterance = new SpeechSynthesisUtterance(
+    prefixText ? `${prefixText} ${content}` : content
+  );
+  utterance.lang = lang;
+  utterance.rate = rate;
+  utterance.pitch = pitch;
 
   state.currentUtterance = utterance;
   utterance.addEventListener(
@@ -946,7 +1496,45 @@ function speakEntry(entry) {
     },
     { once: true }
   );
+
   window.speechSynthesis.speak(utterance);
+}
+
+function speakEntry(entry) {
+  if (!entry) {
+    return;
+  }
+
+  const parts = [String(entry.number)];
+  if (entry.dialect) {
+    parts.push(entry.dialect);
+  }
+
+  speakText(parts.join('. '), { lang: 'it-IT', rate: 0.92 });
+}
+
+function speakDialectText(entry) {
+  if (!entry || !entry.dialect) {
+    return;
+  }
+
+  speakText(entry.dialect, {
+    lang: 'it-IT',
+    rate: 0.92,
+    prefix: `Numero ${entry.number}.`,
+  });
+}
+
+function speakItalianText(entry) {
+  if (!entry || !entry.italian) {
+    return;
+  }
+
+  speakText(entry.italian, {
+    lang: 'it-IT',
+    rate: 0.96,
+    prefix: `Numero ${entry.number}.`,
+  });
 }
 
 function updateDrawStatus(latestEntry) {
@@ -1000,15 +1588,33 @@ function updateDrawStatus(latestEntry) {
 
 function setupEventListeners() {
   elements.modalClose.addEventListener('click', closeModal);
-  elements.modalPlay.addEventListener('click', () => {
-    if (state.selected) {
-      const number = Number(state.selected.dataset.number);
-      const entry = state.numbers.find((item) => item.number === number);
-      if (entry) {
-        speakEntry(entry);
+  if (elements.modalDialectPlay) {
+    elements.modalDialectPlay.addEventListener('click', () => {
+      if (!state.selected) {
+        return;
       }
-    }
-  });
+
+      const number = Number(state.selected.dataset.number);
+      const entry = getEntryByNumber(number);
+      if (entry) {
+        speakDialectText(entry);
+      }
+    });
+  }
+
+  if (elements.modalItalianPlay) {
+    elements.modalItalianPlay.addEventListener('click', () => {
+      if (!state.selected) {
+        return;
+      }
+
+      const number = Number(state.selected.dataset.number);
+      const entry = getEntryByNumber(number);
+      if (entry) {
+        speakItalianText(entry);
+      }
+    });
+  }
 
   if (elements.modalNext) {
     elements.modalNext.addEventListener('click', () => {
@@ -1083,6 +1689,7 @@ function init() {
   setupEventListeners();
   syncHistoryPanelToLayout({ immediate: true });
   loadNumbers();
+  loadSponsors();
 }
 
 if (document.readyState === 'loading') {
