@@ -98,6 +98,17 @@
           </div>
         </div>
       </section>
+      <section
+        class="sponsor-section"
+        id="sponsor-showcase"
+        hidden
+        aria-hidden="true"
+      >
+        <div class="sponsor-section__content">
+          <h2 class="sponsor-section__title">Grazie al contributo di</h2>
+          <div class="sponsor-gallery" id="sponsor-showcase-list"></div>
+        </div>
+      </section>
     </main>
 
     <div
@@ -160,10 +171,66 @@
         >
           <span aria-hidden="true">&times;</span>
         </button>
-        <div class="number-popup__hero">
-          <div class="number-popup__image-frame" id="modal-image-frame">
-            <img id="modal-image" alt="" decoding="async" loading="lazy" />
+        <div class="number-popup__layout">
+          <div class="number-popup__media">
+            <div class="number-popup__image-frame" id="modal-image-frame">
+              <div class="number-popup__image-placeholder" aria-hidden="true">
+                <span class="number-popup__placeholder-orb"></span>
+              </div>
+              <img id="modal-image" alt="" decoding="async" loading="lazy" />
+            </div>
           </div>
+          <div class="number-popup__details">
+            <div class="number-popup__header">
+              <span class="number-popup__eyebrow" id="modal-eyebrow"
+                >Numero estratto</span
+              >
+              <p id="modal-number" class="number-popup__number"></p>
+            </div>
+            <div class="number-popup__phrases">
+              <article class="number-popup__phrase number-popup__phrase--dialect">
+                <h3 class="number-popup__phrase-title">In nojano</h3>
+                <div class="number-popup__text-row">
+                  <p
+                    id="modal-dialect"
+                    class="number-popup__text number-popup__text--dialect"
+                  ></p>
+                  <button
+                    type="button"
+                    class="number-popup__play"
+                    id="modal-dialect-play"
+                    aria-label="Ascolta pronuncia in nojano"
+                  >
+                    <span aria-hidden="true"></span>
+                  </button>
+                </div>
+              </article>
+              <article class="number-popup__phrase number-popup__phrase--italian">
+                <h3 class="number-popup__phrase-title">In italiano</h3>
+                <div class="number-popup__text-row">
+                  <p
+                    id="modal-italian"
+                    class="number-popup__text number-popup__text--italian"
+                  ></p>
+                  <button
+                    type="button"
+                    class="number-popup__play number-popup__play--secondary"
+                    id="modal-italian-play"
+                    aria-label="Ascolta pronuncia in italiano"
+                  >
+                    <span aria-hidden="true"></span>
+                  </button>
+                </div>
+              </article>
+            </div>
+            <div class="number-popup__actions">
+              <button type="button" class="number-popup__action" id="modal-next" hidden>
+                Estrai successivo
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="number-popup__footer">
           <div
             id="modal-sponsor-block"
             class="number-popup__sponsor"
@@ -184,50 +251,6 @@
             </a>
           </div>
         </div>
-        <div class="number-popup__content">
-          <p id="modal-number" class="number-popup__number"></p>
-          <div class="number-popup__phrases">
-            <div class="number-popup__phrase number-popup__phrase--dialect">
-              <h3 class="number-popup__phrase-title">In nojano</h3>
-              <div class="number-popup__text-row">
-                <p
-                  id="modal-dialect"
-                  class="number-popup__text number-popup__text--dialect"
-                ></p>
-                <button
-                  type="button"
-                  class="number-popup__play"
-                  id="modal-dialect-play"
-                  aria-label="Ascolta pronuncia in nojano"
-                >
-                  <span aria-hidden="true"></span>
-                </button>
-              </div>
-            </div>
-            <div class="number-popup__phrase number-popup__phrase--italian">
-              <h3 class="number-popup__phrase-title">In italiano</h3>
-              <div class="number-popup__text-row">
-                <p
-                  id="modal-italian"
-                  class="number-popup__text number-popup__text--italian"
-                ></p>
-                <button
-                  type="button"
-                  class="number-popup__play number-popup__play--secondary"
-                  id="modal-italian-play"
-                  aria-label="Ascolta pronuncia in italiano"
-                >
-                  <span aria-hidden="true"></span>
-                </button>
-              </div>
-            </div>
-          </div>
-          <div class="number-popup__actions">
-            <button type="button" class="number-popup__action" id="modal-next" hidden>
-              Estrai successivo
-            </button>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -237,16 +260,5 @@
       </button>
     </template>
 
-    <footer
-      class="app-footer"
-      id="sponsor-showcase"
-      hidden
-      aria-hidden="true"
-    >
-      <div class="app-footer__content">
-        <h2 class="app-footer__title">Grazie al contributo di</h2>
-        <div class="sponsor-gallery" id="sponsor-showcase-list"></div>
-      </div>
-    </footer>
   </body>
 </html>

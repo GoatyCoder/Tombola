@@ -22,6 +22,7 @@ const elements = {
   template: document.querySelector('#board-cell-template'),
   modal: document.querySelector('#number-modal'),
   modalNumber: document.querySelector('#modal-number'),
+  modalEyebrow: document.querySelector('#modal-eyebrow'),
   modalItalian: document.querySelector('#modal-italian'),
   modalDialect: document.querySelector('#modal-dialect'),
   modalImage: document.querySelector('#modal-image'),
@@ -403,6 +404,36 @@ function resolveModalSponsor(entry) {
   const previousKey = state.lastSponsorKey || (state.currentSponsor ? getSponsorKey(state.currentSponsor) : null);
   const candidate = pickRandomSponsor(previousKey);
   return cloneSponsorData(candidate);
+}
+
+function ensureModalSponsor(entry) {
+  const immediateSponsor = resolveModalSponsor(entry);
+
+  if (immediateSponsor) {
+    applySponsorToModal(immediateSponsor);
+    return;
+  }
+
+  applySponsorToModal(null);
+
+  const pending =
+    state.sponsorLoadPromise ||
+    (Array.isArray(state.sponsors) && state.sponsors.length > 0
+      ? Promise.resolve(state.sponsors)
+      : loadSponsors());
+
+  if (!pending || typeof pending.then !== 'function') {
+    return;
+  }
+
+  pending
+    .then(() => {
+      const refreshed = resolveModalSponsor(entry);
+      applySponsorToModal(refreshed);
+    })
+    .catch(() => {
+      applySponsorToModal(null);
+    });
 }
 
 function setOverlayBallLoading(isLoading) {
@@ -1159,6 +1190,13 @@ function openModal(entry, options = {}) {
 
   elements.modalNumber.textContent = `Numero ${entry.number}`;
 
+  if (elements.modalEyebrow) {
+    const isDrawn = state.drawnNumbers.has(entry.number);
+    elements.modalEyebrow.textContent = isDrawn
+      ? 'Numero estratto'
+      : 'Numero della tombola';
+  }
+
   const italianText = entry.italian || '—';
   const dialectText = entry.dialect || 'Da completare';
 
@@ -1203,8 +1241,7 @@ function openModal(entry, options = {}) {
     );
   }
 
-  const sponsor = resolveModalSponsor(entry);
-  applySponsorToModal(sponsor);
+  ensureModalSponsor(entry);
 
   elements.modal.removeAttribute('hidden');
   elements.modal.classList.add('modal--visible');
