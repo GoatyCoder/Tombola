@@ -237,6 +237,14 @@ button {
   overflow: hidden;
 }
 
+.board-summary__card--progress {
+  gap: clamp(0.6rem, 2vw, 0.85rem);
+}
+
+.board-summary__card--audio {
+  padding-block: clamp(1.05rem, 3vw, 1.35rem);
+}
+
 .board-summary__card--highlight {
   color: var(--surface);
   background: radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.24), rgba(67, 10, 18, 0.9)),
@@ -252,16 +260,6 @@ button {
   border-radius: calc(var(--radius-md) - 0.35rem);
   border: 1px solid rgba(255, 255, 255, 0.28);
   pointer-events: none;
-}
-
-.board-summary__card--actions {
-  gap: 0.8rem;
-  align-content: start;
-}
-
-.board-summary__text {
-  display: grid;
-  gap: 0.4rem;
 }
 
 .board-summary__label {
@@ -295,42 +293,90 @@ button {
   color: var(--brand-primary);
 }
 
-.board-summary__button {
-  justify-self: stretch;
+.board-summary__header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  padding: 0.65rem 1.4rem;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.board-summary__history-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.95rem;
   border-radius: 999px;
-  font-size: 0.95rem;
+  font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.02em;
-  background: var(--surface-soft);
+  background: rgba(155, 27, 43, 0.1);
   color: var(--brand-primary);
   border: 1px solid rgba(155, 27, 43, 0.28);
-  box-shadow: 0 12px 22px rgba(45, 16, 21, 0.12);
+  box-shadow: 0 10px 18px rgba(45, 16, 21, 0.12);
   cursor: pointer;
   transition: transform var(--transition-base), box-shadow var(--transition-base),
     background var(--transition-base), color var(--transition-base),
     border-color var(--transition-base);
 }
 
-.board-summary__button:hover,
-.board-summary__button:focus-visible {
+.board-summary__history-button:hover,
+.board-summary__history-button:focus-visible {
   transform: translateY(-1px);
-  background: rgba(155, 27, 43, 0.08);
+  background: rgba(155, 27, 43, 0.16);
   border-color: rgba(155, 27, 43, 0.42);
-  box-shadow: 0 18px 32px rgba(45, 16, 21, 0.16);
+  box-shadow: 0 16px 26px rgba(45, 16, 21, 0.16);
 }
 
-.board-summary__button:focus-visible {
+.board-summary__history-button:focus-visible {
   outline: 3px solid rgba(155, 27, 43, 0.32);
   outline-offset: 3px;
 }
 
-.board-summary__button:active {
+.board-summary__history-button:active {
   transform: translateY(0);
+}
+
+.board-summary__history-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.board-summary__actions {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.35rem;
+}
+
+.board-summary__actions .board-panel__draw,
+.board-summary__actions .board-panel__reset {
+  width: 100%;
+  justify-content: center;
+  display: inline-flex;
+  align-items: center;
+}
+
+.board-summary__audio {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(1rem, 3vw, 1.6rem);
+}
+
+.board-summary__audio-text {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.board-summary__audio .board-summary__detail {
+  font-size: 0.95rem;
+  opacity: 0.85;
+}
+
+@media (min-width: 541px) {
+  .board-summary__history-button {
+    display: none;
+  }
 }
 
 .board-summary__progress {
@@ -357,26 +403,6 @@ button {
   transform-origin: left center;
   width: 0%;
   transition: width 0.35s ease;
-}
-
-.board-panel__controls {
-  display: grid;
-  gap: 0.8rem;
-  justify-items: end;
-  align-content: start;
-}
-
-.board-panel__toolbar {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-}
-
-.board-panel__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.65rem;
-  justify-content: flex-end;
 }
 
 .board-panel__draw,
@@ -443,6 +469,7 @@ button {
   padding: 0;
   cursor: pointer;
   box-shadow: 0 10px 22px rgba(45, 16, 21, 0.12);
+  flex-shrink: 0;
   transition: background var(--transition-base),
     border-color var(--transition-base), transform var(--transition-base),
     box-shadow var(--transition-base), color var(--transition-base);

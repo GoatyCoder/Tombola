@@ -65,8 +65,24 @@
                   In attesa della prima estrazione
                 </p>
               </article>
-              <article class="board-summary__card">
-                <p class="board-summary__label">Numeri estratti</p>
+              <article class="board-summary__card board-summary__card--progress">
+                <div class="board-summary__header">
+                  <p class="board-summary__label">Numeri estratti</p>
+                  <button
+                    type="button"
+                    id="history-toggle"
+                    class="board-summary__history-button"
+                    aria-expanded="false"
+                    aria-controls="history-panel"
+                    data-label-mobile-open="Chiudi cronologia"
+                    data-label-mobile-closed="Apri cronologia"
+                    data-label-desktop="Vai alla cronologia"
+                  >
+                    <span class="board-summary__history-text" data-history-label>
+                      Apri cronologia
+                    </span>
+                  </button>
+                </div>
                 <p id="draw-progress-value" class="board-summary__metric">0/0</p>
                 <div
                   id="draw-progress-bar"
@@ -78,82 +94,68 @@
                 >
                   <span class="board-summary__progress-fill" style="width: 0%"></span>
                 </div>
-              </article>
-              <article class="board-summary__card board-summary__card--actions">
-                <div class="board-summary__text">
-                  <p class="board-summary__label">Cronologia</p>
-                  <p class="board-summary__detail">
-                    Consulta l'ordine di uscita dei numeri estratti.
-                  </p>
+                <div class="board-summary__actions">
+                  <button
+                    type="button"
+                    id="draw-button"
+                    class="board-panel__draw"
+                    disabled
+                  >
+                    Estrai numero
+                  </button>
+                  <button
+                    type="button"
+                    id="reset-button"
+                    class="board-panel__reset"
+                    disabled
+                  >
+                    Reset partita
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  id="history-toggle"
-                  class="board-summary__button"
-                  aria-expanded="false"
-                  aria-controls="history-panel"
-                  data-label-mobile-open="Chiudi cronologia"
-                  data-label-mobile-closed="Apri cronologia"
-                  data-label-desktop="Vai alla cronologia"
-                >
-                  <span class="board-summary__button-text" data-history-label>Apri cronologia</span>
-                </button>
               </article>
-            </div>
-          </div>
-          <div class="board-panel__controls">
-            <div class="board-panel__toolbar">
-              <button
-                type="button"
-                id="audio-toggle"
-                class="board-panel__audio-toggle"
-                aria-pressed="true"
-                aria-label="Disattiva annuncio audio"
-                title="Disattiva annuncio audio"
-              >
-                <span class="sr-only" data-audio-label>Audio attivo</span>
-                <svg
-                  class="board-panel__audio-icon"
-                  viewBox="0 0 24 24"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <path
-                    class="board-panel__audio-speaker"
-                    d="M5.5 9.5H8l3.5-3.5v12L8 14.5H5.5a1.5 1.5 0 0 1-1.5-1.5v-2a1.5 1.5 0 0 1 1.5-1.5Z"
-                  />
-                  <path
-                    class="board-panel__audio-wave"
-                    d="M15.5 9.5a3 3 0 0 1 0 5"
-                  />
-                  <path
-                    class="board-panel__audio-wave board-panel__audio-wave--strong"
-                    d="M17.8 7.8a6 6 0 0 1 0 8.5"
-                  />
-                  <path
-                    class="board-panel__audio-cross"
-                    d="M16 9l5 5m0-5-5 5"
-                  />
-                </svg>
-              </button>
-            </div>
-            <div class="board-panel__actions">
-              <button
-                type="button"
-                id="draw-button"
-                class="board-panel__draw"
-                disabled
-              >
-                Estrai numero
-              </button>
-              <button
-                type="button"
-                id="reset-button"
-                class="board-panel__reset"
-                disabled
-              >
-                Reset partita
-              </button>
+              <article class="board-summary__card board-summary__card--audio">
+                <div class="board-summary__audio">
+                  <div class="board-summary__audio-text">
+                    <p class="board-summary__label">Audio estrazioni</p>
+                    <p class="board-summary__detail">
+                      Attiva la voce che annuncia il numero in vernacolo.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    id="audio-toggle"
+                    class="board-panel__audio-toggle"
+                    aria-pressed="true"
+                    aria-label="Disattiva annuncio audio"
+                    title="Disattiva annuncio audio"
+                  >
+                    <span class="sr-only" data-audio-label>Audio attivo</span>
+                    <svg
+                      class="board-panel__audio-icon"
+                      viewBox="0 0 24 24"
+                      role="presentation"
+                      aria-hidden="true"
+                    >
+                      <path
+                        class="board-panel__audio-speaker"
+                        d="M5.5 9.5H8l3.5-3.5v12L8 14.5H5.5a1.5 1.5 0 0 1-1.5-1.5v-2a1.5 1.5 0 0 1 1.5-1.5Z"
+                      />
+                      <path
+                        class="board-panel__audio-wave"
+                        d="M15.5 9.5a3 3 0 0 1 0 5"
+                      />
+                      <path
+                        class="board-panel__audio-wave board-panel__audio-wave--strong"
+                        d="M17.8 7.8a6 6 0 0 1 0 8.5"
+                      />
+                      <path
+                        class="board-panel__audio-cross"
+                        d="M16 9l5 5m0-5-5 5"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </article>
             </div>
           </div>
         </header>
