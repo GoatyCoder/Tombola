@@ -581,12 +581,12 @@ function updateHistoryToggleText() {
   const mobileLayout = Boolean(historyMediaMatcher.matches);
   const { dataset } = historyToggle;
 
-  let nextLabel = dataset.labelDesktop || 'Cronologia estrazioni';
+  let nextLabel = dataset.labelDesktop || 'Cronologia';
 
   if (mobileLayout) {
     nextLabel = state.historyOpen
       ? dataset.labelMobileOpen || 'Chiudi cronologia'
-      : dataset.labelMobileClosed || 'Apri cronologia';
+      : dataset.labelMobileClosed || 'Cronologia';
   }
 
   historyToggleLabel.textContent = nextLabel;
