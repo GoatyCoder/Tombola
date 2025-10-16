@@ -3,6 +3,7 @@ const state = {
   selected: null,
   currentUtterance: null,
   cellsByNumber: new Map(),
+  entriesByNumber: new Map(),
   drawnNumbers: new Set(),
   drawHistory: [],
   sponsorByNumber: new Map(),
@@ -51,8 +52,16 @@ const elements = {
   historyEmpty: document.querySelector('#draw-history-empty'),
   historyPanel: document.querySelector('#history-panel'),
   historyToggle: document.querySelector('#history-toggle'),
+  historyToggleLabel: document.querySelector('[data-history-label]'),
   historyScrim: document.querySelector('#history-scrim'),
   audioToggle: document.querySelector('#audio-toggle'),
+  drawProgressValue: document.querySelector('#draw-progress-value'),
+  drawProgressBar: document.querySelector('#draw-progress-bar'),
+  drawProgressFill: document.querySelector(
+    '#draw-progress-bar .board-summary__progress-fill'
+  ),
+  drawLastNumber: document.querySelector('#draw-last-number'),
+  drawLastDetail: document.querySelector('#draw-last-detail'),
 };
 
 const AUDIO_STORAGE_KEY = 'tombola-audio-enabled';
@@ -562,12 +571,36 @@ async function prepareSponsorForNextDraw() {
   applySponsorToOverlay(sponsor);
 }
 
+function updateHistoryToggleText() {
+  const { historyToggle, historyToggleLabel } = elements;
+
+  if (!historyToggle || !historyToggleLabel) {
+    return;
+  }
+
+  const mobileLayout = Boolean(historyMediaMatcher.matches);
+  const { dataset } = historyToggle;
+
+  let nextLabel = dataset.labelDesktop || 'Cronologia estrazioni';
+
+  if (mobileLayout) {
+    nextLabel = state.historyOpen
+      ? dataset.labelMobileOpen || 'Chiudi cronologia'
+      : dataset.labelMobileClosed || 'Apri cronologia';
+  }
+
+  historyToggleLabel.textContent = nextLabel;
+  historyToggle.setAttribute('aria-label', nextLabel);
+  historyToggle.title = nextLabel;
+}
+
 function syncHistoryPanelToLayout(options = {}) {
   const { immediate = false } = options;
   const { historyPanel, historyToggle, historyScrim } = elements;
 
   if (!historyPanel) {
     state.historyOpen = false;
+    updateHistoryToggleText();
     return;
   }
 
@@ -580,6 +613,7 @@ function syncHistoryPanelToLayout(options = {}) {
     if (historyToggle) {
       historyToggle.setAttribute('aria-expanded', 'false');
     }
+    updateHistoryToggleText();
     if (historyScrim) {
       historyScrim.classList.remove('history-scrim--visible');
       historyScrim.hidden = true;
@@ -592,6 +626,7 @@ function syncHistoryPanelToLayout(options = {}) {
   if (historyToggle) {
     historyToggle.setAttribute('aria-expanded', state.historyOpen ? 'true' : 'false');
   }
+  updateHistoryToggleText();
 
   if (!historyScrim) {
     return;
@@ -652,6 +687,7 @@ function toggleHistoryPanel() {
     if (elements.historyPanel) {
       elements.historyPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
+    updateHistoryToggleText();
     return;
   }
 
@@ -670,11 +706,15 @@ function updateAudioToggle() {
 
   const enabled = Boolean(state.audioEnabled);
   audioToggle.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+  audioToggle.classList.toggle('board-panel__audio-toggle--on', enabled);
   audioToggle.classList.toggle('board-panel__audio-toggle--off', !enabled);
-  audioToggle.textContent = enabled ? 'Audio attivo' : 'Audio disattivato';
   const actionLabel = enabled ? 'Disattiva annuncio audio' : 'Attiva annuncio audio';
   audioToggle.setAttribute('aria-label', actionLabel);
   audioToggle.title = actionLabel;
+  const srText = audioToggle.querySelector('[data-audio-label]');
+  if (srText) {
+    srText.textContent = enabled ? 'Audio attivo' : 'Audio disattivato';
+  }
 }
 
 function setAudioEnabled(enabled) {
@@ -888,6 +928,7 @@ async function loadNumbers() {
     state.drawnNumbers = new Set();
     state.drawHistory = [];
     state.sponsorByNumber = new Map();
+    state.entriesByNumber = new Map();
     state.storageErrorMessage = '';
     renderBoard();
     updateDrawHistory();
@@ -918,9 +959,16 @@ function renderBoard() {
   state.cellsByNumber = new Map();
   state.selected = null;
 
+  if (!(state.entriesByNumber instanceof Map)) {
+    state.entriesByNumber = new Map();
+  } else {
+    state.entriesByNumber.clear();
+  }
+
   const fragment = document.createDocumentFragment();
 
   state.numbers.forEach((entry) => {
+    state.entriesByNumber.set(entry.number, entry);
     const cell = template.content.firstElementChild.cloneNode(true);
     cell.dataset.number = entry.number;
 
@@ -968,6 +1016,10 @@ function getNumberImage(entry) {
 function getEntryByNumber(number) {
   if (!Number.isInteger(number)) {
     return null;
+  }
+
+  if (state.entriesByNumber instanceof Map && state.entriesByNumber.has(number)) {
+    return state.entriesByNumber.get(number) || null;
   }
 
   return state.numbers.find((item) => item.number === number) || null;
@@ -1673,18 +1725,95 @@ function speakItalianText(entry) {
 }
 
 function updateDrawStatus(latestEntry) {
-  if (!elements.drawStatus) {
-    return;
-  }
+  const {
+    drawStatus,
+    drawProgressValue,
+    drawProgressBar,
+    drawProgressFill,
+    drawLastNumber,
+    drawLastDetail,
+    drawButton,
+    resetButton,
+  } = elements;
 
   const total = state.numbers.length;
   const drawnCount = state.drawnNumbers.size;
+
+  let normalizedEntry = null;
+
+  if (latestEntry && typeof latestEntry.number === 'number') {
+    normalizedEntry = latestEntry;
+  } else if (state.drawHistory.length > 0) {
+    const lastHistory = state.drawHistory[state.drawHistory.length - 1];
+    if (lastHistory && typeof lastHistory.number === 'number') {
+      const reference =
+        state.entriesByNumber instanceof Map
+          ? state.entriesByNumber.get(lastHistory.number)
+          : null;
+      normalizedEntry = {
+        number: lastHistory.number,
+        italian: lastHistory.italian || reference?.italian || '',
+        dialect: lastHistory.dialect || reference?.dialect || '',
+      };
+    }
+  }
+
+  if (drawProgressValue) {
+    if (total > 0) {
+      drawProgressValue.textContent = `${drawnCount}/${total}`;
+    } else {
+      drawProgressValue.textContent = '0/0';
+    }
+  }
+
+  if (drawProgressBar) {
+    const ratio = total > 0 ? drawnCount / total : 0;
+    const clampedRatio = Math.min(1, Math.max(0, ratio));
+    const percentage = Math.round(clampedRatio * 100);
+    drawProgressBar.setAttribute('aria-valuemax', `${total}`);
+    drawProgressBar.setAttribute('aria-valuenow', `${drawnCount}`);
+    drawProgressBar.setAttribute(
+      'aria-valuetext',
+      total > 0 ? `${drawnCount} su ${total}` : '0 su 0'
+    );
+    if (drawProgressFill) {
+      drawProgressFill.style.width = `${percentage}%`;
+    }
+  }
+
+  if (drawLastNumber) {
+    drawLastNumber.textContent = normalizedEntry
+      ? `${normalizedEntry.number}`
+      : '—';
+  }
+
+  if (drawLastDetail) {
+    let detailText = '';
+    if (state.storageErrorMessage) {
+      detailText = 'Verifica la connessione e riprova.';
+    } else if (total === 0) {
+      detailText = 'Caricamento del tabellone in corso';
+    } else if (normalizedEntry) {
+      detailText =
+        normalizedEntry.dialect ||
+        normalizedEntry.italian ||
+        'Nessuna descrizione disponibile';
+    } else if (drawnCount === 0) {
+      detailText = 'In attesa della prima estrazione';
+    } else if (drawnCount === total) {
+      detailText = 'Tutti i numeri sono stati estratti';
+    } else {
+      detailText = 'Prosegui con le estrazioni';
+    }
+    drawLastDetail.textContent = detailText;
+  }
+
   let message = state.storageErrorMessage || 'Caricamento del tabellone…';
 
   if (!state.storageErrorMessage && total > 0) {
-    if (latestEntry) {
-      const detail = latestEntry.italian || latestEntry.dialect || '';
-      message = `Estratto il numero ${latestEntry.number}`;
+    if (normalizedEntry) {
+      const detail = normalizedEntry.italian || normalizedEntry.dialect || '';
+      message = `Estratto il numero ${normalizedEntry.number}`;
       if (detail) {
         message += ` — ${detail}`;
       }
@@ -1698,26 +1827,28 @@ function updateDrawStatus(latestEntry) {
     }
   }
 
-  elements.drawStatus.textContent = message;
+  if (drawStatus) {
+    drawStatus.textContent = message;
+  }
 
-  if (elements.drawButton) {
+  if (drawButton) {
     const noNumbersLoaded = total === 0;
     const finished = drawnCount === total && total > 0;
-    elements.drawButton.disabled = noNumbersLoaded || finished;
+    drawButton.disabled = noNumbersLoaded || finished;
 
     if (noNumbersLoaded) {
-      elements.drawButton.textContent = 'Estrai numero';
+      drawButton.textContent = 'Estrai numero';
     } else if (finished) {
-      elements.drawButton.textContent = 'Fine estrazioni';
+      drawButton.textContent = 'Fine estrazioni';
     } else if (drawnCount === 0) {
-      elements.drawButton.textContent = 'Estrai primo numero';
+      drawButton.textContent = 'Estrai primo numero';
     } else {
-      elements.drawButton.textContent = 'Estrai successivo';
+      drawButton.textContent = 'Estrai successivo';
     }
   }
 
-  if (elements.resetButton) {
-    elements.resetButton.disabled = drawnCount === 0;
+  if (resetButton) {
+    resetButton.disabled = drawnCount === 0;
   }
 }
 

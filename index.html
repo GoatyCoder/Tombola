@@ -4,34 +4,139 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tombola Nojana</title>
-    <link rel="stylesheet" href="styles.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Signika:wght@400;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="styles.css" />
     <script defer src="script.js"></script>
   </head>
   <body>
     <header class="app-header" role="banner">
-      <div class="header-content">
-        <h1>Tombola Nojana</h1>
-        <p>
-          Un tabellone moderno e leggibile che si adatta a qualsiasi schermo.
-          Tocca un numero per aprire la scheda con la descrizione completa.
-        </p>
+      <div class="header-shell">
+        <div class="header-brand">
+          <div class="header-brand__identity">
+            <div class="header-brand__logo">
+              <img
+                src="images/logo-amici-del-teatro.svg"
+                alt="Amici del Teatro - Associazione Culturale Nojana"
+                loading="lazy"
+              />
+            </div>
+            <p class="header-brand__name">Amici del Teatro</p>
+          </div>
+          <div class="header-brand__content">
+            <p class="header-brand__eyebrow">Tombola in Vernacolo Nojano</p>
+            <h1 class="header-brand__title">Tabellone digitale</h1>
+            <p class="header-brand__lead">
+              Porta con te la smorfia nojana in versione interattiva: estrai i
+              numeri, ascolta le pronunce e condividi l'atmosfera della grande
+              tombolata cittadina.
+            </p>
+          </div>
+        </div>
       </div>
     </header>
 
     <main class="app-main" aria-label="Tabellone principale">
       <section class="board-panel">
         <header class="board-panel__head">
-          <div class="board-panel__intro">
-            <h2>Tabellone della tombola</h2>
-            <p>Numeri disposti in righe da dieci, ottimizzati anche per smartphone.</p>
+          <div class="board-panel__summary">
+            <p class="board-panel__eyebrow">Smorfia Nojana</p>
+            <h2 class="board-panel__title">Controllo estrazioni</h2>
+            <p class="board-panel__description">
+              Gestisci la partita digitale e tieni a vista l'ultimo numero uscito.
+            </p>
+            <div class="board-summary" role="status" aria-live="polite">
+              <span id="draw-status" class="sr-only">Caricamento del tabellone…</span>
+              <article class="board-summary__card board-summary__card--highlight">
+                <p class="board-summary__label">Ultimo numero</p>
+                <p
+                  id="draw-last-number"
+                  class="board-summary__number"
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
+                  —
+                </p>
+                <p id="draw-last-detail" class="board-summary__detail">
+                  In attesa della prima estrazione
+                </p>
+              </article>
+              <article class="board-summary__card">
+                <p class="board-summary__label">Numeri estratti</p>
+                <p id="draw-progress-value" class="board-summary__metric">0/0</p>
+                <div
+                  id="draw-progress-bar"
+                  class="board-summary__progress"
+                  role="progressbar"
+                  aria-valuemin="0"
+                  aria-valuemax="0"
+                  aria-valuenow="0"
+                >
+                  <span class="board-summary__progress-fill" style="width: 0%"></span>
+                </div>
+              </article>
+              <article class="board-summary__card board-summary__card--actions">
+                <div class="board-summary__text">
+                  <p class="board-summary__label">Cronologia</p>
+                  <p class="board-summary__detail">
+                    Consulta l'ordine di uscita dei numeri estratti.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  id="history-toggle"
+                  class="board-summary__button"
+                  aria-expanded="false"
+                  aria-controls="history-panel"
+                  data-label-mobile-open="Chiudi cronologia"
+                  data-label-mobile-closed="Apri cronologia"
+                  data-label-desktop="Vai alla cronologia"
+                >
+                  <span class="board-summary__button-text" data-history-label>Apri cronologia</span>
+                </button>
+              </article>
+            </div>
           </div>
           <div class="board-panel__controls">
+            <div class="board-panel__toolbar">
+              <button
+                type="button"
+                id="audio-toggle"
+                class="board-panel__audio-toggle"
+                aria-pressed="true"
+                aria-label="Disattiva annuncio audio"
+                title="Disattiva annuncio audio"
+              >
+                <span class="sr-only" data-audio-label>Audio attivo</span>
+                <svg
+                  class="board-panel__audio-icon"
+                  viewBox="0 0 24 24"
+                  role="presentation"
+                  aria-hidden="true"
+                >
+                  <path
+                    class="board-panel__audio-speaker"
+                    d="M5.5 9.5H8l3.5-3.5v12L8 14.5H5.5a1.5 1.5 0 0 1-1.5-1.5v-2a1.5 1.5 0 0 1 1.5-1.5Z"
+                  />
+                  <path
+                    class="board-panel__audio-wave"
+                    d="M15.5 9.5a3 3 0 0 1 0 5"
+                  />
+                  <path
+                    class="board-panel__audio-wave board-panel__audio-wave--strong"
+                    d="M17.8 7.8a6 6 0 0 1 0 8.5"
+                  />
+                  <path
+                    class="board-panel__audio-cross"
+                    d="M16 9l5 5m0-5-5 5"
+                  />
+                </svg>
+              </button>
+            </div>
             <div class="board-panel__actions">
               <button
                 type="button"
@@ -49,27 +154,7 @@
               >
                 Reset partita
               </button>
-              <button
-                type="button"
-                id="audio-toggle"
-                class="board-panel__audio-toggle"
-                aria-pressed="true"
-              >
-                Audio attivo
-              </button>
             </div>
-            <p class="board-panel__status" id="draw-status" aria-live="polite">
-              Caricamento del tabellone…
-            </p>
-            <button
-              type="button"
-              id="history-toggle"
-              class="board-panel__history-toggle"
-              aria-expanded="false"
-              aria-controls="history-panel"
-            >
-              Cronologia estrazioni
-            </button>
           </div>
         </header>
         <div class="board-panel__body">
@@ -256,6 +341,11 @@
         <span class="board-cell__number" aria-hidden="true"></span>
       </button>
     </template>
+
+    <footer class="app-footer">
+      Iniziativa a cura dell'Associazione Culturale Amici del Teatro di
+      Noicattaro.
+    </footer>
 
   </body>
 </html>
