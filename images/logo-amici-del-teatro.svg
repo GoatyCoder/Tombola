@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-labelledby="title desc">
+  <title id="title">Logo Amici del Teatro</title>
+  <desc id="desc">Quadrato rosso con maschera teatrale stilizzata e lettera A</desc>
+  <rect width="160" height="160" rx="18" fill="#9b1b2b" />
+  <path
+    fill="#ffffff"
+    d="M32 48c12.5-10.2 29.1-16 48-16s35.5 5.8 48 16v12c-12.3-9.5-28.7-15-48-15s-35.7 5.5-48 15V48z"
+  />
+  <path
+    fill="#ffffff"
+    d="
+      M80 52
+      c-14.7 0-26.9 4.8-35.8 13.8
+      C35.4 74.6 32 86.3 32 100
+      v28h20v-26
+      c0-8.4 6.4-14.4 14.6-14.4
+      6.6 0 13.4 4.1 13.4 13.8
+      V128h20v-26
+      c0-9.7 6.8-13.8 13.4-13.8
+      8.2 0 14.6 6 14.6 14.4
+      v26h20v-28
+      c0-13.7-3.4-25.4-12.2-34.2
+      C106.9 56.8 94.7 52 80 52z
+    "
+  />
+  <path
+    fill="#9b1b2b"
+    d="M62 109c0-8.5-6.3-13.4-12.4-13.4S38 100.5 38 109v19h24v-19zM122 109c0-8.5-6.3-13.4-11.6-13.4-6.1 0-12.4 4.9-12.4 13.4v19h24v-19z"
+  />
+  <path
+    fill="#ffffff"
+    d="M68 90.5c0-6 5.4-9.5 12-9.5s12 3.5 12 9.5-5.4 9.5-12 9.5-12-3.5-12-9.5z"
+  />
+  <path fill="#ffffff" d="M74 128h12l10 24H64l10-24z" />
+</svg>

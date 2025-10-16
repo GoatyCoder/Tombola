@@ -4,23 +4,49 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tombola Nojana</title>
-    <link rel="stylesheet" href="styles.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Signika:wght@400;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="styles.css" />
     <script defer src="script.js"></script>
   </head>
   <body>
     <header class="app-header" role="banner">
-      <div class="header-content">
-        <h1>Tombola Nojana</h1>
-        <p>
-          Un tabellone moderno e leggibile che si adatta a qualsiasi schermo.
-          Tocca un numero per aprire la scheda con la descrizione completa.
-        </p>
+      <div class="header-shell">
+        <div class="header-brand">
+          <div class="header-brand__logo">
+            <img
+              src="images/logo-amici-del-teatro.svg"
+              alt="Amici del Teatro - Associazione Culturale Nojana"
+              loading="lazy"
+            />
+          </div>
+          <div class="header-brand__content">
+            <p class="header-brand__eyebrow">Tombola in Vernacolo Nojano</p>
+            <h1 class="header-brand__title">Tabellone digitale</h1>
+            <p class="header-brand__lead">
+              Porta con te la smorfia nojana in versione interattiva: estrai i
+              numeri, ascolta le pronunce e condividi l'atmosfera della grande
+              tombolata cittadina.
+            </p>
+          </div>
+        </div>
+        <div class="header-card" role="complementary" aria-label="Prossimi appuntamenti">
+          <p class="header-card__eyebrow">Prossimi appuntamenti</p>
+          <dl class="header-card__list">
+            <div class="header-card__item">
+              <dt>4 dicembre · 18:00</dt>
+              <dd>Presentazione al Palazzo della Cultura</dd>
+            </div>
+            <div class="header-card__item">
+              <dt>21 dicembre</dt>
+              <dd>Tombolata cittadina in dialetto nojano</dd>
+            </div>
+          </dl>
+        </div>
       </div>
     </header>
 
@@ -28,8 +54,13 @@
       <section class="board-panel">
         <header class="board-panel__head">
           <div class="board-panel__intro">
-            <h2>Tabellone della tombola</h2>
-            <p>Numeri disposti in righe da dieci, ottimizzati anche per smartphone.</p>
+            <p class="board-panel__eyebrow">Smorfia Nojana</p>
+            <h2>Tabellone interattivo</h2>
+            <p>
+              Numeri organizzati in colonne chiare e leggibili. Tocca una casella
+              per aprire la scheda con i significati e gli audio in vernacolo e
+              in italiano.
+            </p>
           </div>
           <div class="board-panel__controls">
             <div class="board-panel__actions">
@@ -256,6 +287,11 @@
         <span class="board-cell__number" aria-hidden="true"></span>
       </button>
     </template>
+
+    <footer class="app-footer">
+      Iniziativa a cura dell'Associazione Culturale Amici del Teatro di
+      Noicattaro.
+    </footer>
 
   </body>
 </html>
