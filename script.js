@@ -22,7 +22,6 @@ const elements = {
   template: document.querySelector('#board-cell-template'),
   modal: document.querySelector('#number-modal'),
   modalNumber: document.querySelector('#modal-number'),
-  modalEyebrow: document.querySelector('#modal-eyebrow'),
   modalItalian: document.querySelector('#modal-italian'),
   modalDialect: document.querySelector('#modal-dialect'),
   modalImage: document.querySelector('#modal-image'),
@@ -385,16 +384,25 @@ function applySponsorToModal(sponsor) {
   );
 }
 
-function resolveModalSponsor(entry) {
+function resolveModalSponsor(entry, options = {}) {
   if (!entry) {
     return null;
   }
 
+  const { fromDraw = false } = options;
   const number = entry.number;
 
   if (state.drawnNumbers.has(number)) {
     const stored = state.sponsorByNumber.get(number);
-    return stored ? cloneSponsorData(stored) : null;
+    if (stored) {
+      return cloneSponsorData(stored);
+    }
+
+    if (fromDraw && state.currentSponsor) {
+      return cloneSponsorData(state.currentSponsor);
+    }
+
+    return null;
   }
 
   if (!Array.isArray(state.sponsors) || state.sponsors.length === 0) {
@@ -406,10 +414,14 @@ function resolveModalSponsor(entry) {
   return cloneSponsorData(candidate);
 }
 
-function ensureModalSponsor(entry) {
-  const immediateSponsor = resolveModalSponsor(entry);
+function ensureModalSponsor(entry, options = {}) {
+  const { fromDraw = false } = options;
+  const immediateSponsor = resolveModalSponsor(entry, { fromDraw });
 
   if (immediateSponsor) {
+    if (entry && state.drawnNumbers.has(entry.number)) {
+      state.sponsorByNumber.set(entry.number, immediateSponsor);
+    }
     applySponsorToModal(immediateSponsor);
     return;
   }
@@ -423,15 +435,48 @@ function ensureModalSponsor(entry) {
       : loadSponsors());
 
   if (!pending || typeof pending.then !== 'function') {
+    if (fromDraw && state.currentSponsor) {
+      const fallback = cloneSponsorData(state.currentSponsor);
+      if (fallback && entry && state.drawnNumbers.has(entry.number)) {
+        state.sponsorByNumber.set(entry.number, fallback);
+      }
+      applySponsorToModal(fallback);
+    }
     return;
   }
 
   pending
     .then(() => {
-      const refreshed = resolveModalSponsor(entry);
+      if (!entry) {
+        applySponsorToModal(null);
+        return;
+      }
+
+      let refreshed = resolveModalSponsor(entry, { fromDraw });
+
+      if (!refreshed && !state.drawnNumbers.has(entry.number)) {
+        refreshed = cloneSponsorData(pickRandomSponsor(state.lastSponsorKey));
+      }
+
+      if (!refreshed && fromDraw && state.currentSponsor) {
+        refreshed = cloneSponsorData(state.currentSponsor);
+      }
+
+      if (refreshed && state.drawnNumbers.has(entry.number)) {
+        state.sponsorByNumber.set(entry.number, refreshed);
+      }
+
       applySponsorToModal(refreshed);
     })
     .catch(() => {
+      if (fromDraw && state.currentSponsor) {
+        const fallback = cloneSponsorData(state.currentSponsor);
+        if (fallback && entry && state.drawnNumbers.has(entry.number)) {
+          state.sponsorByNumber.set(entry.number, fallback);
+        }
+        applySponsorToModal(fallback);
+        return;
+      }
       applySponsorToModal(null);
     });
 }
@@ -912,7 +957,9 @@ function markNumberDrawn(entry, options = {}) {
   state.drawnNumbers.add(number);
 
   const sponsorData = cloneSponsorData(sponsorOverride || state.currentSponsor);
-  state.sponsorByNumber.set(number, sponsorData);
+  if (sponsorData) {
+    state.sponsorByNumber.set(number, sponsorData);
+  }
 
   if (recordHistory) {
     state.drawHistory.push({
@@ -1190,13 +1237,6 @@ function openModal(entry, options = {}) {
 
   elements.modalNumber.textContent = `Numero ${entry.number}`;
 
-  if (elements.modalEyebrow) {
-    const isDrawn = state.drawnNumbers.has(entry.number);
-    elements.modalEyebrow.textContent = isDrawn
-      ? 'Numero estratto'
-      : 'Numero della tombola';
-  }
-
   const italianText = entry.italian || '—';
   const dialectText = entry.dialect || 'Da completare';
 
@@ -1241,7 +1281,7 @@ function openModal(entry, options = {}) {
     );
   }
 
-  ensureModalSponsor(entry);
+  ensureModalSponsor(entry, { fromDraw });
 
   elements.modal.removeAttribute('hidden');
   elements.modal.classList.add('modal--visible');

@@ -1390,14 +1390,6 @@ img {
   gap: 0.45rem;
 }
 
-.number-popup__eyebrow {
-  font-size: 0.95rem;
-  text-transform: uppercase;
-  letter-spacing: 0.38em;
-  font-weight: 600;
-  color: rgba(100, 116, 139, 0.88);
-}
-
 .number-popup__number {
   margin: 0;
   font-size: clamp(2.8rem, 6.5vw, 3.6rem);
