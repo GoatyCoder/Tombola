@@ -85,15 +85,15 @@ const EMBEDDED_SPONSORS = Object.freeze([
   },
 ]);
 const DRAW_TIMELINE = Object.freeze({
-  intro: 360,
-  prepareHold: 1400,
-  revealAccent: 260,
-  celebrationHold: 1150,
-  flightDelay: 220,
-  flightDuration: 1150,
-  overlayHideDelay: 240,
-  reducedMotionHold: 900,
-  reducedMotionFlight: 320,
+  intro: 420,
+  prepareHold: 2100,
+  revealAccent: 320,
+  celebrationHold: 1850,
+  flightDelay: 260,
+  flightDuration: 1250,
+  overlayHideDelay: 320,
+  reducedMotionHold: 1400,
+  reducedMotionFlight: 420,
 });
 
 const MOBILE_HISTORY_QUERY = '(max-width: 540px)';
@@ -1356,7 +1356,7 @@ function resetGame() {
     elements.drawOverlayNumber.textContent = '';
   }
   if (elements.drawOverlayLabel) {
-    elements.drawOverlayLabel.textContent = 'Preparazione estrazione…';
+    elements.drawOverlayLabel.textContent = 'Estrazione in corso...';
   }
 
   state.isAnimatingDraw = false;
@@ -1616,7 +1616,7 @@ async function showDrawAnimation(entry) {
     setOverlayBallLoading(false);
     drawOverlayNumber.textContent = entry.number;
     drawOverlayBall.classList.add('draw-portal__ball--revealed');
-    setCaption(`Numero ${entry.number} estratto!`);
+    setCaption('Estratto il numero');
   };
 
   const hideOverlay = (immediate = false) => {
@@ -1636,7 +1636,7 @@ async function showDrawAnimation(entry) {
   setOverlayBallLoading(true);
   drawOverlayBall.classList.remove('draw-portal__ball--revealed');
   drawOverlayNumber.textContent = '';
-  setCaption('Preparazione estrazione…');
+  setCaption('Estrazione in corso...');
 
   drawOverlay.hidden = false;
   drawOverlay.setAttribute('aria-hidden', 'false');
@@ -1645,7 +1645,7 @@ async function showDrawAnimation(entry) {
 
   try {
     if (prefersReducedMotion) {
-      setCaption('Il numero sta arrivando…');
+      setCaption('Estrazione in corso...');
       const fromRect = drawOverlayBall.getBoundingClientRect();
       await sleep(DRAW_TIMELINE.reducedMotionHold);
       revealNumber();
@@ -1665,10 +1665,9 @@ async function showDrawAnimation(entry) {
     }
 
     await sleep(DRAW_TIMELINE.intro);
-    setCaption('Il bussolotto gira…');
+    setCaption('Estrazione in corso...');
 
     await sleep(DRAW_TIMELINE.prepareHold);
-    setCaption('Il numero sta arrivando…');
     await sleep(DRAW_TIMELINE.revealAccent);
     revealNumber();
 
@@ -1676,7 +1675,7 @@ async function showDrawAnimation(entry) {
 
     const fromRect = drawOverlayBall.getBoundingClientRect();
     drawOverlay.classList.add('draw-portal--closing');
-    setCaption('Segna il numero sul tabellone…');
+    setCaption('Estratto il numero');
 
     await sleep(DRAW_TIMELINE.flightDelay);
     if (targetCell) {
@@ -1694,7 +1693,7 @@ async function showDrawAnimation(entry) {
     hideOverlay(true);
     drawOverlayBall.classList.remove('draw-portal__ball--revealed');
     drawOverlayNumber.textContent = '';
-    setCaption('Preparazione estrazione…');
+    setCaption('Estrazione in corso...');
   }
 }
 
