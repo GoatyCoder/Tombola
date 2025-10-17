@@ -85,15 +85,15 @@ const EMBEDDED_SPONSORS = Object.freeze([
   },
 ]);
 const DRAW_TIMELINE = Object.freeze({
-  intro: 420,
-  prepareHold: 2100,
-  revealAccent: 320,
-  celebrationHold: 1850,
-  flightDelay: 260,
-  flightDuration: 1250,
-  overlayHideDelay: 320,
-  reducedMotionHold: 1400,
-  reducedMotionFlight: 420,
+  intro: 520,
+  prepareHold: 2860,
+  revealAccent: 360,
+  celebrationHold: 2280,
+  flightDelay: 320,
+  flightDuration: 1320,
+  overlayHideDelay: 360,
+  reducedMotionHold: 1900,
+  reducedMotionFlight: 520,
 });
 
 const MOBILE_HISTORY_QUERY = '(max-width: 540px)';
@@ -571,7 +571,7 @@ function ensureModalSponsor(entry, options = {}) {
 }
 
 function setOverlayBallLoading(isLoading) {
-  const { drawOverlayBall } = elements;
+  const { drawOverlayBall, drawOverlay } = elements;
 
   if (!drawOverlayBall) {
     return;
@@ -584,9 +584,15 @@ function setOverlayBallLoading(isLoading) {
     drawOverlayBall.classList.add(loadingClass);
     drawOverlayBall.classList.remove(revealClass);
     drawOverlayBall.setAttribute('aria-busy', 'true');
+    if (drawOverlay) {
+      drawOverlay.classList.add('draw-portal--charging');
+    }
   } else {
     drawOverlayBall.classList.remove(loadingClass);
     drawOverlayBall.removeAttribute('aria-busy');
+    if (drawOverlay) {
+      drawOverlay.classList.remove('draw-portal--charging');
+    }
   }
 }
 
@@ -1198,13 +1204,22 @@ async function handleDraw() {
     }
 
     try {
-      await showDrawAnimation(entry);
+      await showDrawAnimation(entry, {
+        onFlightComplete: () => {
+          if (!markRecorded) {
+            markNumberDrawn(entry, { animate: true });
+            markRecorded = true;
+          }
+        },
+      });
     } catch (animationError) {
       console.warn('Errore durante l\'animazione di estrazione', animationError);
     }
 
-    markNumberDrawn(entry, { animate: true });
-    markRecorded = true;
+    if (!markRecorded) {
+      markNumberDrawn(entry, { animate: true });
+      markRecorded = true;
+    }
   } catch (error) {
     preparationError = error;
   } finally {
@@ -1586,9 +1601,25 @@ async function animateBallFlight(entry, fromRect, targetCell, options = {}) {
   });
 }
 
-async function showDrawAnimation(entry) {
+async function showDrawAnimation(entry, options = {}) {
   const { drawOverlay, drawOverlayNumber, drawOverlayBall, drawOverlayLabel } = elements;
   const targetCell = state.cellsByNumber.get(entry.number);
+  const { onFlightComplete = null } = options;
+
+  let flightNotified = false;
+  const notifyFlightComplete = () => {
+    if (flightNotified) {
+      return;
+    }
+    flightNotified = true;
+    if (typeof onFlightComplete === 'function') {
+      try {
+        onFlightComplete();
+      } catch (error) {
+        console.warn('Errore durante l\'aggiornamento della casella estratta', error);
+      }
+    }
+  };
 
   if (!drawOverlay || !drawOverlayNumber || !drawOverlayBall) {
     if (targetCell) {
@@ -1659,6 +1690,8 @@ async function showDrawAnimation(entry) {
         await sleep(DRAW_TIMELINE.reducedMotionFlight);
       }
 
+      notifyFlightComplete();
+
       drawOverlay.classList.add('draw-portal--closing');
       await sleep(DRAW_TIMELINE.overlayHideDelay);
       return;
@@ -1686,6 +1719,8 @@ async function showDrawAnimation(entry) {
     } else {
       await sleep(DRAW_TIMELINE.flightDuration);
     }
+
+    notifyFlightComplete();
 
     await sleep(DRAW_TIMELINE.overlayHideDelay);
   } finally {
