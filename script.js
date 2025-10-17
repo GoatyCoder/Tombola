@@ -262,7 +262,8 @@ function renderSponsorShowcase(sponsors, options = {}) {
     }
 
     const anchor = document.createElement('a');
-    anchor.className = 'sponsor-gallery__item';
+    anchor.className = 'sponsor-strip__item';
+    anchor.setAttribute('role', 'listitem');
     anchor.href = sponsor.url || '#';
     anchor.target = sponsor.url ? '_blank' : '_self';
     anchor.rel = 'noopener noreferrer';
