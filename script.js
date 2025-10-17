@@ -38,10 +38,11 @@ const elements = {
   drawButton: document.querySelector('#draw-button'),
   resetButton: document.querySelector('#reset-button'),
   drawStatus: document.querySelector('#draw-status'),
-  drawOverlay: document.querySelector('#draw-animation'),
+  drawOverlay: document.querySelector('#draw-portal'),
   drawOverlayNumber: document.querySelector('#draw-animation-number'),
   drawOverlayBall: document.querySelector('#draw-animation-ball'),
   drawOverlayLabel: document.querySelector('#draw-animation-label'),
+  drawOverlayLoader: document.querySelector('#draw-portal-loader'),
   drawSponsorBlock: document.querySelector('#draw-sponsor-block'),
   drawSponsorHeading: document.querySelector('#draw-sponsor-heading'),
   drawSponsor: document.querySelector('#draw-sponsor'),
@@ -84,13 +85,15 @@ const EMBEDDED_SPONSORS = Object.freeze([
   },
 ]);
 const DRAW_TIMELINE = Object.freeze({
-  stageIntro: 620,
-  incomingHold: 2800,
-  celebrationHold: 2400,
-  flightDelay: 320,
-  flightDuration: 1450,
-  overlayHideDelay: 320,
-  reducedMotionHold: 1700,
+  intro: 360,
+  prepareHold: 1400,
+  revealAccent: 260,
+  celebrationHold: 1150,
+  flightDelay: 220,
+  flightDuration: 1150,
+  overlayHideDelay: 240,
+  reducedMotionHold: 900,
+  reducedMotionFlight: 320,
 });
 
 const MOBILE_HISTORY_QUERY = '(max-width: 540px)';
@@ -574,10 +577,16 @@ function setOverlayBallLoading(isLoading) {
     return;
   }
 
+  const loadingClass = 'draw-portal__ball--loading';
+  const revealClass = 'draw-portal__ball--revealed';
+
   if (isLoading) {
-    drawOverlayBall.classList.add('draw-overlay__ball--loading');
+    drawOverlayBall.classList.add(loadingClass);
+    drawOverlayBall.classList.remove(revealClass);
+    drawOverlayBall.setAttribute('aria-busy', 'true');
   } else {
-    drawOverlayBall.classList.remove('draw-overlay__ball--loading');
+    drawOverlayBall.classList.remove(loadingClass);
+    drawOverlayBall.removeAttribute('aria-busy');
   }
 }
 
@@ -1332,12 +1341,22 @@ function resetGame() {
   }
 
   if (elements.drawOverlay && !elements.drawOverlay.hasAttribute('hidden')) {
-    elements.drawOverlay.classList.remove('draw-overlay--visible');
+    elements.drawOverlay.classList.remove('draw-portal--visible', 'draw-portal--closing');
     elements.drawOverlay.setAttribute('hidden', '');
     elements.drawOverlay.setAttribute('aria-hidden', 'true');
-    if (elements.drawOverlayBall) {
-      elements.drawOverlayBall.classList.remove('draw-overlay__ball--active');
-    }
+  }
+  if (elements.drawOverlayBall) {
+    elements.drawOverlayBall.classList.remove(
+      'draw-portal__ball--loading',
+      'draw-portal__ball--revealed'
+    );
+    elements.drawOverlayBall.removeAttribute('aria-busy');
+  }
+  if (elements.drawOverlayNumber) {
+    elements.drawOverlayNumber.textContent = '';
+  }
+  if (elements.drawOverlayLabel) {
+    elements.drawOverlayLabel.textContent = 'Preparazione estrazione…';
   }
 
   state.isAnimatingDraw = false;
@@ -1388,10 +1407,10 @@ function openModal(entry, options = {}) {
   const dialectText = entry.dialect || 'Da completare';
 
   elements.modalItalian.textContent = italianText;
-  elements.modalItalian.classList.toggle('number-popup__text--missing', !entry.italian);
+  elements.modalItalian.classList.toggle('number-dialog__text--missing', !entry.italian);
 
   elements.modalDialect.textContent = dialectText;
-  elements.modalDialect.classList.toggle('number-popup__text--missing', !entry.dialect);
+  elements.modalDialect.classList.toggle('number-dialog__text--missing', !entry.dialect);
 
   if (elements.modalItalianPlay) {
     const hasItalian = Boolean(entry.italian);
@@ -1423,7 +1442,7 @@ function openModal(entry, options = {}) {
 
   if (elements.modalImageFrame) {
     elements.modalImageFrame.classList.toggle(
-      'number-popup__image-frame--placeholder',
+      'number-dialog__image-frame--placeholder',
       !hasImage
     );
   }
@@ -1466,7 +1485,7 @@ function closeModal(options = {}) {
   }
   applySponsorToModal(null);
   if (elements.modalImageFrame) {
-    elements.modalImageFrame.classList.remove('number-popup__image-frame--placeholder');
+    elements.modalImageFrame.classList.remove('number-dialog__image-frame--placeholder');
   }
   if (returnFocus && state.selected) {
     state.selected.focus();
@@ -1573,7 +1592,11 @@ async function showDrawAnimation(entry) {
 
   if (!drawOverlay || !drawOverlayNumber || !drawOverlayBall) {
     if (targetCell) {
-      targetCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+      try {
+        targetCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+      } catch (error) {
+        targetCell.scrollIntoView();
+      }
     }
     return;
   }
@@ -1583,10 +1606,22 @@ async function showDrawAnimation(entry) {
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  const setCaption = (text) => {
+    if (drawOverlayLabel) {
+      drawOverlayLabel.textContent = text;
+    }
+  };
+
+  const revealNumber = () => {
+    setOverlayBallLoading(false);
+    drawOverlayNumber.textContent = entry.number;
+    drawOverlayBall.classList.add('draw-portal__ball--revealed');
+    setCaption(`Numero ${entry.number} estratto!`);
+  };
+
   const hideOverlay = (immediate = false) => {
-    drawOverlay.classList.remove('draw-overlay--visible');
-    drawOverlay.classList.remove('draw-overlay--leaving');
-    drawOverlayBall.classList.remove('draw-overlay__ball--active');
+    drawOverlay.classList.remove('draw-portal--visible');
+    drawOverlay.classList.remove('draw-portal--closing');
     const finalize = () => {
       drawOverlay.setAttribute('aria-hidden', 'true');
       drawOverlay.hidden = true;
@@ -1598,74 +1633,68 @@ async function showDrawAnimation(entry) {
     }
   };
 
-  setOverlayBallLoading(false);
+  setOverlayBallLoading(true);
+  drawOverlayBall.classList.remove('draw-portal__ball--revealed');
   drawOverlayNumber.textContent = '';
-  if (drawOverlayLabel) {
-    drawOverlayLabel.textContent = "Preparati all'estrazione…";
-  }
+  setCaption('Preparazione estrazione…');
 
   drawOverlay.hidden = false;
   drawOverlay.setAttribute('aria-hidden', 'false');
-  drawOverlay.classList.remove('draw-overlay--leaving');
-  drawOverlay.classList.add('draw-overlay--visible');
-
-  drawOverlayBall.classList.remove('draw-overlay__ball--active');
-  void drawOverlayBall.offsetWidth;
-  drawOverlayBall.classList.add('draw-overlay__ball--active');
+  drawOverlay.classList.remove('draw-portal--closing');
+  drawOverlay.classList.add('draw-portal--visible');
 
   try {
     if (prefersReducedMotion) {
-      if (drawOverlayLabel) {
-        drawOverlayLabel.textContent = 'Numero in arrivo…';
-      }
-      setOverlayBallLoading(true);
+      setCaption('Il numero sta arrivando…');
       const fromRect = drawOverlayBall.getBoundingClientRect();
       await sleep(DRAW_TIMELINE.reducedMotionHold);
-      setOverlayBallLoading(false);
-      drawOverlayNumber.textContent = entry.number;
-      if (drawOverlayLabel) {
-        drawOverlayLabel.textContent = `Numero ${entry.number}!`;
+      revealNumber();
+
+      if (targetCell) {
+        await animateBallFlight(entry, fromRect, targetCell, {
+          prefersReducedMotion: true,
+          duration: DRAW_TIMELINE.reducedMotionFlight,
+        });
+      } else {
+        await sleep(DRAW_TIMELINE.reducedMotionFlight);
       }
-      await animateBallFlight(entry, fromRect, targetCell, {
-        prefersReducedMotion: true,
-        duration: 260,
-      });
-      drawOverlay.classList.add('draw-overlay--leaving');
+
+      drawOverlay.classList.add('draw-portal--closing');
       await sleep(DRAW_TIMELINE.overlayHideDelay);
       return;
     }
 
-    await sleep(DRAW_TIMELINE.stageIntro);
-    if (drawOverlayLabel) {
-      drawOverlayLabel.textContent = 'Numero in arrivo…';
-    }
-    setOverlayBallLoading(true);
+    await sleep(DRAW_TIMELINE.intro);
+    setCaption('Il bussolotto gira…');
 
-    await sleep(DRAW_TIMELINE.incomingHold);
-    setOverlayBallLoading(false);
-    drawOverlayNumber.textContent = entry.number;
-    if (drawOverlayLabel) {
-      drawOverlayLabel.textContent = `Numero ${entry.number}!`;
-    }
+    await sleep(DRAW_TIMELINE.prepareHold);
+    setCaption('Il numero sta arrivando…');
+    await sleep(DRAW_TIMELINE.revealAccent);
+    revealNumber();
 
     await sleep(DRAW_TIMELINE.celebrationHold);
-    const fromRect = drawOverlayBall.getBoundingClientRect();
 
-    drawOverlay.classList.add('draw-overlay--leaving');
-    if (drawOverlayLabel) {
-      drawOverlayLabel.textContent = 'Segna sul tabellone…';
-    }
+    const fromRect = drawOverlayBall.getBoundingClientRect();
+    drawOverlay.classList.add('draw-portal--closing');
+    setCaption('Segna il numero sul tabellone…');
 
     await sleep(DRAW_TIMELINE.flightDelay);
-    await animateBallFlight(entry, fromRect, targetCell, {
-      duration: DRAW_TIMELINE.flightDuration,
-      prefersReducedMotion,
-    });
+    if (targetCell) {
+      await animateBallFlight(entry, fromRect, targetCell, {
+        duration: DRAW_TIMELINE.flightDuration,
+        prefersReducedMotion,
+      });
+    } else {
+      await sleep(DRAW_TIMELINE.flightDuration);
+    }
 
     await sleep(DRAW_TIMELINE.overlayHideDelay);
   } finally {
     setOverlayBallLoading(false);
     hideOverlay(true);
+    drawOverlayBall.classList.remove('draw-portal__ball--revealed');
+    drawOverlayNumber.textContent = '';
+    setCaption('Preparazione estrazione…');
   }
 }
 
