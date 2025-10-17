@@ -68,6 +68,20 @@ const AUDIO_STORAGE_KEY = 'tombola-audio-enabled';
 const DRAW_STATE_STORAGE_KEY = 'TOMBOLA_DRAW_STATE';
 const EMPTY_DRAW_STATE = Object.freeze({ drawnNumbers: [], drawHistory: [] });
 const SPONSOR_DATA_PATH = 'sponsors.json';
+const EMBEDDED_SPONSORS = Object.freeze([
+  {
+    logo: 'images/sponsor-panificio-stella.svg',
+    url: 'https://www.panificiostella.it/',
+  },
+  {
+    logo: 'images/sponsor-agrumi-del-sud.svg',
+    url: 'https://www.agrumidelsud.it/',
+  },
+  {
+    logo: 'images/sponsor-cantina-nojana.svg',
+    url: 'https://www.cantinanojana.it/',
+  },
+]);
 const DRAW_TIMELINE = Object.freeze({
   stageIntro: 620,
   incomingHold: 2800,
@@ -122,6 +136,10 @@ function cloneSponsorData(sponsor) {
   return { logo, url };
 }
 
+function getEmbeddedSponsors() {
+  return EMBEDDED_SPONSORS.map(cloneSponsorData).filter(Boolean);
+}
+
 function loadSponsors() {
   if (state.sponsors.length > 0) {
     renderSponsorShowcase(state.sponsors);
@@ -141,22 +159,28 @@ function loadSponsors() {
     })
     .then((data) => {
       const rawList = Array.isArray(data?.sponsors) ? data.sponsors : Array.isArray(data) ? data : [];
-      state.sponsors = rawList.map(normalizeSponsor).filter(Boolean);
+      const normalized = rawList.map(normalizeSponsor).filter(Boolean);
+      const fallbackList = getEmbeddedSponsors();
+
+      state.sponsors = normalized.length ? normalized : fallbackList;
       state.lastSponsorKey = null;
       if (!state.sponsors.length) {
+        applySponsorToOverlay(null);
+      }
+      renderSponsorShowcase(state.sponsors, { force: true });
+      return state.sponsors;
+    })
+    .catch((error) => {
+      console.warn('Impossibile caricare gli sponsor', error);
+      const fallbackList = getEmbeddedSponsors();
+      state.sponsors = fallbackList;
+      state.lastSponsorKey = null;
+      if (state.sponsors.length === 0) {
         applySponsorToOverlay(null);
         renderSponsorShowcase([], { force: true });
       } else {
         renderSponsorShowcase(state.sponsors, { force: true });
       }
-      return state.sponsors;
-    })
-    .catch((error) => {
-      console.warn('Impossibile caricare gli sponsor', error);
-      state.sponsors = [];
-      state.lastSponsorKey = null;
-      applySponsorToOverlay(null);
-      renderSponsorShowcase([], { force: true });
       return state.sponsors;
     })
     .finally(() => {
@@ -486,7 +510,7 @@ function ensureModalSponsor(entry, options = {}) {
     return;
   }
 
-  applySponsorToModal(null, { showPlaceholder: true });
+  applySponsorToModal(null);
 
   const pending =
     state.sponsorLoadPromise ||
@@ -1335,7 +1359,8 @@ function resetGame() {
 function openModal(entry, options = {}) {
   const { fromDraw = false } = options;
 
-  elements.modalNumber.textContent = `${entry.number}`;
+  const paddedNumber = String(entry.number).padStart(2, '0');
+  elements.modalNumber.textContent = `Numero ${paddedNumber}`;
 
   const italianText = entry.italian || '—';
   const dialectText = entry.dialect || 'Da completare';
