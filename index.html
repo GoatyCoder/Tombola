@@ -377,9 +377,55 @@
         class="board-panel__floating-button board-panel__floating-draw"
         aria-label="Estrai numero"
         title="Estrai numero"
+        data-tooltip="Estrai numero"
         disabled
       >
-        <span aria-hidden="true" data-floating-draw-text>Estrai</span>
+        <svg
+          class="board-panel__floating-draw-icon"
+          viewBox="0 0 24 24"
+          role="presentation"
+          aria-hidden="true"
+        >
+          <rect
+            class="board-panel__floating-draw-icon-base"
+            x="4.5"
+            y="4.5"
+            width="15"
+            height="15"
+            rx="3.5"
+            ry="3.5"
+          />
+          <circle
+            class="board-panel__floating-draw-icon-pip"
+            cx="9.5"
+            cy="9.5"
+            r="1.35"
+          />
+          <circle
+            class="board-panel__floating-draw-icon-pip"
+            cx="14.5"
+            cy="14.5"
+            r="1.35"
+          />
+          <circle
+            class="board-panel__floating-draw-icon-pip"
+            cx="14.5"
+            cy="9.5"
+            r="1.35"
+          />
+          <circle
+            class="board-panel__floating-draw-icon-pip"
+            cx="9.5"
+            cy="14.5"
+            r="1.35"
+          />
+          <circle
+            class="board-panel__floating-draw-icon-pip"
+            cx="12"
+            cy="12"
+            r="1.35"
+          />
+        </svg>
         <span class="sr-only" data-floating-draw-sr>Estrai numero</span>
       </button>
       <button

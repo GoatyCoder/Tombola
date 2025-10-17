@@ -633,17 +633,13 @@ button {
 }
 
 .board-panel__floating-draw {
-  min-width: 3.2rem;
+  width: 50px;
   height: 50px;
-  padding: 0 1.35rem;
+  padding: 0;
   border-radius: 999px;
   border: 1px solid transparent;
   background: var(--brand-primary);
   color: var(--surface);
-  font-size: 0.95rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -673,8 +669,21 @@ button {
   transform: none;
 }
 
-[data-floating-draw-text] {
-  pointer-events: none;
+.board-panel__floating-draw-icon {
+  width: 1.45rem;
+  height: 1.45rem;
+  display: block;
+}
+
+.board-panel__floating-draw-icon-base {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+
+.board-panel__floating-draw-icon-pip {
+  fill: currentColor;
 }
 
 .board-panel__audio-icon {
@@ -795,10 +804,14 @@ button {
   }
 
   .board-panel__floating-draw {
-    padding: 0 1.05rem;
-    font-size: 0.85rem;
+    width: 46px;
     height: 46px;
     box-shadow: 0 12px 24px rgba(155, 27, 43, 0.28);
+  }
+
+  .board-panel__floating-draw-icon {
+    width: 1.35rem;
+    height: 1.35rem;
   }
 }
 

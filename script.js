@@ -974,16 +974,11 @@ async function loadNumbers() {
     }
     if (elements.floatingDrawButton) {
       elements.floatingDrawButton.disabled = true;
-      const floatingLabel = elements.floatingDrawButton.querySelector(
-        '[data-floating-draw-text]'
-      );
       const floatingSr = elements.floatingDrawButton.querySelector('[data-floating-draw-sr]');
-      if (floatingLabel) {
-        floatingLabel.textContent = 'Estrai';
-      }
       const disabledMessage = 'Estrazione non disponibile';
       elements.floatingDrawButton.setAttribute('aria-label', disabledMessage);
       elements.floatingDrawButton.title = disabledMessage;
+      elements.floatingDrawButton.setAttribute('data-tooltip', disabledMessage);
       if (floatingSr) {
         floatingSr.textContent = disabledMessage;
       }
@@ -1901,35 +1896,24 @@ function updateDrawStatus(latestEntry) {
 
   if (elements.floatingDrawButton) {
     const floatingButton = elements.floatingDrawButton;
-    const floatingLabel = floatingButton.querySelector('[data-floating-draw-text]');
     const floatingSr = floatingButton.querySelector('[data-floating-draw-sr]');
     floatingButton.disabled = noNumbersLoaded || finished;
 
-    let compactLabel = 'Estrai';
     let srMessage = 'Estrai numero';
 
     if (noNumbersLoaded) {
-      compactLabel = 'Estrai';
       srMessage = 'Caricamento del tabellone in corso';
     } else if (finished) {
-      compactLabel = 'Fine';
       srMessage = 'Tutte le estrazioni sono completate';
     } else if (drawnCount === 0) {
-      compactLabel = 'Primo';
       srMessage = 'Estrai il primo numero';
     } else {
-      compactLabel = 'Prossimo';
       srMessage = 'Estrai il prossimo numero';
-    }
-
-    if (floatingLabel) {
-      floatingLabel.textContent = compactLabel;
-    } else {
-      floatingButton.textContent = compactLabel;
     }
 
     floatingButton.setAttribute('aria-label', srMessage);
     floatingButton.title = srMessage;
+    floatingButton.setAttribute('data-tooltip', srMessage);
     if (floatingSr) {
       floatingSr.textContent = srMessage;
     }
