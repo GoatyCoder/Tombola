@@ -47,101 +47,109 @@
             <h2 class="sr-only">Controllo estrazioni</h2>
             <div class="board-summary" role="status" aria-live="polite">
               <span id="draw-status" class="sr-only">Caricamento del tabellone…</span>
-              <article class="board-summary__card board-summary__card--highlight">
-                <div class="board-summary__header">
-                  <p class="board-summary__label">Ultimo numero</p>
-                </div>
-                <p
-                  id="draw-last-number"
-                  class="board-summary__number"
-                  aria-live="polite"
-                  aria-atomic="true"
-                >
-                  —
-                </p>
-                <p id="draw-last-detail" class="board-summary__detail">
-                  In attesa della prima estrazione
-                </p>
-              </article>
-              <article class="board-summary__card board-summary__card--progress">
-                <div class="board-summary__header">
-                  <p class="board-summary__label">Numeri estratti</p>
-                  <button
-                    type="button"
-                    id="history-toggle"
-                    class="board-summary__icon-button board-summary__icon-button--history"
-                    aria-expanded="false"
-                    aria-controls="history-panel"
-                    data-label-mobile-open="Chiudi cronologia"
-                    data-label-mobile-closed="Cronologia"
-                    data-label-desktop="Cronologia"
-                    aria-label="Cronologia"
-                    title="Cronologia"
-                  >
-                    <svg
-                      class="board-summary__icon"
-                      viewBox="0 0 24 24"
-                      role="presentation"
-                      aria-hidden="true"
+              <article class="board-summary__card board-summary__card--combined">
+                <div class="board-summary__sections">
+                  <div class="board-summary__section board-summary__section--last">
+                    <div class="board-summary__header">
+                      <p class="board-summary__label">Ultimo numero</p>
+                    </div>
+                    <p
+                      id="draw-last-number"
+                      class="board-summary__number"
+                      aria-live="polite"
+                      aria-atomic="true"
                     >
-                      <path
-                        d="M5.75 4.5h12.5a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H5.75a.75.75 0 0 1-.75-.75V5.25a.75.75 0 0 1 .75-.75Z"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                      <path
-                        d="M8 7h8m-8 4h8m-8 4h5"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                      <path
-                        d="M5 4.5l1.5-2m11 2L19 2.5"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
-                    <span class="board-summary__icon-button-label" data-history-label>
-                      Cronologia
-                    </span>
-                  </button>
-                </div>
-                <p id="draw-progress-value" class="board-summary__metric">0/0</p>
-                <div
-                  id="draw-progress-bar"
-                  class="board-summary__progress"
-                  role="progressbar"
-                  aria-valuemin="0"
-                  aria-valuemax="0"
-                  aria-valuenow="0"
-                >
-                  <span class="board-summary__progress-fill" style="width: 0%"></span>
-                </div>
-                <div class="board-summary__actions">
-                  <button
-                    type="button"
-                    id="draw-button"
-                    class="board-panel__draw"
-                    disabled
-                  >
-                    Estrai numero
-                  </button>
-                  <button
-                    type="button"
-                    id="reset-button"
-                    class="board-panel__reset"
-                    disabled
-                  >
-                    Reset partita
-                  </button>
+                      —
+                    </p>
+                    <p id="draw-last-detail" class="board-summary__detail">
+                      In attesa della prima estrazione
+                    </p>
+                  </div>
+                  <div class="board-summary__section board-summary__section--progress">
+                    <div class="board-summary__header">
+                      <p class="board-summary__label">Numeri estratti</p>
+                      <button
+                        type="button"
+                        id="history-toggle"
+                        class="board-summary__icon-button board-summary__icon-button--history"
+                        aria-expanded="false"
+                        aria-controls="history-panel"
+                        data-label-mobile-open="Chiudi cronologia"
+                        data-label-mobile-closed="Cronologia"
+                        data-label-desktop="Cronologia"
+                        aria-label="Cronologia"
+                        title="Cronologia"
+                      >
+                        <svg
+                          class="board-summary__icon"
+                          viewBox="0 0 24 24"
+                          role="presentation"
+                          aria-hidden="true"
+                        >
+                          <path
+                            d="M5.75 4.5h12.5a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H5.75a.75.75 0 0 1-.75-.75V5.25a.75.75 0 0 1 .75-.75Z"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                          <path
+                            d="M8 7h8m-8 4h8m-8 4h5"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                          <path
+                            d="M5 4.5l1.5-2m11 2L19 2.5"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                        </svg>
+                        <span class="board-summary__icon-button-label" data-history-label>
+                          Cronologia
+                        </span>
+                      </button>
+                    </div>
+                    <div class="board-summary__section-body">
+                      <div class="board-summary__stat">
+                        <p id="draw-progress-value" class="board-summary__metric">0/0</p>
+                        <div
+                          id="draw-progress-bar"
+                          class="board-summary__progress"
+                          role="progressbar"
+                          aria-valuemin="0"
+                          aria-valuemax="0"
+                          aria-valuenow="0"
+                        >
+                          <span class="board-summary__progress-fill" style="width: 0%"></span>
+                        </div>
+                      </div>
+                      <div class="board-summary__actions">
+                        <button
+                          type="button"
+                          id="draw-button"
+                          class="board-panel__draw"
+                          disabled
+                        >
+                          Estrai numero
+                        </button>
+                        <button
+                          type="button"
+                          id="reset-button"
+                          class="board-panel__reset"
+                          disabled
+                        >
+                          Reset partita
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </article>
             </div>

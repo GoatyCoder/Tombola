@@ -215,25 +215,66 @@ button {
   overflow: hidden;
 }
 
-.board-summary__card--progress {
-  gap: clamp(0.45rem, 2vw, 0.7rem);
+.board-summary__card--combined {
+  padding: clamp(0.85rem, 2.8vw, 1.2rem);
+  gap: clamp(0.75rem, 2.8vw, 1.1rem);
 }
 
-.board-summary__card--highlight {
+.board-summary__sections {
+  display: grid;
+  gap: clamp(0.75rem, 2.8vw, 1.1rem);
+}
+
+@media (min-width: 680px) {
+  .board-summary__sections {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    align-items: stretch;
+  }
+}
+
+.board-summary__section {
+  position: relative;
+  display: grid;
+  gap: clamp(0.4rem, 1.8vw, 0.7rem);
+  align-content: start;
+  padding: clamp(0.85rem, 2.8vw, 1.3rem);
+  border-radius: var(--radius-sm);
+}
+
+.board-summary__section--last {
   color: var(--surface);
   background: radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.24), rgba(67, 10, 18, 0.9)),
     linear-gradient(145deg, rgba(155, 27, 43, 0.9), rgba(92, 16, 26, 0.94));
-  border-color: rgba(255, 255, 255, 0.32);
-  box-shadow: 0 26px 44px rgba(45, 16, 21, 0.32);
+  box-shadow: 0 22px 40px rgba(45, 16, 21, 0.3);
+  overflow: hidden;
 }
 
-.board-summary__card--highlight::after {
+.board-summary__section--last::after {
   content: '';
   position: absolute;
-  inset: 0.35rem;
-  border-radius: calc(var(--radius-md) - 0.35rem);
+  inset: 0.45rem;
+  border-radius: calc(var(--radius-sm) - 0.45rem);
   border: 1px solid rgba(255, 255, 255, 0.28);
   pointer-events: none;
+}
+
+.board-summary__section--progress {
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.96), rgba(237, 225, 218, 0.72));
+  border: 1px solid rgba(155, 27, 43, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6), 0 14px 30px rgba(45, 16, 21, 0.12);
+  gap: clamp(0.45rem, 2.2vw, 0.75rem);
+  display: grid;
+}
+
+.board-summary__section-body {
+  display: grid;
+  gap: clamp(0.75rem, 2.4vw, 1.05rem);
+}
+
+.board-summary__stat {
+  display: grid;
+  gap: 0.4rem;
+  align-content: start;
 }
 
 .board-summary__label {
@@ -319,23 +360,10 @@ button {
   font-weight: 600;
 }
 
-.board-summary__card--highlight .board-summary__icon-button {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.34);
-  color: var(--surface);
-  box-shadow: none;
-}
-
-.board-summary__card--highlight .board-summary__icon-button:hover,
-.board-summary__card--highlight .board-summary__icon-button:focus-visible {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.48);
-}
-
 .board-summary__actions {
   display: grid;
   gap: 0.55rem;
-  margin-top: 0.25rem;
+  margin-top: 0;
 }
 
 .board-summary__actions .board-panel__draw,
@@ -344,6 +372,26 @@ button {
   justify-content: center;
   display: inline-flex;
   align-items: center;
+}
+
+@media (min-width: 720px) {
+  .board-summary__section-body {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: clamp(0.85rem, 2vw, 1.2rem);
+  }
+
+  .board-summary__actions {
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    justify-content: end;
+    align-items: center;
+  }
+
+  .board-summary__actions .board-panel__draw,
+  .board-summary__actions .board-panel__reset {
+    width: auto;
+  }
 }
 
 @media (min-width: 541px) {
@@ -376,6 +424,64 @@ button {
   transform-origin: left center;
   width: 0%;
   transition: width 0.35s ease;
+}
+
+@media (max-width: 540px) {
+  .board-summary__card--combined {
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+
+  .board-summary__sections {
+    gap: 0.65rem;
+  }
+
+  .board-summary__section {
+    padding: 0.75rem;
+    gap: 0.55rem;
+  }
+
+  .board-summary__section-body {
+    gap: 0.65rem;
+  }
+
+  .board-summary__stat {
+    gap: 0.35rem;
+  }
+
+  .board-summary__icon-button {
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0.45rem;
+    gap: 0;
+  }
+
+  .board-summary__icon-button-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .board-summary__actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  .board-summary__actions .board-panel__draw,
+  .board-summary__actions .board-panel__reset {
+    padding: 0.65rem 0.75rem;
+    font-size: 0.94rem;
+  }
+
+  .board-summary__progress {
+    height: 0.45rem;
+  }
 }
 
 .board-panel__draw,
