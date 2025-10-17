@@ -926,8 +926,9 @@ button {
   background: rgba(17, 6, 8, 0.6);
   display: grid;
   place-items: center;
-  padding: clamp(1.5rem, 3vw, 2.5rem);
+  padding: clamp(2rem, 6vh, 3.2rem) clamp(1.2rem, 4vw, 2.6rem);
   z-index: 60;
+  overflow-y: auto;
 }
 
 .modal[hidden] {
@@ -937,10 +938,10 @@ button {
 .number-popup {
   background: linear-gradient(145deg, var(--surface) 0%, #fff7f2 100%);
   border-radius: clamp(26px, 5vw, 34px);
-  width: min(760px, 100%);
+  width: min(700px, 100%);
   display: grid;
-  gap: clamp(1.5rem, 3vw, 2.4rem);
-  padding: clamp(1.6rem, 3.8vw, 2.6rem);
+  gap: clamp(1.4rem, 3vw, 2.2rem);
+  padding: clamp(1.5rem, 3.4vw, 2.4rem);
   position: relative;
   box-shadow: var(--shadow-overlay);
   border: 1px solid rgba(255, 255, 255, 0.22);
@@ -971,7 +972,7 @@ button {
 
 .number-popup__layout {
   display: grid;
-  gap: clamp(1.4rem, 3vw, 2.2rem);
+  gap: clamp(1.3rem, 2.8vw, 2rem);
 }
 
 @media (min-width: 760px) {
@@ -1231,8 +1232,9 @@ button {
 }
 
 .number-popup__sponsor-link img {
-  max-height: 52px;
+  height: clamp(2.5rem, 5.8vw, 3.2rem);
   width: auto;
+  max-width: min(160px, 100%);
 }
 
 .draw-overlay {
@@ -1424,8 +1426,60 @@ button {
 }
 
 .draw-overlay__sponsor img {
-  max-height: 48px;
+  height: clamp(2.2rem, 5vw, 2.9rem);
   width: auto;
+  max-width: min(150px, 100%);
+}
+
+@media (max-width: 640px) {
+  .modal {
+    padding-block: clamp(2.6rem, 12vh, 3.8rem);
+    padding-inline: clamp(1rem, 6vw, 1.6rem);
+  }
+
+  .number-popup {
+    width: min(100%, 520px);
+    gap: clamp(1rem, 4vw, 1.4rem);
+    padding: clamp(1.1rem, 4.5vw, 1.6rem);
+    border-radius: clamp(22px, 8vw, 30px);
+  }
+
+  .number-popup__layout {
+    gap: clamp(0.9rem, 4vw, 1.3rem);
+  }
+
+  .number-popup__media {
+    padding: clamp(0.7rem, 4vw, 1rem);
+  }
+
+  .number-popup__header {
+    gap: 0.28rem;
+  }
+
+  .number-popup__number {
+    font-size: clamp(2rem, 11vw, 2.8rem);
+  }
+
+  .number-popup__phrases {
+    gap: clamp(0.6rem, 3.5vw, 0.85rem);
+  }
+
+  .number-popup__text-row {
+    gap: clamp(0.55rem, 3vw, 0.75rem);
+  }
+
+  .number-popup__play {
+    width: 2.4rem;
+    height: 2.4rem;
+  }
+
+  .number-popup__sponsor-link {
+    padding: 0.55rem 0.85rem;
+  }
+
+  .number-popup__sponsor-link img {
+    height: clamp(2.2rem, 8vw, 2.8rem);
+  }
 }
 
 .sponsor-section {
