@@ -587,15 +587,25 @@ button {
   box-shadow: none;
 }
 
-.audio-fab {
+.board-panel__floating-controls {
   position: fixed;
   right: clamp(1rem, 4vw, 2.2rem);
   bottom: clamp(1.2rem, 5vw, 2.6rem);
   z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: clamp(0.65rem, 3vw, 0.9rem);
 }
 
-.audio-fab::after {
-  content: attr(title);
+.board-panel__floating-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.board-panel__floating-button[data-tooltip]::after {
+  content: attr(data-tooltip);
   position: absolute;
   inset: auto auto calc(100% + 0.6rem) 50%;
   transform: translateX(-50%);
@@ -613,9 +623,58 @@ button {
   white-space: nowrap;
 }
 
-.audio-fab:hover::after,
-.audio-fab:focus-visible::after {
+.board-panel__floating-button[data-tooltip]:hover::after,
+.board-panel__floating-button[data-tooltip]:focus-visible::after {
   opacity: 1;
+}
+
+.audio-fab {
+  position: relative;
+}
+
+.board-panel__floating-draw {
+  min-width: 3.2rem;
+  height: 50px;
+  padding: 0 1.35rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: var(--brand-primary);
+  color: var(--surface);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 16px 30px rgba(155, 27, 43, 0.32);
+  transition: background var(--transition-base),
+    border-color var(--transition-base), transform var(--transition-base),
+    box-shadow var(--transition-base), color var(--transition-base);
+}
+
+.board-panel__floating-draw:hover,
+.board-panel__floating-draw:focus-visible {
+  background: var(--brand-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 20px 36px rgba(155, 27, 43, 0.36);
+}
+
+.board-panel__floating-draw:focus-visible {
+  outline: 3px solid rgba(155, 27, 43, 0.35);
+  outline-offset: 3px;
+}
+
+.board-panel__floating-draw:disabled {
+  background: rgba(155, 27, 43, 0.32);
+  color: rgba(255, 255, 255, 0.85);
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
+[data-floating-draw-text] {
+  pointer-events: none;
 }
 
 .board-panel__audio-icon {
@@ -713,18 +772,33 @@ button {
     flex: 1 1 140px;
   }
 
-  .audio-fab {
+  .board-panel__floating-controls {
     bottom: 1.4rem;
     right: 1.1rem;
   }
 
-  .audio-fab.board-panel__audio-toggle {
+  .board-panel__floating-button.board-panel__audio-toggle {
     width: 46px;
     height: 46px;
   }
 
   .board-grid {
     grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 540px) {
+  .board-panel__floating-controls {
+    right: 0.9rem;
+    left: auto;
+    gap: 0.6rem;
+  }
+
+  .board-panel__floating-draw {
+    padding: 0 1.05rem;
+    font-size: 0.85rem;
+    height: 46px;
+    box-shadow: 0 12px 24px rgba(155, 27, 43, 0.28);
   }
 }
 

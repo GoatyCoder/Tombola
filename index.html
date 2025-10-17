@@ -370,39 +370,53 @@
       </div>
     </footer>
 
-    <button
-      type="button"
-      id="audio-toggle"
-      class="board-panel__audio-toggle board-panel__audio-toggle--on audio-fab"
-      aria-pressed="true"
-      aria-label="Disattiva annuncio audio"
-      title="Disattiva annuncio audio"
-    >
-      <span class="sr-only" data-audio-label>Audio attivo</span>
-      <svg
-        class="board-panel__audio-icon"
-        viewBox="0 0 24 24"
-        role="presentation"
-        aria-hidden="true"
+    <div class="board-panel__floating-controls" role="presentation">
+      <button
+        type="button"
+        id="floating-draw-button"
+        class="board-panel__floating-button board-panel__floating-draw"
+        aria-label="Estrai numero"
+        title="Estrai numero"
+        disabled
       >
-        <path
-          class="board-panel__audio-speaker"
-          d="M5.5 9.5H8l3.5-3.5v12L8 14.5H5.5a1.5 1.5 0 0 1-1.5-1.5v-2a1.5 1.5 0 0 1 1.5-1.5Z"
-        />
-        <path
-          class="board-panel__audio-wave"
-          d="M15.5 9.5a3 3 0 0 1 0 5"
-        />
-        <path
-          class="board-panel__audio-wave board-panel__audio-wave--strong"
-          d="M17.8 7.8a6 6 0 0 1 0 8.5"
-        />
-        <path
-          class="board-panel__audio-cross"
-          d="M16 9l5 5m0-5-5 5"
-        />
-      </svg>
-    </button>
+        <span aria-hidden="true" data-floating-draw-text>Estrai</span>
+        <span class="sr-only" data-floating-draw-sr>Estrai numero</span>
+      </button>
+      <button
+        type="button"
+        id="audio-toggle"
+        class="board-panel__audio-toggle board-panel__audio-toggle--on board-panel__floating-button audio-fab"
+        aria-pressed="true"
+        aria-label="Disattiva annuncio audio"
+        title="Disattiva annuncio audio"
+        data-tooltip="Disattiva annuncio audio"
+      >
+        <span class="sr-only" data-audio-label>Audio attivo</span>
+        <svg
+          class="board-panel__audio-icon"
+          viewBox="0 0 24 24"
+          role="presentation"
+          aria-hidden="true"
+        >
+          <path
+            class="board-panel__audio-speaker"
+            d="M5.5 9.5H8l3.5-3.5v12L8 14.5H5.5a1.5 1.5 0 0 1-1.5-1.5v-2a1.5 1.5 0 0 1 1.5-1.5Z"
+          />
+          <path
+            class="board-panel__audio-wave"
+            d="M15.5 9.5a3 3 0 0 1 0 5"
+          />
+          <path
+            class="board-panel__audio-wave board-panel__audio-wave--strong"
+            d="M17.8 7.8a6 6 0 0 1 0 8.5"
+          />
+          <path
+            class="board-panel__audio-cross"
+            d="M16 9l5 5m0-5-5 5"
+          />
+        </svg>
+      </button>
+    </div>
 
   </body>
 </html>

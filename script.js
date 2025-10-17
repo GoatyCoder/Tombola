@@ -55,6 +55,7 @@ const elements = {
   historyToggleLabel: document.querySelector('[data-history-label]'),
   historyScrim: document.querySelector('#history-scrim'),
   audioToggle: document.querySelector('#audio-toggle'),
+  floatingDrawButton: document.querySelector('#floating-draw-button'),
   drawProgressValue: document.querySelector('#draw-progress-value'),
   drawProgressBar: document.querySelector('#draw-progress-bar'),
   drawProgressFill: document.querySelector(
@@ -735,6 +736,7 @@ function updateAudioToggle() {
   const actionLabel = enabled ? 'Disattiva annuncio audio' : 'Attiva annuncio audio';
   audioToggle.setAttribute('aria-label', actionLabel);
   audioToggle.title = actionLabel;
+  audioToggle.setAttribute('data-tooltip', actionLabel);
   const srText = audioToggle.querySelector('[data-audio-label]');
   if (srText) {
     srText.textContent = enabled ? 'Audio attivo' : 'Audio disattivato';
@@ -970,6 +972,22 @@ async function loadNumbers() {
     if (elements.drawButton) {
       elements.drawButton.disabled = true;
     }
+    if (elements.floatingDrawButton) {
+      elements.floatingDrawButton.disabled = true;
+      const floatingLabel = elements.floatingDrawButton.querySelector(
+        '[data-floating-draw-text]'
+      );
+      const floatingSr = elements.floatingDrawButton.querySelector('[data-floating-draw-sr]');
+      if (floatingLabel) {
+        floatingLabel.textContent = 'Estrai';
+      }
+      const disabledMessage = 'Estrazione non disponibile';
+      elements.floatingDrawButton.setAttribute('aria-label', disabledMessage);
+      elements.floatingDrawButton.title = disabledMessage;
+      if (floatingSr) {
+        floatingSr.textContent = disabledMessage;
+      }
+    }
   }
 }
 
@@ -1158,6 +1176,7 @@ async function handleDraw() {
 
   state.isAnimatingDraw = true;
   let restoreDrawButton = false;
+  let restoreFloatingDrawButton = false;
   let markRecorded = false;
   let preparationError = null;
 
@@ -1167,6 +1186,10 @@ async function handleDraw() {
     if (elements.drawButton) {
       restoreDrawButton = !elements.drawButton.disabled;
       elements.drawButton.disabled = true;
+    }
+    if (elements.floatingDrawButton) {
+      restoreFloatingDrawButton = !elements.floatingDrawButton.disabled;
+      elements.floatingDrawButton.disabled = true;
     }
 
     try {
@@ -1183,6 +1206,9 @@ async function handleDraw() {
     state.isAnimatingDraw = false;
     if (elements.drawButton && restoreDrawButton) {
       elements.drawButton.disabled = false;
+    }
+    if (elements.floatingDrawButton && restoreFloatingDrawButton) {
+      elements.floatingDrawButton.disabled = false;
     }
   }
 
@@ -1856,9 +1882,10 @@ function updateDrawStatus(latestEntry) {
     drawStatus.textContent = message;
   }
 
+  const noNumbersLoaded = total === 0;
+  const finished = drawnCount === total && total > 0;
+
   if (drawButton) {
-    const noNumbersLoaded = total === 0;
-    const finished = drawnCount === total && total > 0;
     drawButton.disabled = noNumbersLoaded || finished;
 
     if (noNumbersLoaded) {
@@ -1869,6 +1896,42 @@ function updateDrawStatus(latestEntry) {
       drawButton.textContent = 'Estrai primo numero';
     } else {
       drawButton.textContent = 'Estrai successivo';
+    }
+  }
+
+  if (elements.floatingDrawButton) {
+    const floatingButton = elements.floatingDrawButton;
+    const floatingLabel = floatingButton.querySelector('[data-floating-draw-text]');
+    const floatingSr = floatingButton.querySelector('[data-floating-draw-sr]');
+    floatingButton.disabled = noNumbersLoaded || finished;
+
+    let compactLabel = 'Estrai';
+    let srMessage = 'Estrai numero';
+
+    if (noNumbersLoaded) {
+      compactLabel = 'Estrai';
+      srMessage = 'Caricamento del tabellone in corso';
+    } else if (finished) {
+      compactLabel = 'Fine';
+      srMessage = 'Tutte le estrazioni sono completate';
+    } else if (drawnCount === 0) {
+      compactLabel = 'Primo';
+      srMessage = 'Estrai il primo numero';
+    } else {
+      compactLabel = 'Prossimo';
+      srMessage = 'Estrai il prossimo numero';
+    }
+
+    if (floatingLabel) {
+      floatingLabel.textContent = compactLabel;
+    } else {
+      floatingButton.textContent = compactLabel;
+    }
+
+    floatingButton.setAttribute('aria-label', srMessage);
+    floatingButton.title = srMessage;
+    if (floatingSr) {
+      floatingSr.textContent = srMessage;
     }
   }
 
@@ -1937,6 +2000,10 @@ function setupEventListeners() {
 
   if (elements.drawButton) {
     elements.drawButton.addEventListener('click', handleDraw);
+  }
+
+  if (elements.floatingDrawButton) {
+    elements.floatingDrawButton.addEventListener('click', handleDraw);
   }
 
   if (elements.resetButton) {
