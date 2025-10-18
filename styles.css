@@ -1964,6 +1964,12 @@ button {
   line-height: 1.6;
 }
 
+.app-footer__partner-logo {
+  margin-top: clamp(1rem, 2.8vw, 1.6rem);
+  height: clamp(52px, 7vw, 72px);
+  width: auto;
+}
+
 .app-footer__brand {
   display: grid;
   gap: 0.65rem;
