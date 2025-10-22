@@ -25,10 +25,10 @@ const elements = {
   resetButton: document.querySelector('#reset-button'),
   audioFab: document.querySelector('#floating-audio'),
   lastNumber: document.querySelector('#last-number'),
+  lastDialect: document.querySelector('#last-dialect'),
   lastStatus: document.querySelector('#last-status'),
   progressCount: document.querySelector('#progress-count'),
   progressBar: document.querySelector('#progress-bar'),
-  summaryImage: document.querySelector('#summary-image'),
   historyList: document.querySelector('#history-list'),
   historyEmpty: document.querySelector('#history-empty'),
   historyClear: document.querySelector('#history-clear'),
@@ -262,23 +262,21 @@ function updateSummary() {
 
   if (!state.lastEntry) {
     elements.lastNumber.textContent = '—';
+    if (elements.lastDialect) {
+      elements.lastDialect.textContent = '—';
+    }
     if (elements.lastStatus) {
       elements.lastStatus.textContent = 'Premi “Estrai numero” per avviare la tombolata.';
-    }
-    if (elements.summaryImage) {
-      elements.summaryImage.src = DEFAULT_IMAGE;
-      elements.summaryImage.alt = 'Illustrazione della casella';
     }
     return;
   }
 
   elements.lastNumber.textContent = state.lastEntry.number;
+  if (elements.lastDialect) {
+    elements.lastDialect.textContent = state.lastEntry.dialect || '—';
+  }
   if (elements.lastStatus) {
     elements.lastStatus.textContent = 'Numero estratto dal tabellone.';
-  }
-  if (elements.summaryImage) {
-    elements.summaryImage.src = state.lastEntry.image || DEFAULT_IMAGE;
-    elements.summaryImage.alt = `Illustrazione del numero ${state.lastEntry.number}.`;
   }
 }
 
