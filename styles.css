@@ -198,7 +198,7 @@ body.detail-dialog--open {
 
 .board-grid {
   display: grid;
-  grid-template-columns: repeat(9, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0;
   border-radius: clamp(16px, 3vw, 24px);
   overflow: hidden;
@@ -226,18 +226,6 @@ body.detail-dialog--open {
   transition: opacity var(--transition);
 }
 
-.board-tile__number {
-  position: absolute;
-  inset: auto 6% 6% auto;
-  padding: 0.25rem 0.5rem;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
-  font-weight: 600;
-  font-size: clamp(0.75rem, 1.2vw + 0.35rem, 1rem);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
-}
-
 .board-tile:hover .board-tile__overlay,
 .board-tile:focus-visible .board-tile__overlay {
   opacity: 0.6;
@@ -245,10 +233,6 @@ body.detail-dialog--open {
 
 .board-tile.is-drawn .board-tile__overlay {
   opacity: 0.85;
-}
-
-.board-tile.is-drawn .board-tile__number {
-  background: rgba(198, 75, 60, 0.9);
 }
 
 .panel {
@@ -668,13 +652,30 @@ body.detail-dialog--open::before {
 
 .detail-dialog__actions {
   margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .detail-dialog__actions .pill {
   width: 100%;
 }
 
+@media (min-width: 420px) {
+  .detail-dialog__actions {
+    flex-direction: row;
+  }
+
+  .detail-dialog__actions .pill {
+    flex: 1;
+  }
+}
+
 @media (min-width: 720px) {
+  .board-grid {
+    grid-template-columns: repeat(10, minmax(0, 1fr));
+  }
+
   .board-area__frame {
     margin: 0 auto;
     max-width: min(100%, 880px);

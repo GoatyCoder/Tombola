@@ -38,6 +38,7 @@ const elements = {
   detailDescription: document.querySelector('#detail-description'),
   detailImage: document.querySelector('#detail-image'),
   detailClose: document.querySelector('#detail-close'),
+  detailDismiss: document.querySelector('#detail-dismiss'),
   detailNext: document.querySelector('#detail-next'),
   sponsorSection: document.querySelector('#sponsor-section'),
   sponsorList: document.querySelector('#sponsor-list'),
@@ -97,9 +98,16 @@ function wireEventListeners() {
   elements.historyClear.addEventListener('click', resetGame);
   elements.historyList.addEventListener('click', onHistoryClick);
   elements.detailClose.addEventListener('click', closeDetailDialog);
+  elements.detailDismiss.addEventListener('click', closeDetailDialog);
   elements.detailNext.addEventListener('click', () => {
     drawNumber({ revealDetail: true, focusDialog: true });
   });
+
+  const handleBackdropClick = (event) => {
+    if (event.target === elements.detailDialog) {
+      closeDetailDialog();
+    }
+  };
 
   if (supportsDialog) {
     elements.detailDialog.addEventListener('cancel', (event) => {
@@ -107,6 +115,8 @@ function wireEventListeners() {
       closeDetailDialog();
     });
   }
+
+  elements.detailDialog.addEventListener('click', handleBackdropClick);
 }
 
 async function fetchNumbers() {
@@ -153,10 +163,6 @@ function buildBoard(entries) {
         ? `Numero ${entry.number}. ${entry.italian}`
         : `Numero ${entry.number}`
     );
-    const numberBadge = instance.querySelector('.board-tile__number');
-    if (numberBadge) {
-      numberBadge.textContent = entry.number;
-    }
     instance.addEventListener('click', () => openDetail(entry.number));
     fragment.appendChild(instance);
     state.boardCells.set(entry.number, instance);
