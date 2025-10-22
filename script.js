@@ -84,6 +84,8 @@ const EMBEDDED_SPONSORS = Object.freeze([
     url: 'https://www.cantinanojana.it/',
   },
 ]);
+const DEFAULT_CELL_IMAGE = 'images/sample.jpg';
+const USE_SHARED_SAMPLE_FOR_ALL_CELLS = true;
 const DRAW_TIMELINE = Object.freeze({
   intro: 520,
   prepareHold: 2860,
@@ -1030,9 +1032,36 @@ function renderBoard() {
       numberEl.textContent = entry.number;
     }
 
+    const italianLabel = entry.italian || 'Da definire';
+    const dialectLabel = entry.dialect || '—';
+
+    const italianEl = cell.querySelector('.board-cell__label--italian');
+    if (italianEl) {
+      italianEl.textContent = italianLabel;
+    }
+
+    const dialectEl = cell.querySelector('.board-cell__label--dialect');
+    if (dialectEl) {
+      dialectEl.textContent = dialectLabel;
+    }
+
+    const imageEl = cell.querySelector('.board-cell__image');
+    if (imageEl) {
+      const imageSrc = getBoardCellImage(entry);
+      imageEl.src = imageSrc;
+      const imageAltParts = [`Illustrazione del numero ${entry.number}`];
+      if (entry.italian) {
+        imageAltParts.push(entry.italian);
+      }
+      imageEl.alt = imageAltParts.join(' – ');
+    }
+
     const ariaLabelParts = [`Numero ${entry.number}`];
     if (entry.italian) {
       ariaLabelParts.push(entry.italian);
+    }
+    if (entry.dialect) {
+      ariaLabelParts.push(entry.dialect);
     }
     cell.setAttribute('aria-label', ariaLabelParts.join(' – '));
 
@@ -1046,6 +1075,45 @@ function renderBoard() {
   });
 
   board.appendChild(fragment);
+}
+
+function normalizeAssetPath(value) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function getBoardCellImage(entry) {
+  if (USE_SHARED_SAMPLE_FOR_ALL_CELLS) {
+    return DEFAULT_CELL_IMAGE;
+  }
+
+  if (!entry || typeof entry !== 'object') {
+    return DEFAULT_CELL_IMAGE;
+  }
+
+  const assets = entry.assets && typeof entry.assets === 'object' ? entry.assets : null;
+
+  if (assets) {
+    const fromAssets =
+      normalizeAssetPath(assets.board) ||
+      normalizeAssetPath(assets.card) ||
+      normalizeAssetPath(assets.boardImage) ||
+      normalizeAssetPath(assets.cardImage);
+    if (fromAssets) {
+      return fromAssets;
+    }
+  }
+
+  const direct =
+    normalizeAssetPath(entry.boardImage) ||
+    normalizeAssetPath(entry.board_image) ||
+    normalizeAssetPath(entry.cardImage) ||
+    normalizeAssetPath(entry.card_image);
+
+  if (direct) {
+    return direct;
+  }
+
+  return DEFAULT_CELL_IMAGE;
 }
 
 function buildNumberImage(number) {
