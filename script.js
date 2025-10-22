@@ -27,6 +27,7 @@ const elements = {
   lastDialect: document.querySelector('#last-dialect'),
   progressCount: document.querySelector('#progress-count'),
   progressBar: document.querySelector('#progress-bar'),
+  summaryImage: document.querySelector('#summary-image'),
   historyList: document.querySelector('#history-list'),
   historyEmpty: document.querySelector('#history-empty'),
   historyClear: document.querySelector('#history-clear'),
@@ -237,12 +238,24 @@ function updateSummary() {
     elements.lastNumber.textContent = '—';
     elements.lastItalian.textContent = 'Inizia la partita';
     elements.lastDialect.textContent = 'Premi “Estrai numero” per avviare la tombolata.';
+    if (elements.summaryImage) {
+      elements.summaryImage.src = DEFAULT_IMAGE;
+      elements.summaryImage.alt = 'Illustrazione della casella';
+    }
     return;
   }
 
   elements.lastNumber.textContent = state.lastEntry.number;
   elements.lastItalian.textContent = state.lastEntry.italian || 'Numero estratto';
   elements.lastDialect.textContent = state.lastEntry.dialect || '';
+  if (elements.summaryImage) {
+    elements.summaryImage.src = state.lastEntry.image || DEFAULT_IMAGE;
+    const altParts = [`Illustrazione del numero ${state.lastEntry.number}.`];
+    if (state.lastEntry.italian) {
+      altParts.push(state.lastEntry.italian);
+    }
+    elements.summaryImage.alt = altParts.join(' ');
+  }
 }
 
 function updateButtons() {
@@ -306,15 +319,18 @@ function renderHistory() {
   state.history.forEach((number) => {
     const entry = state.entries.find((item) => item.number === number);
     const item = document.createElement('li');
-    item.className = 'history-card__item';
+    item.className = 'history__item';
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'history-card__button';
+    button.className = 'history__button';
     button.dataset.number = String(number);
-    button.innerHTML = `
-      <span class="history-card__badge">${number}</span>
-      <span class="history-card__label">${entry?.italian || 'Numero'}</span>
-    `;
+    const badge = document.createElement('span');
+    badge.className = 'history__badge';
+    badge.textContent = String(number);
+    const label = document.createElement('span');
+    label.className = 'history__label';
+    label.textContent = entry?.italian || 'Numero';
+    button.append(badge, label);
     item.appendChild(button);
     fragment.appendChild(item);
   });

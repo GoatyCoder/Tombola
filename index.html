@@ -14,103 +14,92 @@
     <script defer src="script.js"></script>
   </head>
   <body>
-    <div class="app-shell">
-      <header class="hero" role="banner">
-        <div class="hero__content">
-          <p class="hero__badge">Tombola Nojana</p>
-          <h1 class="hero__title">La tradizione prende forma digitale</h1>
-          <p class="hero__lead">
-            Un tabellone essenziale, pulito e coerente con le illustrazioni
-            originali. Estrai i numeri, scopri i significati e condividi la
-            tombolata con chi vuoi tu.
-          </p>
-          <div class="hero__actions" role="group" aria-label="Controlli principali">
-            <button id="draw-button" class="button button--primary" type="button" disabled>
-              Estrai numero
-            </button>
-            <button id="reset-button" class="button button--ghost" type="button" disabled>
-              Nuova partita
-            </button>
-            <button
-              id="audio-toggle"
-              class="button button--toggle"
-              type="button"
-              aria-pressed="true"
-            >
-              Audio attivo
-            </button>
+    <div class="app">
+      <header class="app-header" role="banner">
+        <div class="app-header__brand">
+          <span class="app-header__mark" aria-hidden="true">TN</span>
+          <div class="app-header__text">
+            <p class="app-header__kicker">Tombola nojano</p>
+            <h1 class="app-header__title">Tabellone digitale</h1>
           </div>
         </div>
-        <div class="hero__preview" aria-hidden="true">
-          <div class="hero__preview-grid">
-            <img src="images/sample.jpg" alt="" />
-            <img src="images/sample.jpg" alt="" />
-            <img src="images/sample.jpg" alt="" />
-            <img src="images/sample.jpg" alt="" />
-          </div>
-        </div>
+        <button
+          id="audio-toggle"
+          class="pill pill--ghost"
+          type="button"
+          aria-pressed="true"
+        >
+          Audio attivo
+        </button>
       </header>
 
-      <main class="layout" aria-label="Tabellone della tombola">
-        <section class="layout__aside" aria-label="Stato partita">
-          <article class="status-card" role="status" aria-live="polite">
-            <div class="status-card__media">
+      <main class="main" aria-label="Tabellone della tombola">
+        <section class="board-area" aria-labelledby="board-title">
+          <div class="board-area__top">
+            <div>
+              <p class="board-area__eyebrow">Tabellone</p>
+              <h2 id="board-title" class="board-area__title">
+                La tombolata illustrata
+              </h2>
+            </div>
+            <div class="board-area__progress" role="status" aria-live="polite">
+              <span id="progress-count" class="board-area__progress-count">0/90</span>
+              <div
+                class="progress"
+                role="progressbar"
+                aria-valuemin="0"
+                aria-valuemax="90"
+                aria-valuenow="0"
+              >
+                <span id="progress-bar" class="progress__fill" style="width: 0%"></span>
+              </div>
+            </div>
+          </div>
+          <div class="board-area__frame">
+            <div id="board" class="board-grid" role="grid" aria-live="polite"></div>
+          </div>
+        </section>
+
+        <section class="panel" aria-label="Dettagli e controlli">
+          <article class="summary-card" role="status" aria-live="polite">
+            <div class="summary-card__body">
+              <p class="summary-card__label">Ultimo numero</p>
+              <p id="last-number" class="summary-card__number">—</p>
+              <p id="last-italian" class="summary-card__title">Inizia la partita</p>
+              <p id="last-dialect" class="summary-card__subtitle">
+                Premi “Estrai numero” per avviare la tombolata.
+              </p>
+            </div>
+            <div class="summary-card__media">
               <img
+                id="summary-image"
                 src="images/sample.jpg"
                 alt="Illustrazione della casella"
-                class="status-card__image"
                 loading="lazy"
                 decoding="async"
               />
             </div>
-            <div class="status-card__body">
-              <p class="status-card__eyebrow">Ultimo numero</p>
-              <p id="last-number" class="status-card__number">—</p>
-              <p id="last-italian" class="status-card__title">Inizia la partita</p>
-              <p id="last-dialect" class="status-card__subtitle">
-                Premi “Estrai numero” per avviare la tombolata.
-              </p>
-              <div class="status-card__progress">
-                <div class="status-card__progress-top">
-                  <span>Estratti</span>
-                  <span id="progress-count" aria-live="polite">0/90</span>
-                </div>
-                <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="90" aria-valuenow="0">
-                  <span id="progress-bar" class="progress-bar__fill" style="width: 0%"></span>
-                </div>
-              </div>
-            </div>
           </article>
 
-          <section class="history-card" aria-labelledby="history-title">
-            <div class="history-card__header">
+          <div class="panel__actions" role="group" aria-label="Comandi partita">
+            <button id="draw-button" class="pill pill--primary" type="button" disabled>
+              Estrai numero
+            </button>
+            <button id="reset-button" class="pill pill--outline" type="button" disabled>
+              Nuova partita
+            </button>
+          </div>
+
+          <section class="history" aria-labelledby="history-title">
+            <div class="history__header">
               <h2 id="history-title">Cronologia</h2>
-              <button id="history-clear" class="history-card__clear" type="button" disabled>
+              <button id="history-clear" class="history__clear" type="button" disabled>
                 Azzera
               </button>
             </div>
-            <p id="history-empty" class="history-card__empty">
-              Nessun numero estratto finora.
-            </p>
-            <ol id="history-list" class="history-card__list" aria-live="polite"></ol>
+            <p id="history-empty" class="history__empty">Nessun numero estratto finora.</p>
+            <ol id="history-list" class="history__list" aria-live="polite"></ol>
           </section>
-        </section>
-
-        <section class="layout__board" aria-label="Tabellone">
-          <header class="board-header">
-            <div>
-              <h2 class="board-header__title">Tabellone completo</h2>
-              <p class="board-header__subtitle">
-                Novanta caselle quadrate con la stessa illustrazione, pronte per
-                essere evidenziate al momento dell'estrazione.
-              </p>
-            </div>
-            <div class="board-header__legend" aria-hidden="true">
-              <span class="legend-dot legend-dot--drawn"></span>
-              <span>Numero estratto</span>
-            </div>
-          </header>
-          <div id="board" class="board-grid" role="grid" aria-live="polite"></div>
         </section>
       </main>
 
@@ -118,7 +107,7 @@
         <div class="sponsor__header">
           <h2 class="sponsor__title">Con il supporto di</h2>
           <p class="sponsor__subtitle">
-            Una selezione di realtà locali che sostengono la tombolata digitale.
+            Le realtà che rendono possibile la tombolata digitale.
           </p>
         </div>
         <div id="sponsor-list" class="sponsor__list" role="list"></div>
@@ -146,26 +135,40 @@
 
     <template id="board-cell-template">
       <button class="board-tile" type="button" data-number>
-        <span class="board-tile__frame">
-          <img
-            class="board-tile__image"
-            src="images/sample.jpg"
-            alt="Illustrazione decorativa della casella"
-            loading="lazy"
-            decoding="async"
-          />
-        </span>
+        <img
+          class="board-tile__image"
+          src="images/sample.jpg"
+          alt="Illustrazione decorativa della casella"
+          loading="lazy"
+          decoding="async"
+        />
+        <span class="board-tile__overlay" aria-hidden="true"></span>
         <span class="board-tile__number" aria-hidden="true"></span>
       </button>
     </template>
 
-    <dialog id="detail-dialog" class="detail-dialog" aria-labelledby="detail-title" aria-modal="true">
+    <dialog
+      id="detail-dialog"
+      class="detail-dialog"
+      aria-labelledby="detail-title"
+      aria-modal="true"
+    >
       <div class="detail-dialog__surface" role="document">
-        <button id="detail-close" type="button" class="detail-dialog__close" aria-label="Chiudi">
+        <button
+          id="detail-close"
+          type="button"
+          class="detail-dialog__close"
+          aria-label="Chiudi"
+        >
           <span aria-hidden="true">&times;</span>
         </button>
         <div class="detail-dialog__image">
-          <img id="detail-image" src="images/sample.jpg" alt="Illustrazione della casella" />
+          <img
+            id="detail-image"
+            src="images/sample.jpg"
+            alt="Illustrazione della casella"
+            loading="lazy"
+          />
           <span id="detail-number" class="detail-dialog__badge"></span>
         </div>
         <div class="detail-dialog__body">
@@ -173,7 +176,9 @@
           <p id="detail-dialect" class="detail-dialog__dialect"></p>
           <p id="detail-description" class="detail-dialog__description"></p>
           <div class="detail-dialog__actions">
-            <button id="detail-next" type="button" class="button button--primary">Estrai il prossimo</button>
+            <button id="detail-next" type="button" class="pill pill--primary">
+              Estrai il prossimo
+            </button>
           </div>
         </div>
       </div>
