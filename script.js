@@ -21,8 +21,9 @@ const elements = {
   board: document.querySelector('#board'),
   template: document.querySelector('#board-cell-template'),
   drawButton: document.querySelector('#draw-button'),
+  drawFab: document.querySelector('#floating-draw'),
   resetButton: document.querySelector('#reset-button'),
-  audioToggle: document.querySelector('#audio-toggle'),
+  audioFab: document.querySelector('#floating-audio'),
   lastNumber: document.querySelector('#last-number'),
   lastStatus: document.querySelector('#last-status'),
   progressCount: document.querySelector('#progress-count'),
@@ -63,9 +64,18 @@ async function initialiseApp() {
     updateSummary();
     renderHistory();
     updateButtons();
-    elements.drawButton.disabled = state.entries.length === 0;
-    elements.resetButton.disabled = state.drawnNumbers.size === 0;
-    elements.historyClear.disabled = state.drawnNumbers.size === 0;
+    if (elements.drawFab) {
+      elements.drawFab.disabled = state.entries.length === 0;
+    }
+    if (elements.drawButton) {
+      elements.drawButton.disabled = state.entries.length === 0;
+    }
+    if (elements.resetButton) {
+      elements.resetButton.disabled = state.drawnNumbers.size === 0;
+    }
+    if (elements.historyClear) {
+      elements.historyClear.disabled = state.drawnNumbers.size === 0;
+    }
     if (state.entries.length > 0) {
       announceReady();
     }
@@ -91,15 +101,32 @@ function hydrateAudioPreference() {
 }
 
 function wireEventListeners() {
-  elements.drawButton.addEventListener('click', () => drawNumber({ revealDetail: true }));
-  elements.resetButton.addEventListener('click', resetGame);
-  elements.audioToggle.addEventListener('click', toggleAudio);
-  elements.historyClear.addEventListener('click', resetGame);
-  elements.historyList.addEventListener('click', onHistoryClick);
-  elements.detailClose.addEventListener('click', closeDetailDialog);
-  elements.detailNext.addEventListener('click', () => {
-    drawNumber({ revealDetail: true, focusDialog: true });
-  });
+  if (elements.drawButton) {
+    elements.drawButton.addEventListener('click', () => drawNumber({ revealDetail: true }));
+  }
+  if (elements.drawFab) {
+    elements.drawFab.addEventListener('click', () => drawNumber({ revealDetail: true }));
+  }
+  if (elements.resetButton) {
+    elements.resetButton.addEventListener('click', resetGame);
+  }
+  if (elements.audioFab) {
+    elements.audioFab.addEventListener('click', toggleAudio);
+  }
+  if (elements.historyClear) {
+    elements.historyClear.addEventListener('click', resetGame);
+  }
+  if (elements.historyList) {
+    elements.historyList.addEventListener('click', onHistoryClick);
+  }
+  if (elements.detailClose) {
+    elements.detailClose.addEventListener('click', closeDetailDialog);
+  }
+  if (elements.detailNext) {
+    elements.detailNext.addEventListener('click', () => {
+      drawNumber({ revealDetail: true, focusDialog: true });
+    });
+  }
 
   const handleBackdropClick = (event) => {
     if (event.target === elements.detailDialog) {
@@ -266,10 +293,21 @@ function updateSummary() {
 
 function updateButtons() {
   const allDrawn = state.drawnNumbers.size >= state.entries.length && state.entries.length > 0;
-  elements.drawButton.disabled = allDrawn || state.entries.length === 0;
-  elements.resetButton.disabled = state.drawnNumbers.size === 0;
-  elements.historyClear.disabled = state.drawnNumbers.size === 0;
-  elements.detailNext.disabled = allDrawn;
+  if (elements.drawButton) {
+    elements.drawButton.disabled = allDrawn || state.entries.length === 0;
+  }
+  if (elements.drawFab) {
+    elements.drawFab.disabled = allDrawn || state.entries.length === 0;
+  }
+  if (elements.resetButton) {
+    elements.resetButton.disabled = state.drawnNumbers.size === 0;
+  }
+  if (elements.historyClear) {
+    elements.historyClear.disabled = state.drawnNumbers.size === 0;
+  }
+  if (elements.detailNext) {
+    elements.detailNext.disabled = allDrawn;
+  }
 }
 
 function drawNumber({ revealDetail = false, focusDialog = false } = {}) {
@@ -451,9 +489,14 @@ function toggleAudio() {
 }
 
 function updateAudioToggle() {
-  elements.audioToggle.setAttribute('aria-pressed', state.audioEnabled ? 'true' : 'false');
-  elements.audioToggle.textContent = state.audioEnabled ? 'Audio attivo' : 'Audio disattivo';
-  elements.audioToggle.classList.toggle('button--toggle-off', !state.audioEnabled);
+  if (!elements.audioFab) {
+    return;
+  }
+  const label = state.audioEnabled ? 'Disattiva audio' : 'Attiva audio';
+  elements.audioFab.setAttribute('aria-pressed', state.audioEnabled ? 'true' : 'false');
+  elements.audioFab.setAttribute('aria-label', label);
+  elements.audioFab.setAttribute('title', label);
+  elements.audioFab.classList.toggle('is-muted', !state.audioEnabled);
 }
 
 function speakEntry(entry) {

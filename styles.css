@@ -526,17 +526,6 @@ body.detail-dialog--open {
   border-color: rgba(198, 75, 60, 0.6);
 }
 
-.pill--ghost {
-  border-color: rgba(198, 75, 60, 0.25);
-  background: rgba(255, 255, 255, 0.55);
-  color: var(--color-primary);
-}
-
-.pill--ghost.button--toggle-off {
-  color: var(--color-text-soft);
-  border-color: rgba(46, 29, 22, 0.2);
-}
-
 .detail-dialog {
   border: none;
   border-radius: var(--radius-lg);
@@ -615,12 +604,6 @@ body.detail-dialog--open::before {
   gap: 1rem;
   text-align: center;
   align-items: center;
-}
-
-.detail-dialog__hint {
-  margin: 0;
-  font-size: 0.9rem;
-  color: var(--color-text-soft);
 }
 
 .detail-dialog__actions {
@@ -726,5 +709,71 @@ body.detail-dialog--open::before {
 
   .progress {
     width: 100%;
+  }
+}
+
+.floating-actions {
+  position: fixed;
+  right: clamp(16px, 4vw, 32px);
+  bottom: clamp(16px, 5vw, 36px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  z-index: 1000;
+}
+
+.fab {
+  width: clamp(52px, 10vw, 64px);
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff7ef;
+  background: linear-gradient(135deg, var(--color-primary) 0%, #e76755 100%);
+  box-shadow: 0 18px 40px rgba(141, 37, 31, 0.28);
+  transition: transform var(--transition), box-shadow var(--transition), background var(--transition), opacity var(--transition);
+}
+
+.fab:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.fab:not(:disabled):hover,
+.fab:not(:disabled):focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 46px rgba(141, 37, 31, 0.34);
+}
+
+.fab svg {
+  width: 60%;
+  height: 60%;
+}
+
+.fab--audio {
+  background: linear-gradient(135deg, #f7b77f 0%, #e27452 100%);
+  color: #5c271c;
+}
+
+.fab--audio.is-muted {
+  background: linear-gradient(135deg, rgba(92, 39, 28, 0.85) 0%, rgba(46, 29, 22, 0.95) 100%);
+  color: rgba(255, 231, 214, 0.9);
+}
+
+.fab--draw {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+}
+
+@media (min-width: 720px) {
+  .floating-actions {
+    bottom: clamp(24px, 4vw, 48px);
+  }
+}
+
+@media (min-width: 960px) {
+  .floating-actions {
+    flex-direction: row;
   }
 }
