@@ -24,8 +24,7 @@ const elements = {
   resetButton: document.querySelector('#reset-button'),
   audioToggle: document.querySelector('#audio-toggle'),
   lastNumber: document.querySelector('#last-number'),
-  lastItalian: document.querySelector('#last-italian'),
-  lastDialect: document.querySelector('#last-dialect'),
+  lastStatus: document.querySelector('#last-status'),
   progressCount: document.querySelector('#progress-count'),
   progressBar: document.querySelector('#progress-bar'),
   summaryImage: document.querySelector('#summary-image'),
@@ -33,9 +32,6 @@ const elements = {
   historyEmpty: document.querySelector('#history-empty'),
   historyClear: document.querySelector('#history-clear'),
   detailDialog: document.querySelector('#detail-dialog'),
-  detailTitle: document.querySelector('#detail-title'),
-  detailDialect: document.querySelector('#detail-dialect'),
-  detailDescription: document.querySelector('#detail-description'),
   detailImage: document.querySelector('#detail-image'),
   detailClose: document.querySelector('#detail-close'),
   detailNext: document.querySelector('#detail-next'),
@@ -76,8 +72,9 @@ async function initialiseApp() {
     void loadSponsors();
   } catch (error) {
     console.error('Impossibile inizializzare il tabellone', error);
-    elements.lastItalian.textContent = 'Errore durante il caricamento dei dati';
-    elements.lastDialect.textContent = 'Riprova a ricaricare la pagina.';
+    if (elements.lastStatus) {
+      elements.lastStatus.textContent = 'Errore durante il caricamento dei dati. Riprova.';
+    }
   }
 }
 
@@ -243,8 +240,9 @@ function updateSummary() {
 
   if (!state.lastEntry) {
     elements.lastNumber.textContent = '—';
-    elements.lastItalian.textContent = 'Inizia la partita';
-    elements.lastDialect.textContent = 'Premi “Estrai numero” per avviare la tombolata.';
+    if (elements.lastStatus) {
+      elements.lastStatus.textContent = 'Premi “Estrai numero” per avviare la tombolata.';
+    }
     if (elements.summaryImage) {
       elements.summaryImage.src = DEFAULT_IMAGE;
       elements.summaryImage.alt = 'Illustrazione della casella';
@@ -253,8 +251,9 @@ function updateSummary() {
   }
 
   elements.lastNumber.textContent = state.lastEntry.number;
-  elements.lastItalian.textContent = state.lastEntry.italian || 'Numero estratto';
-  elements.lastDialect.textContent = state.lastEntry.dialect || '';
+  if (elements.lastStatus) {
+    elements.lastStatus.textContent = 'Numero estratto dal tabellone.';
+  }
   if (elements.summaryImage) {
     elements.summaryImage.src = state.lastEntry.image || DEFAULT_IMAGE;
     const altParts = [`Illustrazione del numero ${state.lastEntry.number}.`];
@@ -334,10 +333,12 @@ function renderHistory() {
     const badge = document.createElement('span');
     badge.className = 'history__badge';
     badge.textContent = String(number);
-    const label = document.createElement('span');
-    label.className = 'history__label';
-    label.textContent = entry?.italian || 'Numero';
-    button.append(badge, label);
+    if (entry?.italian) {
+      button.setAttribute('aria-label', `Numero ${entry.number}. ${entry.italian}`);
+    } else {
+      button.setAttribute('aria-label', `Numero ${entry?.number ?? number}`);
+    }
+    button.append(badge);
     item.appendChild(button);
     fragment.appendChild(item);
   });
@@ -362,19 +363,9 @@ function openDetail(number, { focusDialog = false } = {}) {
     return;
   }
 
-  elements.detailTitle.textContent = entry.italian || 'Casella estratta';
-  if (entry.dialect) {
-    elements.detailDialect.textContent = entry.dialect;
-    elements.detailDialect.hidden = false;
-  } else {
-    elements.detailDialect.textContent = '';
-    elements.detailDialect.hidden = true;
-  }
-  elements.detailDescription.textContent = entry.italian
-    ? `Illustrazione dedicata a ${entry.italian}.`
-    : 'Estratto dal tabellone della Tombola Nojana.';
   elements.detailImage.src = entry.image || DEFAULT_IMAGE;
   elements.detailImage.alt = `Illustrazione decorativa del numero ${entry.number}`;
+  elements.detailDialog.setAttribute('aria-label', `Numero ${entry.number} estratto`);
   showRandomSponsorInDialog();
 
   if (supportsDialog) {

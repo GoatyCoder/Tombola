@@ -65,8 +65,7 @@
             <div class="summary-card__body">
               <p class="summary-card__label">Ultimo numero</p>
               <p id="last-number" class="summary-card__number">—</p>
-              <p id="last-italian" class="summary-card__title">Inizia la partita</p>
-              <p id="last-dialect" class="summary-card__subtitle">
+              <p id="last-status" class="summary-card__status">
                 Premi “Estrai numero” per avviare la tombolata.
               </p>
             </div>
@@ -146,12 +145,7 @@
       </button>
     </template>
 
-    <dialog
-      id="detail-dialog"
-      class="detail-dialog"
-      aria-labelledby="detail-title"
-      aria-modal="true"
-    >
+    <dialog id="detail-dialog" class="detail-dialog" aria-label="Numero estratto" aria-modal="true">
       <div class="detail-dialog__surface" role="document">
         <button
           id="detail-close"
@@ -170,9 +164,7 @@
           />
         </div>
         <div class="detail-dialog__body">
-          <h2 id="detail-title" class="detail-dialog__title"></h2>
-          <p id="detail-dialect" class="detail-dialog__dialect"></p>
-          <p id="detail-description" class="detail-dialog__description"></p>
+          <p class="detail-dialog__hint">Tocca fuori dalla finestra per chiudere.</p>
           <div id="detail-sponsor" class="detail-dialog__sponsor" hidden>
             <p class="detail-dialog__sponsor-label">Con il supporto di</p>
             <a
