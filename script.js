@@ -64,6 +64,7 @@ const elements = {
   ),
   drawLastNumber: document.querySelector('#draw-last-number'),
   drawLastDetail: document.querySelector('#draw-last-detail'),
+  boardSummaryImage: document.querySelector('#board-summary-image'),
 };
 
 const AUDIO_STORAGE_KEY = 'tombola-audio-enabled';
@@ -1933,6 +1934,28 @@ function updateDrawStatus(latestEntry) {
         italian: lastHistory.italian || reference?.italian || '',
         dialect: lastHistory.dialect || reference?.dialect || '',
       };
+    }
+  }
+
+  if (elements.boardSummaryImage) {
+    const summaryEntry =
+      normalizedEntry && typeof normalizedEntry.number === 'number'
+        ? getEntryByNumber(normalizedEntry.number)
+        : null;
+    const summarySrc = summaryEntry
+      ? getBoardCellImage(summaryEntry)
+      : DEFAULT_CELL_IMAGE;
+
+    elements.boardSummaryImage.src = summarySrc || DEFAULT_CELL_IMAGE;
+
+    if (summaryEntry) {
+      const altParts = [`Illustrazione del numero ${summaryEntry.number}`];
+      if (summaryEntry.italian) {
+        altParts.push(summaryEntry.italian);
+      }
+      elements.boardSummaryImage.alt = altParts.join(' – ');
+    } else {
+      elements.boardSummaryImage.alt = 'Illustrazione delle caselle della tombola';
     }
   }
 
