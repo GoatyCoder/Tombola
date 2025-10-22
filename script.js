@@ -182,12 +182,7 @@ function buildBoard(entries) {
     instance.dataset.number = String(entry.number);
     instance.setAttribute('role', 'gridcell');
     instance.setAttribute('aria-pressed', 'false');
-    instance.setAttribute(
-      'aria-label',
-      entry.italian
-        ? `Numero ${entry.number}. ${entry.italian}`
-        : `Numero ${entry.number}`
-    );
+    instance.setAttribute('aria-label', `Numero ${entry.number}`);
     instance.addEventListener('click', () => openDetail(entry.number));
     fragment.appendChild(instance);
     state.boardCells.set(entry.number, instance);
@@ -283,11 +278,7 @@ function updateSummary() {
   }
   if (elements.summaryImage) {
     elements.summaryImage.src = state.lastEntry.image || DEFAULT_IMAGE;
-    const altParts = [`Illustrazione del numero ${state.lastEntry.number}.`];
-    if (state.lastEntry.italian) {
-      altParts.push(state.lastEntry.italian);
-    }
-    elements.summaryImage.alt = altParts.join(' ');
+    elements.summaryImage.alt = `Illustrazione del numero ${state.lastEntry.number}.`;
   }
 }
 
@@ -371,11 +362,7 @@ function renderHistory() {
     const badge = document.createElement('span');
     badge.className = 'history__badge';
     badge.textContent = String(number);
-    if (entry?.italian) {
-      button.setAttribute('aria-label', `Numero ${entry.number}. ${entry.italian}`);
-    } else {
-      button.setAttribute('aria-label', `Numero ${entry?.number ?? number}`);
-    }
+    button.setAttribute('aria-label', `Numero ${entry?.number ?? number}`);
     button.append(badge);
     item.appendChild(button);
     fragment.appendChild(item);

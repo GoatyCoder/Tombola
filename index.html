@@ -34,18 +34,6 @@
                 La tombolata illustrata
               </h2>
             </div>
-            <div class="board-area__progress" role="status" aria-live="polite">
-              <span id="progress-count" class="board-area__progress-count">0/90</span>
-              <div
-                class="progress"
-                role="progressbar"
-                aria-valuemin="0"
-                aria-valuemax="90"
-                aria-valuenow="0"
-              >
-                <span id="progress-bar" class="progress__fill" style="width: 0%"></span>
-              </div>
-            </div>
           </div>
           <div class="board-area__frame">
             <div id="board" class="board-grid" role="grid" aria-live="polite"></div>
@@ -53,33 +41,50 @@
         </section>
 
         <section class="panel" aria-label="Dettagli e controlli">
-          <article class="summary-card" role="status" aria-live="polite">
-            <div class="summary-card__body">
-              <p class="summary-card__label">Ultimo numero</p>
-              <p id="last-number" class="summary-card__number">—</p>
-              <p id="last-status" class="summary-card__status">
+          <article class="status-card" role="status" aria-live="polite">
+            <div class="status-card__media">
+              <div class="status-card__art">
+                <img
+                  id="summary-image"
+                  src="images/sample.jpg"
+                  alt="Illustrazione della casella"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+            </div>
+            <div class="status-card__body">
+              <div class="status-card__row">
+                <div class="status-card__numbers">
+                  <p class="status-card__label">Ultimo estratto</p>
+                  <p id="last-number" class="status-card__number">—</p>
+                </div>
+                <div class="status-card__progress" role="group" aria-label="Progresso partita">
+                  <span id="progress-count" class="status-card__progress-count">0/90</span>
+                  <div
+                    class="progress"
+                    role="progressbar"
+                    aria-valuemin="0"
+                    aria-valuemax="90"
+                    aria-valuenow="0"
+                  >
+                    <span id="progress-bar" class="progress__fill" style="width: 0%"></span>
+                  </div>
+                </div>
+              </div>
+              <p id="last-status" class="status-card__status">
                 Premi “Estrai numero” per avviare la tombolata.
               </p>
-            </div>
-            <div class="summary-card__media">
-              <img
-                id="summary-image"
-                src="images/sample.jpg"
-                alt="Illustrazione della casella"
-                loading="lazy"
-                decoding="async"
-              />
+              <div class="status-card__actions" role="group" aria-label="Comandi partita">
+                <button id="draw-button" class="pill pill--primary" type="button" disabled>
+                  Estrai numero
+                </button>
+                <button id="reset-button" class="pill pill--outline" type="button" disabled>
+                  Nuova partita
+                </button>
+              </div>
             </div>
           </article>
-
-          <div class="panel__actions" role="group" aria-label="Comandi partita">
-            <button id="draw-button" class="pill pill--primary" type="button" disabled>
-              Estrai numero
-            </button>
-            <button id="reset-button" class="pill pill--outline" type="button" disabled>
-              Nuova partita
-            </button>
-          </div>
 
           <section class="history" aria-labelledby="history-title">
             <div class="history__header">
