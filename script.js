@@ -14,6 +14,7 @@ const state = {
   history: [],
   lastEntry: null,
   audioEnabled: true,
+  sponsors: [],
 };
 
 const elements = {
@@ -32,14 +33,15 @@ const elements = {
   historyEmpty: document.querySelector('#history-empty'),
   historyClear: document.querySelector('#history-clear'),
   detailDialog: document.querySelector('#detail-dialog'),
-  detailNumber: document.querySelector('#detail-number'),
   detailTitle: document.querySelector('#detail-title'),
   detailDialect: document.querySelector('#detail-dialect'),
   detailDescription: document.querySelector('#detail-description'),
   detailImage: document.querySelector('#detail-image'),
   detailClose: document.querySelector('#detail-close'),
-  detailDismiss: document.querySelector('#detail-dismiss'),
   detailNext: document.querySelector('#detail-next'),
+  detailSponsor: document.querySelector('#detail-sponsor'),
+  detailSponsorLink: document.querySelector('#detail-sponsor-link'),
+  detailSponsorLogo: document.querySelector('#detail-sponsor-logo'),
   sponsorSection: document.querySelector('#sponsor-section'),
   sponsorList: document.querySelector('#sponsor-list'),
 };
@@ -98,7 +100,6 @@ function wireEventListeners() {
   elements.historyClear.addEventListener('click', resetGame);
   elements.historyList.addEventListener('click', onHistoryClick);
   elements.detailClose.addEventListener('click', closeDetailDialog);
-  elements.detailDismiss.addEventListener('click', closeDetailDialog);
   elements.detailNext.addEventListener('click', () => {
     drawNumber({ revealDetail: true, focusDialog: true });
   });
@@ -361,13 +362,20 @@ function openDetail(number, { focusDialog = false } = {}) {
     return;
   }
 
-  elements.detailNumber.textContent = entry.number;
-  elements.detailTitle.textContent = `Numero ${entry.number}`;
-  elements.detailDialect.textContent = entry.dialect || 'Vernacolo non disponibile per questo numero.';
-  elements.detailDescription.textContent =
-    entry.italian || `Numero ${entry.number} della tradizione nojano-italiana.`;
+  elements.detailTitle.textContent = entry.italian || 'Casella estratta';
+  if (entry.dialect) {
+    elements.detailDialect.textContent = entry.dialect;
+    elements.detailDialect.hidden = false;
+  } else {
+    elements.detailDialect.textContent = '';
+    elements.detailDialect.hidden = true;
+  }
+  elements.detailDescription.textContent = entry.italian
+    ? `Illustrazione dedicata a ${entry.italian}.`
+    : 'Estratto dal tabellone della Tombola Nojana.';
   elements.detailImage.src = entry.image || DEFAULT_IMAGE;
   elements.detailImage.alt = `Illustrazione decorativa del numero ${entry.number}`;
+  showRandomSponsorInDialog();
 
   if (supportsDialog) {
     if (!elements.detailDialog.open) {
@@ -390,6 +398,34 @@ function closeDetailDialog() {
   } else {
     elements.detailDialog.removeAttribute('open');
     document.body.classList.remove('detail-dialog--open');
+  }
+}
+
+function showRandomSponsorInDialog() {
+  if (!elements.detailSponsor) {
+    return;
+  }
+
+  if (!Array.isArray(state.sponsors) || state.sponsors.length === 0) {
+    elements.detailSponsor.hidden = true;
+    if (elements.detailSponsorLink) {
+      elements.detailSponsorLink.removeAttribute('href');
+    }
+    if (elements.detailSponsorLogo) {
+      elements.detailSponsorLogo.src = '';
+      elements.detailSponsorLogo.alt = '';
+    }
+    return;
+  }
+
+  const sponsor = state.sponsors[Math.floor(Math.random() * state.sponsors.length)];
+  elements.detailSponsor.hidden = false;
+  if (elements.detailSponsorLink) {
+    elements.detailSponsorLink.href = sponsor.url;
+  }
+  if (elements.detailSponsorLogo) {
+    elements.detailSponsorLogo.src = sponsor.logo;
+    elements.detailSponsorLogo.alt = 'Logo sponsor';
   }
 }
 
@@ -481,11 +517,20 @@ async function loadSponsors() {
       .filter((item) => item.logo && item.url);
 
     if (valid.length === 0) {
+      state.sponsors = [];
       return;
     }
 
+    state.sponsors = valid.slice();
     renderSponsors(valid);
+    if (
+      (supportsDialog && elements.detailDialog.open) ||
+      (!supportsDialog && document.body.classList.contains('detail-dialog--open'))
+    ) {
+      showRandomSponsorInDialog();
+    }
   } catch (error) {
+    state.sponsors = [];
     console.warn('Nessuno sponsor disponibile', error);
   }
 }

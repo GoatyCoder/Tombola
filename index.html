@@ -168,16 +168,30 @@
             alt="Illustrazione della casella"
             loading="lazy"
           />
-          <span id="detail-number" class="detail-dialog__badge"></span>
         </div>
         <div class="detail-dialog__body">
           <h2 id="detail-title" class="detail-dialog__title"></h2>
           <p id="detail-dialect" class="detail-dialog__dialect"></p>
           <p id="detail-description" class="detail-dialog__description"></p>
+          <div id="detail-sponsor" class="detail-dialog__sponsor" hidden>
+            <p class="detail-dialog__sponsor-label">Con il supporto di</p>
+            <a
+              id="detail-sponsor-link"
+              class="detail-dialog__sponsor-link"
+              href="#"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <img
+                id="detail-sponsor-logo"
+                src=""
+                alt="Logo sponsor"
+                loading="lazy"
+                decoding="async"
+              />
+            </a>
+          </div>
           <div class="detail-dialog__actions">
-            <button id="detail-dismiss" type="button" class="pill pill--ghost">
-              Chiudi
-            </button>
             <button id="detail-next" type="button" class="pill pill--primary">
               Estrai il prossimo
             </button>

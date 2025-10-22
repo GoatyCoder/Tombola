@@ -617,26 +617,18 @@ body.detail-dialog--open::before {
   object-fit: cover;
 }
 
-.detail-dialog__badge {
-  position: absolute;
-  inset: auto 1rem 1rem auto;
-  background: rgba(0, 0, 0, 0.65);
-  color: #fff;
-  font-weight: 600;
-  font-size: 1.2rem;
-  border-radius: 999px;
-  padding: 0.35rem 0.75rem;
-}
-
 .detail-dialog__body {
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  text-align: center;
+  align-items: center;
 }
 
 .detail-dialog__title {
   margin: 0;
+  font-size: 1.4rem;
 }
 
 .detail-dialog__dialect {
@@ -648,26 +640,69 @@ body.detail-dialog--open::before {
 .detail-dialog__description {
   margin: 0;
   color: var(--color-text-soft);
+  max-width: 32ch;
 }
 
 .detail-dialog__actions {
-  margin-top: 0.5rem;
+  margin-top: 1.25rem;
   display: flex;
-  flex-direction: column;
   gap: 0.75rem;
+  width: 100%;
 }
 
 .detail-dialog__actions .pill {
+  flex: 1;
+}
+
+.detail-dialog__sponsor {
+  margin-top: 0.75rem;
+  padding: 0.85rem;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(2px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
   width: 100%;
+}
+
+.detail-dialog__sponsor-label {
+  margin: 0;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-soft);
+}
+
+.detail-dialog__sponsor-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: var(--radius-md);
+  background: #fff;
+  box-shadow: 0 10px 25px rgba(31, 19, 14, 0.18);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+  max-width: 160px;
+  width: 100%;
+}
+
+.detail-dialog__sponsor-link:hover,
+.detail-dialog__sponsor-link:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 32px rgba(31, 19, 14, 0.24);
+}
+
+.detail-dialog__sponsor-link img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
 }
 
 @media (min-width: 420px) {
   .detail-dialog__actions {
     flex-direction: row;
-  }
-
-  .detail-dialog__actions .pill {
-    flex: 1;
   }
 }
 
