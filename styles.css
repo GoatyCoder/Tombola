@@ -17,6 +17,7 @@
   --radius-md: 20px;
   --radius-sm: 14px;
   --transition: 180ms ease;
+  --board-gap: clamp(3px, 0.6vw, 6px);
 }
 
 * {
@@ -184,21 +185,33 @@ body.detail-dialog--open {
 .board-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: clamp(2px, 0.5vw, 6px);
+  gap: var(--board-gap);
   overflow: hidden;
 }
 
 .board-tile {
   position: relative;
-  aspect-ratio: 1 / 1;
+  display: block;
+  width: 100%;
   padding: 0;
   border: none;
   background: transparent;
   overflow: hidden;
   border-radius: 0;
+  isolation: isolate;
+  --tile-overlay-opacity: 0;
+  --tile-cross-opacity: 0;
+}
+
+.board-tile::before {
+  content: '';
+  display: block;
+  padding-top: 100%;
 }
 
 .board-tile__image {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;
@@ -209,19 +222,49 @@ body.detail-dialog--open {
 .board-tile__overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(198, 75, 60, 0.15), rgba(198, 75, 60, 0.45));
-  opacity: 0;
+  display: block;
+  background: linear-gradient(135deg, rgba(198, 75, 60, 0.12), rgba(198, 75, 60, 0.42));
+  opacity: var(--tile-overlay-opacity);
   transition: opacity var(--transition);
   border-radius: inherit;
+  pointer-events: none;
 }
 
-.board-tile:hover .board-tile__overlay,
-.board-tile:focus-visible .board-tile__overlay {
-  opacity: 0.6;
+.board-tile__overlay::before,
+.board-tile__overlay::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 120%;
+  height: 22%;
+  background: linear-gradient(
+    90deg,
+    rgba(198, 44, 33, 0) 0%,
+    rgba(198, 44, 33, 0.95) 45%,
+    rgba(198, 44, 33, 0.95) 55%,
+    rgba(198, 44, 33, 0) 100%
+  );
+  transform-origin: center;
+  transform: translate(-50%, -50%) rotate(45deg);
+  border-radius: 999px;
+  filter: drop-shadow(0 6px 12px rgba(137, 24, 18, 0.4));
+  opacity: var(--tile-cross-opacity);
+  transition: opacity var(--transition);
 }
 
-.board-tile.is-drawn .board-tile__overlay {
-  opacity: 0.85;
+.board-tile__overlay::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.board-tile:hover,
+.board-tile:focus-visible {
+  --tile-overlay-opacity: 0.55;
+}
+
+.board-tile.is-drawn {
+  --tile-overlay-opacity: 0.9;
+  --tile-cross-opacity: 1;
 }
 
 .panel {
@@ -611,6 +654,8 @@ body.detail-dialog--open::before {
 }
 
 .detail-dialog__image img {
+  position: relative;
+  z-index: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;
@@ -624,6 +669,54 @@ body.detail-dialog--open::before {
   inset: 0;
   background: radial-gradient(circle at 50% 50%, rgba(246, 241, 230, 0) 52%, rgba(246, 241, 230, 0.78) 88%);
   pointer-events: none;
+  z-index: 1;
+}
+
+.detail-dialog__overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(198, 75, 60, 0.12), rgba(198, 75, 60, 0.4));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition);
+  z-index: 2;
+}
+
+.detail-dialog__overlay::before,
+.detail-dialog__overlay::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 140%;
+  height: 24%;
+  background: linear-gradient(
+    90deg,
+    rgba(198, 44, 33, 0) 0%,
+    rgba(198, 44, 33, 0.95) 45%,
+    rgba(198, 44, 33, 0.95) 55%,
+    rgba(198, 44, 33, 0) 100%
+  );
+  transform-origin: center;
+  transform: translate(-50%, -50%) rotate(45deg);
+  border-radius: 999px;
+  filter: drop-shadow(0 8px 14px rgba(137, 24, 18, 0.45));
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+
+.detail-dialog__overlay::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.detail-dialog__overlay.is-active {
+  opacity: 1;
+}
+
+.detail-dialog__overlay.is-active::before,
+.detail-dialog__overlay.is-active::after {
+  opacity: 1;
 }
 
 .detail-dialog__body {
