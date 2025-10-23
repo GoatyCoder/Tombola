@@ -184,7 +184,7 @@ body.detail-dialog--open {
 .board-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0;
+  gap: clamp(2px, 0.5vw, 6px);
   overflow: hidden;
 }
 
