@@ -34,7 +34,6 @@ const elements = {
   historyClear: document.querySelector('#history-clear'),
   detailDialog: document.querySelector('#detail-dialog'),
   detailImage: document.querySelector('#detail-image'),
-  detailOverlay: document.querySelector('#detail-overlay'),
   detailClose: document.querySelector('#detail-close'),
   detailNext: document.querySelector('#detail-next'),
   detailSponsor: document.querySelector('#detail-sponsor'),
@@ -390,10 +389,6 @@ function openDetail(number, { focusDialog = false } = {}) {
   elements.detailImage.src = entry.image || DEFAULT_IMAGE;
   elements.detailImage.alt = `Illustrazione decorativa del numero ${entry.number}`;
   elements.detailDialog.setAttribute('aria-label', `Numero ${entry.number} estratto`);
-  if (elements.detailOverlay) {
-    const isDrawn = state.drawnNumbers.has(number);
-    elements.detailOverlay.classList.toggle('is-active', isDrawn);
-  }
   showRandomSponsorInDialog();
 
   if (supportsDialog) {
