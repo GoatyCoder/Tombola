@@ -59,9 +59,7 @@ const elements = {
   floatingDrawButton: document.querySelector('#floating-draw-button'),
   drawProgressValue: document.querySelector('#draw-progress-value'),
   drawProgressBar: document.querySelector('#draw-progress-bar'),
-  drawProgressFill: document.querySelector(
-    '#draw-progress-bar .board-summary__progress-fill'
-  ),
+  drawProgressFill: document.querySelector('#draw-progress-bar .progress__fill'),
   drawLastNumber: document.querySelector('#draw-last-number'),
   drawLastDetail: document.querySelector('#draw-last-detail'),
 };
@@ -649,7 +647,7 @@ function syncHistoryPanelToLayout(options = {}) {
 
   if (!mobileLayout) {
     state.historyOpen = false;
-    historyPanel.classList.remove('history-panel--open');
+    historyPanel.classList.remove('history--open');
     historyPanel.setAttribute('aria-hidden', 'false');
     if (historyToggle) {
       historyToggle.setAttribute('aria-expanded', 'false');
@@ -663,7 +661,7 @@ function syncHistoryPanelToLayout(options = {}) {
   }
 
   historyPanel.setAttribute('aria-hidden', state.historyOpen ? 'false' : 'true');
-  historyPanel.classList.toggle('history-panel--open', state.historyOpen);
+  historyPanel.classList.toggle('history--open', state.historyOpen);
   if (historyToggle) {
     historyToggle.setAttribute('aria-expanded', state.historyOpen ? 'true' : 'false');
   }
@@ -747,8 +745,6 @@ function updateAudioToggle() {
 
   const enabled = Boolean(state.audioEnabled);
   audioToggle.setAttribute('aria-pressed', enabled ? 'true' : 'false');
-  audioToggle.classList.toggle('board-panel__audio-toggle--on', enabled);
-  audioToggle.classList.toggle('board-panel__audio-toggle--off', !enabled);
   const actionLabel = enabled ? 'Disattiva annuncio audio' : 'Attiva annuncio audio';
   audioToggle.setAttribute('aria-label', actionLabel);
   audioToggle.title = actionLabel;
@@ -1025,21 +1021,18 @@ function renderBoard() {
     const cell = template.content.firstElementChild.cloneNode(true);
     cell.dataset.number = entry.number;
 
-    const numberEl = cell.querySelector('.board-cell__number');
-    if (numberEl) {
-      numberEl.textContent = entry.number;
+    const srOnlyLabel = cell.querySelector('[data-board-cell-sr]');
+    if (srOnlyLabel) {
+      const labelParts = [`Numero ${entry.number}`];
+      if (typeof entry.italian === 'string' && entry.italian.trim()) {
+        labelParts.push(entry.italian.trim());
+      } else if (typeof entry.dialect === 'string' && entry.dialect.trim()) {
+        labelParts.push(entry.dialect.trim());
+      }
+      srOnlyLabel.textContent = labelParts.join(' – ');
     }
 
-    const nameEl = cell.querySelector('[data-board-cell-name]');
-    if (nameEl) {
-      const displayName =
-        (typeof entry.italian === 'string' && entry.italian.trim()) ||
-        (typeof entry.dialect === 'string' && entry.dialect.trim()) ||
-        '—';
-      nameEl.textContent = displayName;
-    }
-
-    const artworkEl = cell.querySelector('.board-cell__artwork');
+    const artworkEl = cell.querySelector('.board-cell__media');
     if (artworkEl) {
       const imageSource = getNumberImage(entry);
       if (imageSource) {
@@ -1048,7 +1041,7 @@ function renderBoard() {
       } else {
         artworkEl.style.removeProperty('--tile-image');
       }
-      artworkEl.classList.toggle('board-cell__artwork--fallback', !entry.image);
+      artworkEl.classList.toggle('board-cell__media--fallback', !entry.image);
     }
 
     const ariaLabelParts = [`Numero ${entry.number}`];
