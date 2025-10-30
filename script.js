@@ -1030,6 +1030,27 @@ function renderBoard() {
       numberEl.textContent = entry.number;
     }
 
+    const nameEl = cell.querySelector('[data-board-cell-name]');
+    if (nameEl) {
+      const displayName =
+        (typeof entry.italian === 'string' && entry.italian.trim()) ||
+        (typeof entry.dialect === 'string' && entry.dialect.trim()) ||
+        '—';
+      nameEl.textContent = displayName;
+    }
+
+    const artworkEl = cell.querySelector('.board-cell__artwork');
+    if (artworkEl) {
+      const imageSource = getNumberImage(entry);
+      if (imageSource) {
+        const sanitizedSource = String(imageSource).replace(/(["\\])/g, '\\$1');
+        artworkEl.style.setProperty('--tile-image', `url("${sanitizedSource}")`);
+      } else {
+        artworkEl.style.removeProperty('--tile-image');
+      }
+      artworkEl.classList.toggle('board-cell__artwork--fallback', !entry.image);
+    }
+
     const ariaLabelParts = [`Numero ${entry.number}`];
     if (entry.italian) {
       ariaLabelParts.push(entry.italian);

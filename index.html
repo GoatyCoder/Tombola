@@ -17,22 +17,27 @@
     <header class="app-header" role="banner">
       <div class="header-shell">
         <div class="header-brand">
-          <div class="header-brand__identity">
+          <div class="header-brand__badge" aria-hidden="true">
             <img
               src="images/logo_amicidelteatro.svg"
               alt="Amici del Teatro - Associazione Culturale Nojana"
-              class="header-brand__badge"
+              class="header-brand__logo"
               loading="lazy"
               decoding="async"
             />
-            <p class="header-brand__presenter">presenta</p>
+            <span class="header-brand__presenter">presenta</span>
           </div>
           <div class="header-brand__content">
             <h1 class="header-brand__title">Tombola Nojana</h1>
             <p class="header-brand__lead">
-              La smorfia nojana in versione interattiva: estrai i numeri,
-              ascolta le voci e condividi la tombolata della città.
+              La smorfia nojana diventa interattiva: estrai i numeri, ascolta le
+              voci e tieni la tombolata della città sempre sotto controllo.
             </p>
+            <ul class="header-brand__highlights" aria-label="Funzionalità principali">
+              <li>Cronologia rapida su mobile e desktop</li>
+              <li>Tabellone illustrato pronto per ogni estrazione</li>
+              <li>Audio in nojano e italiano sempre disponibili</li>
+            </ul>
           </div>
         </div>
       </div>
@@ -45,109 +50,99 @@
             <h2 class="sr-only">Controllo estrazioni</h2>
             <div class="board-summary" role="status" aria-live="polite">
               <span id="draw-status" class="sr-only">Caricamento del tabellone…</span>
-              <article class="board-summary__card board-summary__card--combined">
-                <div class="board-summary__sections">
-                  <div class="board-summary__section board-summary__section--last">
-                    <div class="board-summary__header">
-                      <p class="board-summary__label">Ultimo numero</p>
-                    </div>
-                    <p
-                      id="draw-last-number"
-                      class="board-summary__number"
-                      aria-live="polite"
-                      aria-atomic="true"
+              <article class="board-summary__card board-summary__card--last">
+                <header class="board-summary__header">
+                  <p class="board-summary__label">Ultimo numero</p>
+                </header>
+                <p
+                  id="draw-last-number"
+                  class="board-summary__number"
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
+                  —
+                </p>
+                <p id="draw-last-detail" class="board-summary__detail">
+                  In attesa della prima estrazione
+                </p>
+              </article>
+              <article class="board-summary__card board-summary__card--progress">
+                <header class="board-summary__header">
+                  <p class="board-summary__label">Numeri estratti</p>
+                  <button
+                    type="button"
+                    id="history-toggle"
+                    class="history-toggle"
+                    aria-expanded="false"
+                    aria-controls="history-panel"
+                    data-label-mobile-open="Chiudi cronologia"
+                    data-label-mobile-closed="Cronologia"
+                    data-label-desktop="Cronologia"
+                    aria-label="Cronologia"
+                    title="Cronologia"
+                  >
+                    <svg
+                      class="history-toggle__icon"
+                      viewBox="0 0 24 24"
+                      role="presentation"
+                      aria-hidden="true"
                     >
-                      —
-                    </p>
-                    <p id="draw-last-detail" class="board-summary__detail">
-                      In attesa della prima estrazione
-                    </p>
+                      <path
+                        d="M5.75 4.5h12.5a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H5.75a.75.75 0 0 1-.75-.75V5.25a.75.75 0 0 1 .75-.75Z"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <path
+                        d="M8 7h8m-8 4h8m-8 4h5"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                    <span class="history-toggle__label" data-history-label>
+                      Cronologia
+                    </span>
+                  </button>
+                </header>
+                <div class="board-summary__stat">
+                  <p id="draw-progress-value" class="board-summary__metric">0/0</p>
+                  <div
+                    id="draw-progress-bar"
+                    class="board-summary__progress"
+                    role="progressbar"
+                    aria-valuemin="0"
+                    aria-valuemax="0"
+                    aria-valuenow="0"
+                  >
+                    <span
+                      class="board-summary__progress-fill"
+                      id="draw-progress-fill"
+                      style="width: 0%"
+                    ></span>
                   </div>
-                  <div class="board-summary__section board-summary__section--progress">
-                    <div class="board-summary__header">
-                      <p class="board-summary__label">Numeri estratti</p>
-                      <button
-                        type="button"
-                        id="history-toggle"
-                        class="board-summary__icon-button board-summary__icon-button--history"
-                        aria-expanded="false"
-                        aria-controls="history-panel"
-                        data-label-mobile-open="Chiudi cronologia"
-                        data-label-mobile-closed="Cronologia"
-                        data-label-desktop="Cronologia"
-                        aria-label="Cronologia"
-                        title="Cronologia"
-                      >
-                        <svg
-                          class="board-summary__icon"
-                          viewBox="0 0 24 24"
-                          role="presentation"
-                          aria-hidden="true"
-                        >
-                          <path
-                            d="M5.75 4.5h12.5a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H5.75a.75.75 0 0 1-.75-.75V5.25a.75.75 0 0 1 .75-.75Z"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="1.5"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                          />
-                          <path
-                            d="M8 7h8m-8 4h8m-8 4h5"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="1.5"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                          />
-                          <path
-                            d="M5 4.5l1.5-2m11 2L19 2.5"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="1.5"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                          />
-                        </svg>
-                        <span class="board-summary__icon-button-label" data-history-label>
-                          Cronologia
-                        </span>
-                      </button>
-                    </div>
-                    <div class="board-summary__section-body">
-                      <div class="board-summary__stat">
-                        <p id="draw-progress-value" class="board-summary__metric">0/0</p>
-                        <div
-                          id="draw-progress-bar"
-                          class="board-summary__progress"
-                          role="progressbar"
-                          aria-valuemin="0"
-                          aria-valuemax="0"
-                          aria-valuenow="0"
-                        >
-                          <span class="board-summary__progress-fill" style="width: 0%"></span>
-                        </div>
-                      </div>
-                      <div class="board-summary__actions">
-                        <button
-                          type="button"
-                          id="draw-button"
-                          class="board-panel__draw"
-                          disabled
-                        >
-                          Estrai numero
-                        </button>
-                        <button
-                          type="button"
-                          id="reset-button"
-                          class="board-panel__reset"
-                          disabled
-                        >
-                          Reset partita
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                </div>
+                <div class="board-summary__actions">
+                  <button
+                    type="button"
+                    id="draw-button"
+                    class="board-panel__draw"
+                    disabled
+                  >
+                    Estrai numero
+                  </button>
+                  <button
+                    type="button"
+                    id="reset-button"
+                    class="board-panel__reset"
+                    disabled
+                  >
+                    Reset partita
+                  </button>
                 </div>
               </article>
             </div>
@@ -347,37 +342,43 @@
 
     <template id="board-cell-template">
       <button class="board-cell" type="button">
-        <span class="board-cell__number" aria-hidden="true"></span>
+        <span class="board-cell__artwork" aria-hidden="true"></span>
+        <span class="board-cell__label">
+          <span class="board-cell__number" aria-hidden="true"></span>
+          <span class="board-cell__name" data-board-cell-name></span>
+        </span>
       </button>
     </template>
 
     <footer class="app-footer" role="contentinfo">
-      <div class="app-footer__content">
-        <div class="app-footer__about">
-          <p class="app-footer__title">Tombola Nojana</p>
-          <p class="app-footer__description">
-            Iniziativa a cura dell'Associazione Culturale Amici del Teatro di
-            Noicattaro.
-          </p>
+      <div class="app-footer__shell">
+        <div class="app-footer__brand">
           <img
             src="images/logo_amicidelteatro_big.svg"
-            alt="Logo Associazione Culturale Amici del Teatro di Noicattaro"
-            class="app-footer__partner-logo"
+            alt="Associazione Culturale Amici del Teatro di Noicattaro"
+            class="app-footer__brand-logo"
             loading="lazy"
             decoding="async"
           />
+          <div class="app-footer__intro">
+            <p class="app-footer__title">Tombola Nojana</p>
+            <p class="app-footer__description">
+              Una serata tradizionale rivista in chiave digitale per stare
+              insieme, anche a distanza.
+            </p>
+          </div>
         </div>
-        <div class="app-footer__brand">
-          <span class="app-footer__label">Powered by</span>
+        <div class="app-footer__meta">
+          <p class="app-footer__label">Powered by</p>
           <a
-            class="app-footer__logo-link"
+            class="app-footer__meta-link"
             href="mailto:GoatyCoder@proton.me"
             aria-label="Contatta GoatyCoder via email"
           >
             <img
               src="images/logo_goty_coder.png"
               alt="GoatyCoder"
-              class="app-footer__logo"
+              class="app-footer__meta-logo"
               decoding="async"
               loading="lazy"
             />
