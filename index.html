@@ -52,7 +52,7 @@
                 <button
                   type="button"
                   id="history-toggle"
-                  class="chip"
+                  class="chip chip--icon"
                   aria-expanded="false"
                   aria-controls="history-panel"
                   data-label-mobile-open="Chiudi cronologia"
@@ -79,7 +79,7 @@
                       stroke-linejoin="round"
                     />
                   </svg>
-                  <span class="chip__label" data-history-label>Cronologia</span>
+                  <span class="sr-only" data-history-label>Cronologia</span>
                 </button>
               </div>
               <p id="draw-progress-value" class="status-card__value">0/0</p>
@@ -94,11 +94,72 @@
                 <span id="draw-progress-fill" class="progress__fill"></span>
               </div>
               <div class="status-card__actions">
-                <button type="button" id="draw-button" class="button button--primary" disabled>
-                  Estrai numero
+                <button
+                  type="button"
+                  id="draw-button"
+                  class="button button--primary button--icon"
+                  aria-label="Estrai numero"
+                  title="Estrai numero"
+                  disabled
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true" role="presentation" class="button__icon">
+                    <path
+                      d="m5.2 7.5 6.8-3.9 6.8 3.9v7.8l-6.8 3.9-6.8-3.9V7.5Z"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <circle cx="9.5" cy="10" r="1.1" fill="currentColor" />
+                    <circle cx="12" cy="13.5" r="1.1" fill="currentColor" />
+                    <circle cx="14.5" cy="10" r="1.1" fill="currentColor" />
+                  </svg>
+                  <span class="sr-only">Estrai numero</span>
                 </button>
-                <button type="button" id="reset-button" class="button" disabled>
-                  Reset partita
+                <button
+                  type="button"
+                  id="reset-button"
+                  class="button button--icon"
+                  aria-label="Reset partita"
+                  title="Reset partita"
+                  disabled
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true" role="presentation" class="button__icon">
+                    <path
+                      d="M6 7.5A6.75 6.75 0 0 1 18.32 9"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <path
+                      d="M18 4.5v4.25h-4.25"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <path
+                      d="M18 16.5a6.75 6.75 0 0 1-12.32-1.5"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <path
+                      d="M6 19.5V15.25h4.25"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                  <span class="sr-only">Reset partita</span>
                 </button>
               </div>
             </article>
@@ -183,7 +244,10 @@
     <div id="number-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-number" hidden>
       <div class="number-dialog" role="document">
         <header class="number-dialog__header">
-          <p id="modal-number" class="number-dialog__number"></p>
+          <div class="number-dialog__title">
+            <p class="number-dialog__eyebrow">Numero estratto</p>
+            <span id="modal-number" class="number-dialog__badge" aria-live="polite"></span>
+          </div>
           <button type="button" class="number-dialog__close" aria-label="Chiudi" id="modal-close">
             <span aria-hidden="true">&times;</span>
           </button>
@@ -191,43 +255,39 @@
         <div class="number-dialog__body">
           <div class="number-dialog__visual">
             <div class="number-dialog__image-frame" id="modal-image-frame">
-              <div class="number-dialog__image-placeholder" aria-hidden="true">
-                <span class="number-dialog__placeholder-glow"></span>
-              </div>
               <img id="modal-image" alt="" decoding="async" loading="lazy" />
             </div>
           </div>
           <div class="number-dialog__details">
-            <div class="number-dialog__phrases">
-              <article class="number-dialog__phrase number-dialog__phrase--dialect">
-                <h3 class="number-dialog__phrase-title">Nojano</h3>
-                <div class="number-dialog__text-row">
-                  <p id="modal-dialect" class="number-dialog__text number-dialog__text--dialect"></p>
+            <section class="number-dialog__listen" aria-labelledby="number-dialog-listen-title">
+              <h3 id="number-dialog-listen-title" class="number-dialog__listen-title">Ascolta</h3>
+              <div class="number-dialog__listen-grid">
+                <div class="number-dialog__listen-item">
                   <button
                     type="button"
-                    class="number-dialog__play"
+                    class="number-dialog__listen-button"
                     id="modal-dialect-play"
+                    aria-describedby="modal-dialect"
                     aria-label="Ascolta pronuncia in nojano"
                   >
-                    <span aria-hidden="true"></span>
+                    Nojano
                   </button>
+                  <p id="modal-dialect" class="number-dialog__phrase sr-only"></p>
                 </div>
-              </article>
-              <article class="number-dialog__phrase number-dialog__phrase--italian">
-                <h3 class="number-dialog__phrase-title">Italiano</h3>
-                <div class="number-dialog__text-row">
-                  <p id="modal-italian" class="number-dialog__text number-dialog__text--italian"></p>
+                <div class="number-dialog__listen-item">
                   <button
                     type="button"
-                    class="number-dialog__play number-dialog__play--secondary"
+                    class="number-dialog__listen-button number-dialog__listen-button--secondary"
                     id="modal-italian-play"
+                    aria-describedby="modal-italian"
                     aria-label="Ascolta pronuncia in italiano"
                   >
-                    <span aria-hidden="true"></span>
+                    Italiano
                   </button>
+                  <p id="modal-italian" class="number-dialog__phrase sr-only"></p>
                 </div>
-              </article>
-            </div>
+              </div>
+            </section>
             <div class="number-dialog__actions">
               <button type="button" class="number-dialog__action" id="modal-next" hidden>
                 Estrai successivo
@@ -261,7 +321,16 @@
 
     <template id="board-cell-template">
       <button class="board-cell" type="button">
-        <span class="board-cell__media" aria-hidden="true"></span>
+        <img
+          class="board-cell__media"
+          alt=""
+          loading="lazy"
+          decoding="async"
+          aria-hidden="true"
+        />
+        <span class="board-cell__token" aria-hidden="true">
+          <span class="board-cell__token-number" data-board-token-number></span>
+        </span>
         <span class="sr-only" data-board-cell-sr></span>
       </button>
     </template>
