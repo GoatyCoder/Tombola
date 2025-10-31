@@ -183,7 +183,10 @@
     <div id="number-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-number" hidden>
       <div class="number-dialog" role="document">
         <header class="number-dialog__header">
-          <p id="modal-number" class="number-dialog__number"></p>
+          <div class="number-dialog__title">
+            <p class="number-dialog__eyebrow">Numero estratto</p>
+            <span id="modal-number" class="number-dialog__badge" aria-live="polite"></span>
+          </div>
           <button type="button" class="number-dialog__close" aria-label="Chiudi" id="modal-close">
             <span aria-hidden="true">&times;</span>
           </button>
@@ -191,43 +194,39 @@
         <div class="number-dialog__body">
           <div class="number-dialog__visual">
             <div class="number-dialog__image-frame" id="modal-image-frame">
-              <div class="number-dialog__image-placeholder" aria-hidden="true">
-                <span class="number-dialog__placeholder-glow"></span>
-              </div>
               <img id="modal-image" alt="" decoding="async" loading="lazy" />
             </div>
           </div>
           <div class="number-dialog__details">
-            <div class="number-dialog__phrases">
-              <article class="number-dialog__phrase number-dialog__phrase--dialect">
-                <h3 class="number-dialog__phrase-title">Nojano</h3>
-                <div class="number-dialog__text-row">
-                  <p id="modal-dialect" class="number-dialog__text number-dialog__text--dialect"></p>
+            <section class="number-dialog__listen" aria-labelledby="number-dialog-listen-title">
+              <h3 id="number-dialog-listen-title" class="number-dialog__listen-title">Ascolta</h3>
+              <div class="number-dialog__listen-grid">
+                <div class="number-dialog__listen-item">
                   <button
                     type="button"
-                    class="number-dialog__play"
+                    class="number-dialog__listen-button"
                     id="modal-dialect-play"
+                    aria-describedby="modal-dialect"
                     aria-label="Ascolta pronuncia in nojano"
                   >
-                    <span aria-hidden="true"></span>
+                    Nojano
                   </button>
+                  <p id="modal-dialect" class="number-dialog__phrase sr-only"></p>
                 </div>
-              </article>
-              <article class="number-dialog__phrase number-dialog__phrase--italian">
-                <h3 class="number-dialog__phrase-title">Italiano</h3>
-                <div class="number-dialog__text-row">
-                  <p id="modal-italian" class="number-dialog__text number-dialog__text--italian"></p>
+                <div class="number-dialog__listen-item">
                   <button
                     type="button"
-                    class="number-dialog__play number-dialog__play--secondary"
+                    class="number-dialog__listen-button number-dialog__listen-button--secondary"
                     id="modal-italian-play"
+                    aria-describedby="modal-italian"
                     aria-label="Ascolta pronuncia in italiano"
                   >
-                    <span aria-hidden="true"></span>
+                    Italiano
                   </button>
+                  <p id="modal-italian" class="number-dialog__phrase sr-only"></p>
                 </div>
-              </article>
-            </div>
+              </div>
+            </section>
             <div class="number-dialog__actions">
               <button type="button" class="number-dialog__action" id="modal-next" hidden>
                 Estrai successivo

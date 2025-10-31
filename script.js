@@ -1448,16 +1448,15 @@ function openModal(entry, options = {}) {
   const { fromDraw = false } = options;
 
   const paddedNumber = String(entry.number).padStart(2, '0');
-  elements.modalNumber.textContent = `Numero ${paddedNumber}`;
+  elements.modalNumber.textContent = paddedNumber;
+  elements.modalNumber.setAttribute('aria-label', `Numero ${entry.number}`);
 
   const italianText = entry.italian || '—';
   const dialectText = entry.dialect || 'Da completare';
 
   elements.modalItalian.textContent = italianText;
-  elements.modalItalian.classList.toggle('number-dialog__text--missing', !entry.italian);
 
   elements.modalDialect.textContent = dialectText;
-  elements.modalDialect.classList.toggle('number-dialog__text--missing', !entry.dialect);
 
   if (elements.modalItalianPlay) {
     const hasItalian = Boolean(entry.italian);
