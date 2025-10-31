@@ -68,6 +68,7 @@ const AUDIO_STORAGE_KEY = 'tombola-audio-enabled';
 const DRAW_STATE_STORAGE_KEY = 'TOMBOLA_DRAW_STATE';
 const EMPTY_DRAW_STATE = Object.freeze({ drawnNumbers: [], drawHistory: [] });
 const SPONSOR_DATA_PATH = 'sponsors.json';
+const TILE_IMAGE_FALLBACK = 'images/empty.jpg';
 const EMBEDDED_SPONSORS = Object.freeze([
   {
     logo: 'images/sponsor-panificio-stella.svg',
@@ -1033,15 +1034,8 @@ function renderBoard() {
     }
 
     const artworkEl = cell.querySelector('.board-cell__media');
-    if (artworkEl) {
-      const imageSource = getNumberImage(entry);
-      if (imageSource) {
-        const sanitizedSource = String(imageSource).replace(/(["\\])/g, '\\$1');
-        artworkEl.style.setProperty('--tile-image', `url("${sanitizedSource}")`);
-      } else {
-        artworkEl.style.removeProperty('--tile-image');
-      }
-      artworkEl.classList.toggle('board-cell__media--fallback', !entry.image);
+    if (artworkEl instanceof HTMLImageElement) {
+      applyBoardCellImage(artworkEl, entry);
     }
 
     const ariaLabelParts = [`Numero ${entry.number}`];
@@ -1062,22 +1056,41 @@ function renderBoard() {
   board.appendChild(fragment);
 }
 
-function buildNumberImage(number) {
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'>
-      <rect width='160' height='160' rx='26' fill='#f8fafc' stroke='#cbd5f5' stroke-width='4' />
-      <path d='M28 120h104' stroke='#e2e8f0' stroke-width='6' stroke-linecap='round' />
-      <circle cx='80' cy='54' r='36' fill='#e2e8f0' />
-      <text x='80' y='64' text-anchor='middle' font-size='48' font-family='Signika, sans-serif' fill='#1f2933' font-weight='700'>${number}</text>
-    </svg>`;
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
-}
-
 function getNumberImage(entry) {
   if (entry && entry.image) {
     return entry.image;
   }
 
-  return buildNumberImage(entry.number);
+  if (entry && entry.number) {
+    return `images/${entry.number}.jpg`;
+  }
+
+  return TILE_IMAGE_FALLBACK;
+}
+
+function handleBoardCellImageError(event) {
+  const target = event.currentTarget;
+  if (!(target instanceof HTMLImageElement)) {
+    return;
+  }
+
+  if (target.dataset.fallbackApplied === 'true') {
+    return;
+  }
+
+  target.dataset.fallbackApplied = 'true';
+  target.src = TILE_IMAGE_FALLBACK;
+}
+
+function applyBoardCellImage(imageEl, entry) {
+  if (!(imageEl instanceof HTMLImageElement)) {
+    return;
+  }
+
+  imageEl.dataset.fallbackApplied = 'false';
+  imageEl.removeEventListener('error', handleBoardCellImageError);
+  imageEl.addEventListener('error', handleBoardCellImageError);
+  imageEl.src = getNumberImage(entry);
 }
 
 function getEntryByNumber(number) {
@@ -1462,12 +1475,14 @@ function openModal(entry, options = {}) {
   }
 
   const hasImage = Boolean(entry.image);
-  elements.modalImage.src = getNumberImage(entry);
-  elements.modalImage.alt = hasImage
-    ? entry.italian
-      ? `Illustrazione del numero ${entry.number}: ${entry.italian}`
-      : `Illustrazione del numero ${entry.number}`
-    : `Segnaposto per il numero ${entry.number}`;
+  if (elements.modalImage) {
+    applyBoardCellImage(elements.modalImage, entry);
+    elements.modalImage.alt = hasImage
+      ? entry.italian
+        ? `Illustrazione del numero ${entry.number}: ${entry.italian}`
+        : `Illustrazione del numero ${entry.number}`
+      : `Segnaposto per il numero ${entry.number}`;
+  }
 
   if (elements.modalImageFrame) {
     elements.modalImageFrame.classList.toggle(
