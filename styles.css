@@ -375,6 +375,33 @@ button {
   block-size: 100%;
   object-fit: cover;
 }
+
+.board-cell__token {
+  position: absolute;
+  inset: clamp(0.75rem, 16%, 1.1rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: clamp(0.18rem, 0.6vw, 0.3rem) solid #b82a29;
+  background: radial-gradient(circle at 30% 30%, #fef1d8 0%, #f6d8a7 65%, #ebc991 100%);
+  box-shadow: inset 0 0 0.6rem rgba(0, 0, 0, 0.08);
+  transition: opacity 160ms ease-out, transform 160ms ease-out;
+  opacity: 0;
+  transform: scale(0.85);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.board-cell__token-number {
+  font-family: 'Manrope', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.3rem, 2.8vw, 2.1rem);
+  line-height: 1;
+  color: #b32229;
+  text-shadow: 0 0.1rem 0 rgba(0, 0, 0, 0.2);
+}
+
 .board-cell:focus {
   outline: none;
 }
@@ -387,6 +414,11 @@ button {
 
 .board-cell--drawn .board-cell__media {
   filter: grayscale(0.5) brightness(0.9);
+}
+
+.board-cell--drawn .board-cell__token {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .board-cell--incoming,

@@ -1038,6 +1038,11 @@ function renderBoard() {
       applyBoardCellImage(artworkEl, entry);
     }
 
+    const tokenNumberEl = cell.querySelector('[data-board-token-number]');
+    if (tokenNumberEl) {
+      tokenNumberEl.textContent = entry.number;
+    }
+
     const ariaLabelParts = [`Numero ${entry.number}`];
     if (entry.italian) {
       ariaLabelParts.push(entry.italian);
