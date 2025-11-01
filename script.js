@@ -39,6 +39,7 @@ const elements = {
   modalSponsor: document.querySelector('#modal-sponsor'),
   modalSponsorLogo: document.querySelector('#modal-sponsor-logo'),
   drawButton: document.querySelector('#draw-button'),
+  drawButtonLabel: document.querySelector('[data-draw-label]'),
   resetButton: document.querySelector('#reset-button'),
   resetDialog: document.querySelector('#reset-dialog'),
   resetDialogConfirm: document.querySelector('[data-reset-confirm]'),
@@ -2180,15 +2181,22 @@ function updateDrawStatus(latestEntry) {
   if (drawButton) {
     drawButton.disabled = noNumbersLoaded || finished;
 
-    if (noNumbersLoaded) {
-      drawButton.textContent = 'Estrai numero';
-    } else if (finished) {
-      drawButton.textContent = 'Fine estrazioni';
-    } else if (drawnCount === 0) {
-      drawButton.textContent = 'Estrai primo numero';
-    } else {
-      drawButton.textContent = 'Estrai successivo';
+    let drawLabel = 'Estrai numero';
+
+    if (finished) {
+      drawLabel = 'Fine estrazioni';
+    } else if (!noNumbersLoaded && drawnCount === 0) {
+      drawLabel = 'Estrai primo numero';
+    } else if (!noNumbersLoaded && drawnCount > 0) {
+      drawLabel = 'Estrai successivo';
     }
+
+    if (elements.drawButtonLabel) {
+      elements.drawButtonLabel.textContent = drawLabel;
+    }
+
+    drawButton.setAttribute('aria-label', drawLabel);
+    drawButton.title = drawLabel;
   }
 
   if (elements.floatingDrawButton) {
