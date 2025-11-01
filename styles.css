@@ -411,13 +411,6 @@ button {
   gap: clamp(1.4rem, 3vw, 2rem);
 }
 
-@media (min-width: 960px) {
-  .board-area__layout {
-    grid-template-columns: minmax(0, 1fr) minmax(280px, 0.32fr);
-    align-items: start;
-  }
-}
-
 .board-wrapper {
   display: grid;
   gap: clamp(1.1rem, 2.4vw, 1.6rem);
@@ -635,12 +628,21 @@ button {
 
 .history {
   background: var(--surface-alt);
-  border-radius: var(--radius-md);
+  border-radius: 24px 24px 0 0;
   padding: clamp(1.4rem, 3vw, 2rem);
-  box-shadow: none;
+  box-shadow: 0 -18px 46px rgba(20, 15, 13, 0.28);
   border: 1px solid rgba(30, 24, 26, 0.1);
   display: grid;
   gap: 1rem;
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  width: min(640px, calc(100vw - clamp(2rem, 6vw, 4rem)));
+  max-height: min(75vh, 520px);
+  transform: translate(-50%, 110%);
+  transition: transform 0.46s cubic-bezier(0.2, 0.8, 0.2, 1);
+  z-index: 40;
+  pointer-events: none;
 }
 
 .history__title {
@@ -752,30 +754,29 @@ button {
   border-color: rgba(180, 40, 64, 0.2);
 }
 
-@media (max-width: 720px) {
+.history[aria-hidden='true'] {
+  visibility: hidden;
+}
+
+.history--open {
+  transform: translate(-50%, 0);
+  pointer-events: auto;
+}
+
+.history--open[aria-hidden='false'] {
+  visibility: visible;
+}
+
+@media (max-width: 540px) {
   .history {
-    position: fixed;
-    inset: auto 0 0 0;
-    border-radius: 24px 24px 0 0;
-    max-height: min(75vh, 520px);
+    left: 0;
+    right: 0;
+    width: 100%;
     transform: translateY(110%);
-    transition: transform 0.46s cubic-bezier(0.2, 0.8, 0.2, 1);
-    z-index: 40;
-    box-shadow: 0 -18px 46px rgba(20, 15, 13, 0.28);
-    pointer-events: none;
   }
 
   .history--open {
     transform: translateY(0);
-    pointer-events: auto;
-  }
-
-  .history[aria-hidden='true'] {
-    visibility: hidden;
-  }
-
-  .history--open[aria-hidden='false'] {
-    visibility: visible;
   }
 }
 
