@@ -1414,26 +1414,25 @@ function updateDrawHistory() {
     const meta = document.createElement('div');
     meta.className = 'history-item__meta';
 
-    if (item.italian) {
-      const italianLine = document.createElement('span');
-      italianLine.className = 'history-item__lang history-item__lang--italian';
-      italianLine.textContent = `Italiano: ${item.italian}`;
-      meta.appendChild(italianLine);
+    const italianLine = document.createElement('span');
+    italianLine.className = 'history-item__lang history-item__lang--italian';
+    const italianValue = typeof item.italian === 'string' ? item.italian.trim() : '';
+    const hasItalian = Boolean(italianValue);
+    italianLine.textContent = `Italiano: ${hasItalian ? italianValue : '—'}`;
+    if (!hasItalian) {
+      italianLine.classList.add('history-item__lang--empty');
     }
+    meta.appendChild(italianLine);
 
-    if (item.dialect) {
-      const dialectLine = document.createElement('span');
-      dialectLine.className = 'history-item__lang history-item__lang--dialect';
-      dialectLine.textContent = `Nojano: ${item.dialect}`;
-      meta.appendChild(dialectLine);
+    const dialectLine = document.createElement('span');
+    dialectLine.className = 'history-item__lang history-item__lang--dialect';
+    const dialectValue = typeof item.dialect === 'string' ? item.dialect.trim() : '';
+    const hasDialect = Boolean(dialectValue);
+    dialectLine.textContent = `Nojano: ${hasDialect ? dialectValue : '—'}`;
+    if (!hasDialect) {
+      dialectLine.classList.add('history-item__lang--empty');
     }
-
-    if (!meta.childElementCount) {
-      const emptyLine = document.createElement('span');
-      emptyLine.className = 'history-item__lang history-item__lang--empty';
-      emptyLine.textContent = 'Nessuna descrizione disponibile.';
-      meta.appendChild(emptyLine);
-    }
+    meta.appendChild(dialectLine);
 
     details.appendChild(meta);
 
@@ -1528,18 +1527,18 @@ function openModal(entry, options = {}) {
   elements.modalNumber.textContent = `Numero ${paddedNumber}`;
   elements.modalNumber.setAttribute('aria-label', `Numero ${entry.number}`);
 
-  const italianText = typeof entry.italian === 'string' && entry.italian.trim()
-    ? entry.italian.trim()
-    : '—';
-  const dialectText = typeof entry.dialect === 'string' && entry.dialect.trim()
-    ? entry.dialect.trim()
-    : 'Da completare';
+  const rawItalian = typeof entry.italian === 'string' ? entry.italian.trim() : '';
+  const rawDialect = typeof entry.dialect === 'string' ? entry.dialect.trim() : '';
+  const hasItalian = Boolean(rawItalian);
+  const hasDialect = Boolean(rawDialect);
+  const italianText = hasItalian ? rawItalian : '—';
+  const dialectText = hasDialect ? rawDialect : '—';
 
   if (elements.modalItalian) {
     elements.modalItalian.textContent = italianText;
     elements.modalItalian.classList.toggle(
       'number-dialog__phrase--empty',
-      !entry.italian || !entry.italian.trim()
+      !hasItalian
     );
   }
 
@@ -1547,12 +1546,11 @@ function openModal(entry, options = {}) {
     elements.modalDialect.textContent = dialectText;
     elements.modalDialect.classList.toggle(
       'number-dialog__phrase--empty',
-      !entry.dialect || !entry.dialect.trim()
+      !hasDialect
     );
   }
 
   if (elements.modalItalianPlay) {
-    const hasItalian = Boolean(entry.italian);
     elements.modalItalianPlay.disabled = !hasItalian;
     if (hasItalian) {
       elements.modalItalianPlay.removeAttribute('aria-disabled');
@@ -1562,7 +1560,6 @@ function openModal(entry, options = {}) {
   }
 
   if (elements.modalDialectPlay) {
-    const hasDialect = Boolean(entry.dialect);
     elements.modalDialectPlay.disabled = !hasDialect;
     if (hasDialect) {
       elements.modalDialectPlay.removeAttribute('aria-disabled');
@@ -2029,10 +2026,9 @@ function updateDrawStatus(latestEntry) {
     } else if (total === 0) {
       detailText = 'Caricamento del tabellone in corso';
     } else if (normalizedEntry) {
-      detailText =
-        normalizedEntry.dialect ||
-        normalizedEntry.italian ||
-        'Nessuna descrizione disponibile';
+      const detailFallback =
+        normalizedEntry.dialect || normalizedEntry.italian || '—';
+      detailText = detailFallback;
     } else if (drawnCount === 0) {
       detailText = 'In attesa della prima estrazione';
     } else if (drawnCount === total) {
