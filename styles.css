@@ -1206,13 +1206,14 @@ button {
   font-size: 1rem;
 }
 
+
 .number-dialog__audio-button {
   margin-left: auto;
   border: none;
-  background: rgba(30, 24, 26, 0.08);
+  background: rgba(30, 24, 26, 0.06);
   color: var(--accent-strong);
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
@@ -1222,12 +1223,12 @@ button {
 }
 
 .number-dialog__audio-button svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 .number-dialog__audio-button:hover {
-  background: rgba(180, 40, 64, 0.16);
+  background: rgba(180, 40, 64, 0.12);
   color: var(--accent-strong);
   transform: translateY(-1px);
 }

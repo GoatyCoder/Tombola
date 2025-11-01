@@ -360,6 +360,11 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
     const shouldShowPlaceholder = Boolean(showPlaceholder);
 
     block.hidden = !shouldShowPlaceholder;
+    if (shouldShowPlaceholder) {
+      block.removeAttribute('hidden');
+    } else {
+      block.setAttribute('hidden', '');
+    }
     block.setAttribute('aria-hidden', shouldShowPlaceholder ? 'false' : 'true');
     block.classList.toggle(placeholderClass, shouldShowPlaceholder);
 
@@ -389,6 +394,7 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
   }
 
   block.hidden = false;
+  block.removeAttribute('hidden');
   block.setAttribute('aria-hidden', 'false');
   block.classList.remove(placeholderClass);
 
@@ -413,6 +419,21 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
   if (heading) {
     heading.hidden = false;
   }
+}
+
+function blurButtonOnNextFrame(button) {
+  if (!button || typeof button.blur !== 'function') {
+    return;
+  }
+
+  if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+    window.requestAnimationFrame(() => {
+      button.blur();
+    });
+    return;
+  }
+
+  button.blur();
 }
 
 function applySponsorToOverlay(sponsor) {
@@ -2061,7 +2082,7 @@ function setupEventListeners() {
   if (elements.modalDialectPlay) {
     elements.modalDialectPlay.addEventListener('click', () => {
       if (!state.selected) {
-        elements.modalDialectPlay.blur();
+        blurButtonOnNextFrame(elements.modalDialectPlay);
         return;
       }
 
@@ -2070,14 +2091,14 @@ function setupEventListeners() {
       if (entry) {
         speakDialectText(entry);
       }
-      elements.modalDialectPlay.blur();
+      blurButtonOnNextFrame(elements.modalDialectPlay);
     });
   }
 
   if (elements.modalItalianPlay) {
     elements.modalItalianPlay.addEventListener('click', () => {
       if (!state.selected) {
-        elements.modalItalianPlay.blur();
+        blurButtonOnNextFrame(elements.modalItalianPlay);
         return;
       }
 
@@ -2086,7 +2107,7 @@ function setupEventListeners() {
       if (entry) {
         speakItalianText(entry);
       }
-      elements.modalItalianPlay.blur();
+      blurButtonOnNextFrame(elements.modalItalianPlay);
     });
   }
 
