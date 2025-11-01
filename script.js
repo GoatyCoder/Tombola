@@ -33,6 +33,7 @@ const elements = {
   modalDialectPlay: document.querySelector('#modal-dialect-play'),
   modalItalianPlay: document.querySelector('#modal-italian-play'),
   modalNext: document.querySelector('#modal-next'),
+  modalNextLabel: document.querySelector('[data-modal-next-label]'),
   modalSponsorBlock: document.querySelector('#modal-sponsor-block'),
   modalSponsorHeading: document.querySelector('#modal-sponsor-heading'),
   modalSponsor: document.querySelector('#modal-sponsor'),
@@ -1692,12 +1693,16 @@ function openModal(entry, options = {}) {
     const remaining = Math.max(total - drawnCount, 0);
     const shouldShow = (fromDraw || state.isAnimatingDraw) && remaining > 0;
 
+    const nextLabel = remaining === 1 ? 'Estrai ultimo numero' : 'Estrai successivo';
+
     elements.modalNext.hidden = !shouldShow;
     elements.modalNext.disabled = !shouldShow;
 
     if (shouldShow) {
-      elements.modalNext.textContent =
-        remaining === 1 ? 'Estrai ultimo numero' : 'Estrai successivo';
+      elements.modalNext.setAttribute('aria-label', nextLabel);
+      if (elements.modalNextLabel) {
+        elements.modalNextLabel.textContent = nextLabel;
+      }
       focusTarget = elements.modalNext;
     }
   }
@@ -1713,6 +1718,7 @@ function closeModal(options = {}) {
   document.body.classList.remove('modal-open');
   if (elements.modalNext) {
     elements.modalNext.hidden = true;
+    elements.modalNext.disabled = true;
   }
   applySponsorToModal(null);
   if (elements.modalImageFrame) {

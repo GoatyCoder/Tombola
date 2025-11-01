@@ -1285,6 +1285,58 @@ button {
   gap: 0.6rem;
 }
 
+.number-dialog__header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.number-dialog__next {
+  border: none;
+  background: transparent;
+  color: var(--accent-strong);
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.1rem;
+  cursor: pointer;
+  transition: transform var(--transition), background var(--transition),
+    color var(--transition);
+}
+
+.number-dialog__next .die-icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  --die-face: rgba(180, 40, 64, 0.18);
+  --die-pip: var(--accent-strong);
+}
+
+.number-dialog__next:hover:not(:disabled),
+.number-dialog__next:focus-visible:not(:disabled) {
+  background: rgba(180, 40, 64, 0.12);
+}
+
+.number-dialog__next:focus-visible {
+  outline: 2px solid rgba(180, 40, 64, 0.35);
+  outline-offset: 2px;
+}
+
+.number-dialog__next:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.number-dialog__next:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.number-dialog__next[hidden] {
+  display: none;
+}
+
 .number-dialog__headline {
   margin: 0;
   font-size: clamp(1.5rem, 3.6vw, 1.9rem);
@@ -1536,47 +1588,6 @@ button {
 .number-dialog__phrase--empty {
   color: var(--ink-soft);
   font-style: italic;
-}
-
-.number-dialog__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-}
-
-.number-dialog__action {
-  border-radius: 999px;
-  border: none;
-  background: var(--accent);
-  color: var(--surface);
-  font-weight: 600;
-  padding: 0.6rem 1.2rem;
-  cursor: pointer;
-  transition: background var(--transition), transform var(--transition);
-}
-
-.number-dialog__action:hover:not(:disabled),
-.number-dialog__action:focus-visible:not(:disabled) {
-  background: var(--accent-strong);
-  transform: translateY(-1px);
-}
-
-.number-dialog__action:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.number-dialog__action--secondary {
-  background: transparent;
-  color: var(--ink);
-  border: 1px solid rgba(30, 24, 26, 0.14);
-  padding: 0.55rem 1.2rem;
-}
-
-.number-dialog__action--secondary:hover:not(:disabled),
-.number-dialog__action--secondary:focus-visible:not(:disabled) {
-  color: var(--accent-strong);
-  border-color: rgba(180, 40, 64, 0.36);
 }
 
 .number-dialog__footer {

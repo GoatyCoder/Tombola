@@ -263,9 +263,29 @@
       <div class="number-dialog" role="document">
         <header class="number-dialog__header">
           <p id="modal-number" class="number-dialog__headline" aria-live="polite"></p>
-          <button type="button" class="number-dialog__close" aria-label="Chiudi" id="modal-close">
-            <span aria-hidden="true">&times;</span>
-          </button>
+          <div class="number-dialog__header-actions">
+            <button
+              type="button"
+              class="number-dialog__next"
+              id="modal-next"
+              aria-label="Estrai successivo"
+              hidden
+              disabled
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" role="presentation" class="die-icon">
+                <rect class="die-icon__face" x="4.5" y="4.5" width="15" height="15" rx="3.5" ry="3.5" />
+                <circle class="die-icon__pip" cx="9.5" cy="9.5" r="1.35" />
+                <circle class="die-icon__pip" cx="14.5" cy="14.5" r="1.35" />
+                <circle class="die-icon__pip" cx="14.5" cy="9.5" r="1.35" />
+                <circle class="die-icon__pip" cx="9.5" cy="14.5" r="1.35" />
+                <circle class="die-icon__pip" cx="12" cy="12" r="1.35" />
+              </svg>
+              <span class="sr-only" data-modal-next-label>Estrai successivo</span>
+            </button>
+            <button type="button" class="number-dialog__close" aria-label="Chiudi" id="modal-close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
         </header>
         <div class="number-dialog__body">
           <div class="number-dialog__visual">
@@ -333,11 +353,6 @@
                 </header>
                 <p id="modal-italian" class="number-dialog__phrase"></p>
               </article>
-            </div>
-            <div class="number-dialog__actions">
-              <button type="button" class="number-dialog__action" id="modal-next" hidden>
-                Estrai successivo
-              </button>
             </div>
             <footer class="number-dialog__footer">
               <div id="modal-sponsor-block" class="number-dialog__sponsor" hidden>
