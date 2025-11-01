@@ -1324,6 +1324,62 @@ button {
   pointer-events: none;
 }
 
+.confirm-dialog {
+  width: min(360px, 100%);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(30, 24, 26, 0.12);
+  border-radius: var(--radius-md);
+  padding: clamp(1rem, 3vw, 1.35rem);
+  display: grid;
+  gap: clamp(0.75rem, 2vw, 1rem);
+  text-align: center;
+  backdrop-filter: blur(var(--scrim-blur));
+  box-shadow: none;
+}
+
+.confirm-dialog__icon {
+  width: clamp(3.1rem, 8vw, 3.7rem);
+  height: clamp(3.1rem, 8vw, 3.7rem);
+  margin: 0 auto;
+  --token-number-size: clamp(1.4rem, 3vw, 1.7rem);
+}
+
+.confirm-dialog__title {
+  margin: 0;
+  font-size: clamp(1.35rem, 3.2vw, 1.6rem);
+  font-weight: 700;
+  color: var(--accent-strong);
+}
+
+.confirm-dialog__message {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: clamp(0.95rem, 2.4vw, 1.05rem);
+  line-height: 1.5;
+}
+
+.confirm-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.confirm-dialog__actions .button {
+  min-width: 0;
+  flex: 1 1 150px;
+}
+
+@media (max-width: 420px) {
+  .confirm-dialog__actions {
+    flex-direction: column;
+  }
+
+  .confirm-dialog__actions .button {
+    width: 100%;
+  }
+}
+
 .number-dialog__image-frame--placeholder img {
   opacity: 0.35;
 }

@@ -16,6 +16,8 @@ const state = {
   sponsors: [],
   sponsorLoadPromise: null,
   sponsorShowcaseRendered: false,
+  resetDialogOpen: false,
+  resetDialogTrigger: null,
 };
 
 const elements = {
@@ -37,6 +39,11 @@ const elements = {
   modalSponsorLogo: document.querySelector('#modal-sponsor-logo'),
   drawButton: document.querySelector('#draw-button'),
   resetButton: document.querySelector('#reset-button'),
+  resetDialog: document.querySelector('#reset-dialog'),
+  resetDialogConfirm: document.querySelector('[data-reset-confirm]'),
+  resetDialogCancelButtons: Array.from(
+    document.querySelectorAll('[data-reset-cancel]')
+  ),
   drawStatus: document.querySelector('#draw-status'),
   drawOverlay: document.querySelector('#draw-portal'),
   drawOverlayNumber: document.querySelector('#draw-animation-number'),
@@ -1443,20 +1450,9 @@ function updateDrawHistory() {
   historyList.scrollTop = 0;
 }
 
-function resetGame() {
+function performGameReset() {
   if (!state.numbers.length) {
     return;
-  }
-
-  closeHistoryPanel({ immediate: true });
-
-  if (state.drawnNumbers.size > 0) {
-    const shouldReset = window.confirm(
-      'Vuoi ricominciare la partita? Tutti i numeri estratti verranno azzerati.'
-    );
-    if (!shouldReset) {
-      return;
-    }
   }
 
   if (!elements.modal.hasAttribute('hidden')) {
@@ -1518,6 +1514,103 @@ function resetGame() {
   if (elements.drawButton) {
     elements.drawButton.focus();
   }
+}
+
+function openResetDialog() {
+  if (!elements.resetDialog) {
+    return false;
+  }
+
+  if (!elements.resetDialog.hasAttribute('hidden')) {
+    return true;
+  }
+
+  const activeElement = document.activeElement;
+  state.resetDialogTrigger =
+    activeElement instanceof HTMLElement ? activeElement : elements.resetButton;
+
+  state.resetDialogOpen = true;
+  elements.resetDialog.removeAttribute('hidden');
+  elements.resetDialog.setAttribute('aria-hidden', 'false');
+  elements.resetDialog.classList.add('modal--visible');
+  document.body.classList.add('modal-open');
+
+  const focusTarget =
+    elements.resetDialogConfirm ||
+    (Array.isArray(elements.resetDialogCancelButtons)
+      ? elements.resetDialogCancelButtons[0]
+      : null) ||
+    elements.resetButton;
+
+  requestAnimationFrame(() => {
+    if (focusTarget && typeof focusTarget.focus === 'function') {
+      focusTarget.focus();
+    }
+  });
+
+  return true;
+}
+
+function closeResetDialog(options = {}) {
+  const config = options instanceof Event ? {} : options;
+  const { returnFocus = true } = config;
+
+  state.resetDialogOpen = false;
+
+  if (!elements.resetDialog) {
+    if (returnFocus && state.resetDialogTrigger instanceof HTMLElement) {
+      state.resetDialogTrigger.focus();
+    }
+    state.resetDialogTrigger = null;
+    if (!elements.modal || elements.modal.hasAttribute('hidden')) {
+      document.body.classList.remove('modal-open');
+    }
+    return;
+  }
+
+  elements.resetDialog.classList.remove('modal--visible');
+  elements.resetDialog.setAttribute('hidden', '');
+  elements.resetDialog.setAttribute('aria-hidden', 'true');
+
+  if (!elements.modal || elements.modal.hasAttribute('hidden')) {
+    document.body.classList.remove('modal-open');
+  }
+
+  if (returnFocus) {
+    const focusTarget =
+      (state.resetDialogTrigger && document.body.contains(state.resetDialogTrigger)
+        ? state.resetDialogTrigger
+        : elements.resetButton) || elements.drawButton;
+    if (focusTarget && typeof focusTarget.focus === 'function') {
+      focusTarget.focus();
+    }
+  }
+
+  state.resetDialogTrigger = null;
+}
+
+function resetGame() {
+  if (!state.numbers.length) {
+    return;
+  }
+
+  closeHistoryPanel({ immediate: true });
+
+  if (state.drawnNumbers.size > 0) {
+    const handled = openResetDialog();
+    if (handled) {
+      return;
+    }
+
+    const shouldReset = window.confirm(
+      'Vuoi ricominciare la partita? Tutti i numeri estratti verranno azzerati.'
+    );
+    if (!shouldReset) {
+      return;
+    }
+  }
+
+  performGameReset();
 }
 
 function openModal(entry, options = {}) {
@@ -2169,8 +2262,36 @@ function setupEventListeners() {
     }
   });
 
+  if (elements.resetDialog) {
+    elements.resetDialog.addEventListener('click', (event) => {
+      if (event.target === elements.resetDialog) {
+        closeResetDialog();
+      }
+    });
+  }
+
+  if (elements.resetDialogConfirm) {
+    elements.resetDialogConfirm.addEventListener('click', () => {
+      closeResetDialog({ returnFocus: false });
+      performGameReset();
+    });
+  }
+
+  if (Array.isArray(elements.resetDialogCancelButtons)) {
+    elements.resetDialogCancelButtons.forEach((button) => {
+      if (button) {
+        button.addEventListener('click', () => closeResetDialog());
+      }
+    });
+  }
+
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') {
+      return;
+    }
+
+    if (state.resetDialogOpen) {
+      closeResetDialog();
       return;
     }
 

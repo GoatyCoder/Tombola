@@ -235,6 +235,33 @@
       </div>
     </div>
 
+    <div
+      id="reset-dialog"
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="reset-dialog-title"
+      aria-describedby="reset-dialog-message"
+      aria-hidden="true"
+      hidden
+    >
+      <div class="confirm-dialog" role="document">
+        <div class="confirm-dialog__icon token" aria-hidden="true">
+          <span class="token__number">↺</span>
+        </div>
+        <h2 id="reset-dialog-title" class="confirm-dialog__title">Azzerare la partita?</h2>
+        <p id="reset-dialog-message" class="confirm-dialog__message">
+          Tutti i numeri estratti e la cronologia verranno cancellati.
+        </p>
+        <div class="confirm-dialog__actions">
+          <button type="button" class="button" data-reset-cancel>Continua a giocare</button>
+          <button type="button" class="button button--primary" data-reset-confirm>
+            Azzera tabellone
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div id="number-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-number" hidden>
       <div class="number-dialog" role="document">
         <header class="number-dialog__header">
