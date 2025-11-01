@@ -1855,7 +1855,11 @@ async function showDrawAnimation(entry, options = {}) {
 }
 
 function speakText(text, options = {}) {
-  if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+  if (
+    typeof window === 'undefined' ||
+    !('speechSynthesis' in window) ||
+    typeof SpeechSynthesisUtterance !== 'function'
+  ) {
     return;
   }
 
@@ -1865,7 +1869,15 @@ function speakText(text, options = {}) {
     return;
   }
 
-  if (!state.audioEnabled) {
+  const {
+    lang = 'it-IT',
+    rate = 0.92,
+    pitch = 1.0,
+    prefix = '',
+    respectToggle = true,
+  } = options;
+
+  if (respectToggle && !state.audioEnabled) {
     if (state.currentUtterance) {
       window.speechSynthesis.cancel();
       state.currentUtterance = null;
@@ -1877,7 +1889,6 @@ function speakText(text, options = {}) {
     window.speechSynthesis.cancel();
   }
 
-  const { lang = 'it-IT', rate = 0.92, pitch = 1.0, prefix = '' } = options;
   const prefixText = typeof prefix === 'string' ? prefix.trim() : '';
   const utterance = new SpeechSynthesisUtterance(
     prefixText ? `${prefixText} ${content}` : content
@@ -1942,6 +1953,7 @@ function speakDialectText(entry) {
   speakText(entry.dialect, {
     lang: 'it-IT',
     rate: 0.92,
+    respectToggle: false,
   });
 }
 
@@ -1953,6 +1965,7 @@ function speakItalianText(entry) {
   speakText(entry.italian, {
     lang: 'it-IT',
     rate: 0.96,
+    respectToggle: false,
   });
 }
 
