@@ -52,7 +52,7 @@
                 <button
                   type="button"
                   id="history-toggle"
-                  class="chip"
+                  class="chip chip--icon"
                   aria-expanded="false"
                   aria-controls="history-panel"
                   data-label-mobile-open="Chiudi cronologia"
@@ -79,7 +79,7 @@
                       stroke-linejoin="round"
                     />
                   </svg>
-                  <span class="chip__label" data-history-label>Cronologia</span>
+                  <span class="sr-only" data-history-label>Cronologia</span>
                 </button>
               </div>
               <p id="draw-progress-value" class="status-card__value">0/0</p>
@@ -94,11 +94,72 @@
                 <span id="draw-progress-fill" class="progress__fill"></span>
               </div>
               <div class="status-card__actions">
-                <button type="button" id="draw-button" class="button button--primary" disabled>
-                  Estrai numero
+                <button
+                  type="button"
+                  id="draw-button"
+                  class="button button--primary button--icon"
+                  aria-label="Estrai numero"
+                  title="Estrai numero"
+                  disabled
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true" role="presentation" class="button__icon">
+                    <path
+                      d="m5.2 7.5 6.8-3.9 6.8 3.9v7.8l-6.8 3.9-6.8-3.9V7.5Z"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <circle cx="9.5" cy="10" r="1.1" fill="currentColor" />
+                    <circle cx="12" cy="13.5" r="1.1" fill="currentColor" />
+                    <circle cx="14.5" cy="10" r="1.1" fill="currentColor" />
+                  </svg>
+                  <span class="sr-only">Estrai numero</span>
                 </button>
-                <button type="button" id="reset-button" class="button" disabled>
-                  Reset partita
+                <button
+                  type="button"
+                  id="reset-button"
+                  class="button button--icon"
+                  aria-label="Reset partita"
+                  title="Reset partita"
+                  disabled
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true" role="presentation" class="button__icon">
+                    <path
+                      d="M6 7.5A6.75 6.75 0 0 1 18.32 9"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <path
+                      d="M18 4.5v4.25h-4.25"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <path
+                      d="M18 16.5a6.75 6.75 0 0 1-12.32-1.5"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <path
+                      d="M6 19.5V15.25h4.25"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                  <span class="sr-only">Reset partita</span>
                 </button>
               </div>
             </article>
@@ -149,41 +210,35 @@
 
     <div id="draw-portal" class="draw-portal" aria-hidden="true" hidden>
       <div class="draw-portal__scrim" aria-hidden="true"></div>
-      <div class="draw-portal__wrapper" role="status" aria-live="assertive">
-        <div class="draw-portal__orbits" aria-hidden="true">
-          <span class="draw-portal__orbit draw-portal__orbit--primary"></span>
-          <span class="draw-portal__orbit draw-portal__orbit--secondary"></span>
-          <span class="draw-portal__spark draw-portal__spark--one"></span>
-          <span class="draw-portal__spark draw-portal__spark--two"></span>
-        </div>
-        <div class="draw-portal__ball" id="draw-animation-ball" aria-hidden="true">
+      <p id="draw-animation-announcement" class="sr-only" aria-live="assertive"></p>
+      <div class="draw-portal__content" role="status" aria-live="assertive">
+        <div class="draw-portal__ball token" id="draw-animation-ball" aria-hidden="true">
           <span class="draw-portal__loader" id="draw-portal-loader" aria-hidden="true">
             <span class="draw-portal__loader-dot"></span>
             <span class="draw-portal__loader-dot"></span>
             <span class="draw-portal__loader-dot"></span>
           </span>
-          <span id="draw-animation-number" class="draw-portal__number"></span>
+          <span id="draw-animation-number" class="draw-portal__number token__number"></span>
         </div>
-        <p class="draw-portal__caption" id="draw-animation-label">Estrazione in corso...</p>
-        <div id="draw-sponsor-block" class="draw-portal__sponsor-block" hidden>
-          <p id="draw-sponsor-heading" class="draw-portal__sponsor-heading">In collaborazione con</p>
-          <a
-            id="draw-sponsor"
-            class="draw-portal__sponsor-link"
-            href="#"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <img id="draw-sponsor-logo" alt="" decoding="async" />
-          </a>
-        </div>
+      </div>
+      <div id="draw-sponsor-block" class="draw-portal__sponsor-block" hidden>
+        <p id="draw-sponsor-heading" class="draw-portal__sponsor-eyebrow">Sponsor dell'estrazione</p>
+        <a
+          id="draw-sponsor"
+          class="draw-portal__sponsor-link"
+          href="#"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <img id="draw-sponsor-logo" alt="" decoding="async" />
+        </a>
       </div>
     </div>
 
     <div id="number-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-number" hidden>
       <div class="number-dialog" role="document">
         <header class="number-dialog__header">
-          <p id="modal-number" class="number-dialog__number"></p>
+          <p id="modal-number" class="number-dialog__headline" aria-live="polite"></p>
           <button type="button" class="number-dialog__close" aria-label="Chiudi" id="modal-close">
             <span aria-hidden="true">&times;</span>
           </button>
@@ -191,58 +246,77 @@
         <div class="number-dialog__body">
           <div class="number-dialog__visual">
             <div class="number-dialog__image-frame" id="modal-image-frame">
-              <div class="number-dialog__image-placeholder" aria-hidden="true">
-                <span class="number-dialog__placeholder-glow"></span>
-              </div>
               <img id="modal-image" alt="" decoding="async" loading="lazy" />
             </div>
           </div>
           <div class="number-dialog__details">
-            <div class="number-dialog__phrases">
-              <article class="number-dialog__phrase number-dialog__phrase--dialect">
-                <h3 class="number-dialog__phrase-title">Nojano</h3>
-                <div class="number-dialog__text-row">
-                  <p id="modal-dialect" class="number-dialog__text number-dialog__text--dialect"></p>
+            <div class="number-dialog__languages">
+              <article class="number-dialog__language-card number-dialog__language-card--dialect">
+                <header class="number-dialog__language-header">
+                  <span class="number-dialog__language-emblem" aria-hidden="true">
+                    <img src="images/logo_noicattaro.svg" alt="" loading="lazy" decoding="async" />
+                  </span>
+                  <span class="number-dialog__language-name">Nojano</span>
                   <button
                     type="button"
-                    class="number-dialog__play"
+                    class="number-dialog__audio-button"
                     id="modal-dialect-play"
-                    aria-label="Ascolta pronuncia in nojano"
+                    aria-describedby="modal-dialect"
+                    aria-label="Riproduci la pronuncia in nojano"
                   >
-                    <span aria-hidden="true"></span>
+                    <svg viewBox="0 0 24 24" role="presentation" aria-hidden="true">
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="8.75"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                      />
+                      <path d="M10 8.5v7l5-3.5-5-3.5Z" fill="currentColor" />
+                    </svg>
+                    <span class="sr-only">Riproduci la pronuncia in nojano</span>
                   </button>
-                </div>
+                </header>
+                <p id="modal-dialect" class="number-dialog__phrase"></p>
               </article>
-              <article class="number-dialog__phrase number-dialog__phrase--italian">
-                <h3 class="number-dialog__phrase-title">Italiano</h3>
-                <div class="number-dialog__text-row">
-                  <p id="modal-italian" class="number-dialog__text number-dialog__text--italian"></p>
+              <article class="number-dialog__language-card number-dialog__language-card--italian">
+                <header class="number-dialog__language-header">
+                  <span class="number-dialog__language-emblem" aria-hidden="true">
+                    <img src="images/logo_italia.svg" alt="" loading="lazy" decoding="async" />
+                  </span>
+                  <span class="number-dialog__language-name">Italiano</span>
                   <button
                     type="button"
-                    class="number-dialog__play number-dialog__play--secondary"
+                    class="number-dialog__audio-button"
                     id="modal-italian-play"
-                    aria-label="Ascolta pronuncia in italiano"
+                    aria-describedby="modal-italian"
+                    aria-label="Riproduci la pronuncia in italiano"
                   >
-                    <span aria-hidden="true"></span>
+                    <svg viewBox="0 0 24 24" role="presentation" aria-hidden="true">
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="8.75"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                      />
+                      <path d="M10 8.5v7l5-3.5-5-3.5Z" fill="currentColor" />
+                    </svg>
+                    <span class="sr-only">Riproduci la pronuncia in italiano</span>
                   </button>
-                </div>
+                </header>
+                <p id="modal-italian" class="number-dialog__phrase"></p>
               </article>
             </div>
             <div class="number-dialog__actions">
               <button type="button" class="number-dialog__action" id="modal-next" hidden>
                 Estrai successivo
               </button>
-              <button
-                type="button"
-                class="number-dialog__action number-dialog__action--secondary"
-                id="modal-close-secondary"
-              >
-                Chiudi
-              </button>
             </div>
             <footer class="number-dialog__footer">
               <div id="modal-sponsor-block" class="number-dialog__sponsor" hidden>
-                <p id="modal-sponsor-heading" class="number-dialog__sponsor-heading">In collaborazione con</p>
                 <a
                   id="modal-sponsor"
                   class="number-dialog__sponsor-link"
@@ -261,7 +335,16 @@
 
     <template id="board-cell-template">
       <button class="board-cell" type="button">
-        <span class="board-cell__media" aria-hidden="true"></span>
+        <img
+          class="board-cell__media"
+          alt=""
+          loading="lazy"
+          decoding="async"
+          aria-hidden="true"
+        />
+        <span class="board-cell__token token" aria-hidden="true">
+          <span class="board-cell__token-number token__number" data-board-token-number></span>
+        </span>
         <span class="sr-only" data-board-cell-sr></span>
       </button>
     </template>
