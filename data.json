@@ -1,544 +1,544 @@
 {
-  "numbers": [
-    {
-      "number": 1,
-      "italian": "Noicattaro",
-      "dialect": "U PAIEI-S DI NAO",
-      "image": "images/1.png"
-    },
-    {
-      "number": 2,
-      "italian": "Il cornuto",
-      "dialect": "U C-RNEUT",
-      "image": null
-    },
-    {
-      "number": 3,
-      "italian": "Le castagne del prete",
-      "dialect": null,
-      "image": "images/3.png"
-    },
-    {
-      "number": 4,
-      "italian": "L'arco di Santoro",
-      "dialect": "UARK D SANTAO-R",
-      "image": "images/4.png"
-    },
-    {
-      "number": 5,
-      "italian": "Il ferro di cavallo",
-      "dialect": "U FIERR D CAVADD",
-      "image": "images/5.png"
-    },
-    {
-      "number": 6,
-      "italian": "La fontana delle tartarughe",
-      "dialect": "A F-ND-N D S-STU-SCE-N",
-      "image": "images/6.png"
-    },
-    {
-      "number": 7,
-      "italian": "L'uva",
-      "dialect": "U M-NAVACC",
-      "image": "images/7.png"
-    },
-    {
-      "number": 8,
-      "italian": "L'orinale",
-      "dialect": "U R-NN-L",
-      "image": "images/8.png"
-    },
-    {
-      "number": 9,
-      "italian": "La levatrice",
-      "dialect": "A MAMM-R",
-      "image": "images/9.png"
-    },
-    {
-      "number": 10,
-      "italian": "La raganella",
-      "dialect": "A TROZZUE",
-      "image": "images/10.png"
-    },
-    {
-      "number": 11,
-      "italian": "La vecchiaia fetente",
-      "dialect": "A V-CCHIE-M F-TEND",
-      "image": "images/11.png"
-    },
-    {
-      "number": 12,
-      "italian": "Il monumento",
-      "dialect": "U M-N-MENT",
-      "image": "images/12.png"
-    },
-    {
-      "number": 13,
-      "italian": "Torre a Mare",
-      "dialect": "A P-LAO-S",
-      "image": "images/13.png"
-    },
-    {
-      "number": 14,
-      "italian": "La pupa",
-      "dialect": "A PEU-P",
-      "image": "images/14.png"
-    },
-    {
-      "number": 15,
-      "italian": "La banda",
-      "dialect": "A BANN",
-      "image": "images/15.png"
-    },
-    {
-      "number": 16,
-      "italian": "La Madonna del Carmine",
-      "dialect": "A MADONN DU CAR-M-N",
-      "image": "images/16.png"
-    },
-    {
-      "number": 17,
-      "italian": "La peste",
-      "dialect": "A PEST",
-      "image": "images/17.png"
-    },
-    {
-      "number": 18,
-      "italian": "L'orologio in piazza",
-      "dialect": "UARROGG DA CHIAZZ",
-      "image": "images/18.png"
-    },
-    {
-      "number": 19,
-      "italian": "Il torchio",
-      "dialect": "U TORCHIE",
-      "image": "images/19.png"
-    },
-    {
-      "number": 20,
-      "italian": "Il calzone di cipolla",
-      "dialect": "U CALZAO-N D C-PODD",
-      "image": "images/20.png"
-    },
-    {
-      "number": 21,
-      "italian": "Il latte di mandorle",
-      "dialect": "U LATTAMINUE",
-      "image": "images/21.png"
-    },
-    {
-      "number": 22,
-      "italian": "Ribelli nel presepe",
-      "dialect": null,
-      "image": "images/22.png"
-    },
-    {
-      "number": 23,
-      "italian": "La pastorale",
-      "dialect": "A PASTO-R-L",
-      "image": "images/23.png"
-    },
-    {
-      "number": 24,
-      "italian": "La vigilia",
-      "dialect": "A V-SCIGGHIE",
-      "image": "images/24.png"
-    },
-    {
-      "number": 25,
-      "italian": "Natale",
-      "dialect": "NAT-L",
-      "image": "images/25.png"
-    },
-    {
-      "number": 26,
-      "italian": "La minestra verde",
-      "dialect": "A M-NESTRA VERD",
-      "image": "images/26.png"
-    },
-    {
-      "number": 27,
-      "italian": "Il teatro cittadino",
-      "dialect": "U TIATR C-TTADEIN",
-      "image": "images/27.png"
-    },
-    {
-      "number": 28,
-      "italian": "L'asino",
-      "dialect": "U CIUCC D CROCAVECCHIE",
-      "image": "images/28.png"
-    },
-    {
-      "number": 29,
-      "italian": "Il falò del giovedì santo",
-      "dialect": "A FANAO-V",
-      "image": "images/29.png"
-    },
-    {
-      "number": 30,
-      "italian": "La gelosia",
-      "dialect": null,
-      "image": "images/30.png"
-    },
-    {
-      "number": 31,
-      "italian": "La cartomante",
-      "dialect": "A M-NARK",
-      "image": "images/31.png"
-    },
-    {
-      "number": 32,
-      "italian": "Il braciere",
-      "dialect": "A FRASCIAE-R",
-      "image": "images/32.png"
-    },
-    {
-      "number": 33,
-      "italian": "Gli anni di Cristo",
-      "dialect": "IANN D CRIST",
-      "image": "images/33.png"
-    },
-    {
-      "number": 34,
-      "italian": "Il mortaio",
-      "dialect": "U M-RT-L",
-      "image": "images/34.png"
-    },
-    {
-      "number": 35,
-      "italian": "Il mediatore",
-      "dialect": "U ZAN-Z-N",
-      "image": "images/35.png"
-    },
-    {
-      "number": 36,
-      "italian": "La villa",
-      "dialect": "A PEZZ",
-      "image": "images/36.png"
-    },
-    {
-      "number": 37,
-      "italian": "Il secca panni",
-      "dialect": null,
-      "image": "images/37.png"
-    },
-    {
-      "number": 38,
-      "italian": "Il forno a campana",
-      "dialect": null,
-      "image": "images/38.png"
-    },
-    {
-      "number": 39,
-      "italian": "Il trappeto",
-      "dialect": "U TRAPPEI-T",
-      "image": "images/39.png"
-    },
-    {
-      "number": 40,
-      "italian": "La fornacella",
-      "dialect": "A F-RNACEDD",
-      "image": "images/40.png"
-    },
-    {
-      "number": 41,
-      "italian": "Il tavoliere",
-      "dialect": null,
-      "image": "images/41.png"
-    },
-    {
-      "number": 42,
-      "italian": "Il figlio celibe",
-      "dialect": "U FIGGHIE ASSAU-L",
-      "image": "images/42.png"
-    },
-    {
-      "number": 43,
-      "italian": "Le lumache",
-      "dialect": null,
-      "image": "images/43.png"
-    },
-    {
-      "number": 44,
-      "italian": "Il santino",
-      "dialect": null,
-      "image": "images/44.png"
-    },
-    {
-      "number": 45,
-      "italian": "Il mattarello",
-      "dialect": null,
-      "image": "images/45.png"
-    },
-    {
-      "number": 46,
-      "italian": "Il consuolo",
-      "dialect": "U CUON-Z",
-      "image": "images/46.png"
-    },
-    {
-      "number": 47,
-      "italian": "La ficcanaso",
-      "dialect": "A QU-TAO-S",
-      "image": "images/47.png"
-    },
-    {
-      "number": 48,
-      "italian": "La mala lingua",
-      "dialect": "A MALA LENGUE",
-      "image": "images/48.png"
-    },
-    {
-      "number": 49,
-      "italian": "Il cesso",
-      "dialect": "U PREI-S",
-      "image": "images/49.png"
-    },
-    {
-      "number": 50,
-      "italian": "Le cartellate",
-      "dialect": null,
-      "image": "images/50.png"
-    },
-    {
-      "number": 51,
-      "italian": "Il bisnonno",
-      "dialect": null,
-      "image": "images/51.png"
-    },
-    {
-      "number": 52,
-      "italian": "Lo zio americano",
-      "dialect": null,
-      "image": "images/52.png"
-    },
-    {
-      "number": 53,
-      "italian": "Il pollone",
-      "dialect": "U F-NGHIAO-N",
-      "image": "images/53.png"
-    },
-    {
-      "number": 54,
-      "italian": "Lo sciuraballo",
-      "dialect": null,
-      "image": "images/54.png"
-    },
-    {
-      "number": 55,
-      "italian": "Pane e pomodoro",
-      "dialect": "A CIALLEDD",
-      "image": "images/55.png"
-    },
-    {
-      "number": 56,
-      "italian": "Il crocifero",
-      "dialect": "U VIACRAO-C",
-      "image": "images/56.png"
-    },
-    {
-      "number": 57,
-      "italian": "Il pozzo di San Nicola",
-      "dialect": "U PUZZ D SANT N-CAO-L",
-      "image": "images/57.png"
-    },
-    {
-      "number": 58,
-      "italian": "Il fazzoletto di stoffa",
-      "dialect": "U FAZZ-LETT A REZZ",
-      "image": "images/58.png"
-    },
-    {
-      "number": 59,
-      "italian": "La porta a vetri",
-      "dialect": "A LASTRIE-R",
-      "image": "images/59.png"
-    },
-    {
-      "number": 60,
-      "italian": "La buffetta",
-      "dialect": null,
-      "image": "images/60.png"
-    },
-    {
-      "number": 61,
-      "italian": "L'uomo del frantoio",
-      "dialect": "U NAGGHIE-R",
-      "image": "images/61.png"
-    },
-    {
-      "number": 62,
-      "italian": "Il secca fiche",
-      "dialect": null,
-      "image": "images/62.png"
-    },
-    {
-      "number": 63,
-      "italian": "Sparatrapp",
-      "dialect": "SPARATRAPP",
-      "image": "images/63.png"
-    },
-    {
-      "number": 64,
-      "italian": "I lupini",
-      "dialect": "I L-PEI-N",
-      "image": "images/64.png"
-    },
-    {
-      "number": 65,
-      "italian": "Il monaco",
-      "dialect": "U MON-K",
-      "image": "images/65.png"
-    },
-    {
-      "number": 66,
-      "italian": "I ceci fritti",
-      "dialect": "I CI-C-R FRITT",
-      "image": "images/66.png"
-    },
-    {
-      "number": 67,
-      "italian": "Le cartellate",
-      "dialect": null,
-      "image": "images/67.png"
-    },
-    {
-      "number": 68,
-      "italian": "La processione",
-      "dialect": "A PR-C-SSAO-N",
-      "image": "images/68.png"
-    },
-    {
-      "number": 69,
-      "italian": "Mia suocera",
-      "dialect": "S-RO-K-M",
-      "image": "images/69.png"
-    },
-    {
-      "number": 70,
-      "italian": "La civetta",
-      "dialect": "A K-K-V-SCIE",
-      "image": "images/70.png"
-    },
-    {
-      "number": 71,
-      "italian": "La cavallina (gioco)",
-      "dialect": "CAVALL E",
-      "image": "images/71.png"
-    },
-    {
-      "number": 72,
-      "italian": "Il lupo mannaro",
-      "dialect": "U L-POMM",
-      "image": "images/72.png"
-    },
-    {
-      "number": 73,
-      "italian": "I cavatelli",
-      "dialect": "I MIGNIUCCHIE",
-      "image": "images/73.png"
-    },
-    {
-      "number": 74,
-      "italian": "Il raspo",
-      "dialect": "U RACIUPP",
-      "image": "images/74.png"
-    },
-    {
-      "number": 75,
-      "italian": "Il fornello della cucina",
-      "dialect": "PIPIGASS",
-      "image": "images/75.png"
-    },
-    {
-      "number": 76,
-      "italian": "La gobba",
-      "dialect": "U SCIUMM",
-      "image": "images/76.png"
-    },
-    {
-      "number": 77,
-      "italian": "Le gambe delle donne",
-      "dialect": "I GAMM DI FE-M-N",
-      "image": "images/77.png"
-    },
-    {
-      "number": 78,
-      "italian": "Il velo delle donne in chiesa",
-      "dialect": "A VELETT",
-      "image": "images/78.png"
-    },
-    {
-      "number": 79,
-      "italian": "Piccolo pezzo di terra",
-      "dialect": "U SCIACQUER",
-      "image": "images/79.png"
-    },
-    {
-      "number": 80,
-      "italian": "Grattarsi in testa",
-      "dialect": "U GRATTIZZ NG-P",
-      "image": "images/80.png"
-    },
-    {
-      "number": 81,
-      "italian": "Il ricovero",
-      "dialect": "UAESCIE",
-      "image": "images/81.png"
-    },
-    {
-      "number": 82,
-      "italian": null,
-      "dialect": "A MASCIE-R",
-      "image": "images/82.png"
-    },
-    {
-      "number": 83,
-      "italian": "Il pianto",
-      "dialect": "U CHIANGIUDD",
-      "image": "images/83.png"
-    },
-    {
-      "number": 84,
-      "italian": "Timballo di finocchio lesso",
-      "dialect": "U B-N-DITT",
-      "image": "images/84.png"
-    },
-    {
-      "number": 85,
-      "italian": "Dolce di castagna",
-      "dialect": "A CASTAGNELL",
-      "image": "images/85.png"
-    },
-    {
-      "number": 86,
-      "italian": "I soldi",
-      "dialect": "I T-RREIS",
-      "image": "images/86.png"
-    },
-    {
-      "number": 87,
-      "italian": "La malombra",
-      "dialect": "A MALOMBR",
-      "image": "images/87.png"
-    },
-    {
-      "number": 88,
-      "italian": "La fuga d'amore",
-      "dialect": "A ZEIT SC-NNEU-T",
-      "image": "images/88.png"
-    },
-    {
-      "number": 89,
-      "italian": "Il ronzio",
-      "dialect": "U RUOSCIE",
-      "image": "images/89.png"
-    },
-    {
-      "number": 90,
-      "italian": "Il gaguro",
-      "dialect": "U GAGHEUR",
-      "image": "images/90.png"
-    }
-  ]
+    "numbers": [
+        {
+            "number": 1,
+            "italian": "Noicattaro",
+            "dialect": "U PAIEI-S DI NAO",
+            "image": "images/1.jpg"
+        },
+        {
+            "number": 2,
+            "italian": "Il cornuto",
+            "dialect": "U C-RNEUT",
+            "image": null
+        },
+        {
+            "number": 3,
+            "italian": "Le castagne del prete",
+            "dialect": null,
+            "image": "images/3.jpg"
+        },
+        {
+            "number": 4,
+            "italian": "L'arco di Santoro",
+            "dialect": "UARK D SANTAO-R",
+            "image": "images/4.jpg"
+        },
+        {
+            "number": 5,
+            "italian": "Il ferro di cavallo",
+            "dialect": "U FIERR D CAVADD",
+            "image": "images/5.jpg"
+        },
+        {
+            "number": 6,
+            "italian": "La fontana delle tartarughe",
+            "dialect": "A F-ND-N D S-STU-SCE-N",
+            "image": "images/6.jpg"
+        },
+        {
+            "number": 7,
+            "italian": "L'uva",
+            "dialect": "U M-NAVACC",
+            "image": "images/7.jpg"
+        },
+        {
+            "number": 8,
+            "italian": "L'orinale",
+            "dialect": "U R-NN-L",
+            "image": "images/8.jpg"
+        },
+        {
+            "number": 9,
+            "italian": "La levatrice",
+            "dialect": "A MAMM-R",
+            "image": "images/9.jpg"
+        },
+        {
+            "number": 10,
+            "italian": "La raganella",
+            "dialect": "A TROZZUE",
+            "image": "images/10.jpg"
+        },
+        {
+            "number": 11,
+            "italian": "La vecchiaia fetente",
+            "dialect": "A V-CCHIE-M F-TEND",
+            "image": "images/11.jpg"
+        },
+        {
+            "number": 12,
+            "italian": "Il monumento",
+            "dialect": "U M-N-MENT",
+            "image": "images/12.jpg"
+        },
+        {
+            "number": 13,
+            "italian": "Torre a Mare",
+            "dialect": "A P-LAO-S",
+            "image": "images/13.jpg"
+        },
+        {
+            "number": 14,
+            "italian": "La pupa",
+            "dialect": "A PEU-P",
+            "image": "images/14.jpg"
+        },
+        {
+            "number": 15,
+            "italian": "La banda",
+            "dialect": "A BANN",
+            "image": "images/15.jpg"
+        },
+        {
+            "number": 16,
+            "italian": "La Madonna del Carmine",
+            "dialect": "A MADONN DU CAR-M-N",
+            "image": "images/16.jpg"
+        },
+        {
+            "number": 17,
+            "italian": "La peste",
+            "dialect": "A PEST",
+            "image": "images/17.jpg"
+        },
+        {
+            "number": 18,
+            "italian": "L'orologio in piazza",
+            "dialect": "UARROGG DA CHIAZZ",
+            "image": "images/18.jpg"
+        },
+        {
+            "number": 19,
+            "italian": "Il torchio",
+            "dialect": "U TORCHIE",
+            "image": "images/19.jpg"
+        },
+        {
+            "number": 20,
+            "italian": "Il calzone di cipolla",
+            "dialect": "U CALZAO-N D C-PODD",
+            "image": "images/20.jpg"
+        },
+        {
+            "number": 21,
+            "italian": "Il latte di mandorle",
+            "dialect": "U LATTAMINUE",
+            "image": "images/21.jpg"
+        },
+        {
+            "number": 22,
+            "italian": "Ribelli nel presepe",
+            "dialect": null,
+            "image": "images/22.jpg"
+        },
+        {
+            "number": 23,
+            "italian": "La pastorale",
+            "dialect": "A PASTO-R-L",
+            "image": "images/23.jpg"
+        },
+        {
+            "number": 24,
+            "italian": "La vigilia",
+            "dialect": "A V-SCIGGHIE",
+            "image": "images/24.jpg"
+        },
+        {
+            "number": 25,
+            "italian": "Natale",
+            "dialect": "NAT-L",
+            "image": "images/25.jpg"
+        },
+        {
+            "number": 26,
+            "italian": "La minestra verde",
+            "dialect": "A M-NESTRA VERD",
+            "image": "images/26.jpg"
+        },
+        {
+            "number": 27,
+            "italian": "Il teatro cittadino",
+            "dialect": "U TIATR C-TTADEIN",
+            "image": "images/27.jpg"
+        },
+        {
+            "number": 28,
+            "italian": "L'asino",
+            "dialect": "U CIUCC D CROCAVECCHIE",
+            "image": "images/28.jpg"
+        },
+        {
+            "number": 29,
+            "italian": "Il fal\u00f2 del gioved\u00ec santo",
+            "dialect": "A FANAO-V",
+            "image": "images/29.jpg"
+        },
+        {
+            "number": 30,
+            "italian": "La gelosia",
+            "dialect": null,
+            "image": "images/30.jpg"
+        },
+        {
+            "number": 31,
+            "italian": "La cartomante",
+            "dialect": "A M-NARK",
+            "image": "images/31.jpg"
+        },
+        {
+            "number": 32,
+            "italian": "Il braciere",
+            "dialect": "A FRASCIAE-R",
+            "image": "images/32.jpg"
+        },
+        {
+            "number": 33,
+            "italian": "Gli anni di Cristo",
+            "dialect": "IANN D CRIST",
+            "image": "images/33.jpg"
+        },
+        {
+            "number": 34,
+            "italian": "Il mortaio",
+            "dialect": "U M-RT-L",
+            "image": "images/34.jpg"
+        },
+        {
+            "number": 35,
+            "italian": "Il mediatore",
+            "dialect": "U ZAN-Z-N",
+            "image": "images/35.jpg"
+        },
+        {
+            "number": 36,
+            "italian": "La villa",
+            "dialect": "A PEZZ",
+            "image": "images/36.jpg"
+        },
+        {
+            "number": 37,
+            "italian": "Il secca panni",
+            "dialect": null,
+            "image": "images/37.jpg"
+        },
+        {
+            "number": 38,
+            "italian": "Il forno a campana",
+            "dialect": null,
+            "image": "images/38.jpg"
+        },
+        {
+            "number": 39,
+            "italian": "Il trappeto",
+            "dialect": "U TRAPPEI-T",
+            "image": "images/39.jpg"
+        },
+        {
+            "number": 40,
+            "italian": "La fornacella",
+            "dialect": "A F-RNACEDD",
+            "image": "images/40.jpg"
+        },
+        {
+            "number": 41,
+            "italian": "Il tavoliere",
+            "dialect": null,
+            "image": "images/41.jpg"
+        },
+        {
+            "number": 42,
+            "italian": "Il figlio celibe",
+            "dialect": "U FIGGHIE ASSAU-L",
+            "image": "images/42.jpg"
+        },
+        {
+            "number": 43,
+            "italian": "Le lumache",
+            "dialect": null,
+            "image": "images/43.jpg"
+        },
+        {
+            "number": 44,
+            "italian": "Il santino",
+            "dialect": null,
+            "image": "images/44.jpg"
+        },
+        {
+            "number": 45,
+            "italian": "Il mattarello",
+            "dialect": null,
+            "image": "images/45.jpg"
+        },
+        {
+            "number": 46,
+            "italian": "Il consuolo",
+            "dialect": "U CUON-Z",
+            "image": "images/46.jpg"
+        },
+        {
+            "number": 47,
+            "italian": "La ficcanaso",
+            "dialect": "A QU-TAO-S",
+            "image": "images/47.jpg"
+        },
+        {
+            "number": 48,
+            "italian": "La mala lingua",
+            "dialect": "A MALA LENGUE",
+            "image": "images/48.jpg"
+        },
+        {
+            "number": 49,
+            "italian": "Il cesso",
+            "dialect": "U PREI-S",
+            "image": "images/49.jpg"
+        },
+        {
+            "number": 50,
+            "italian": "Le cartellate",
+            "dialect": null,
+            "image": "images/50.jpg"
+        },
+        {
+            "number": 51,
+            "italian": "Il bisnonno",
+            "dialect": null,
+            "image": "images/51.jpg"
+        },
+        {
+            "number": 52,
+            "italian": "Lo zio americano",
+            "dialect": null,
+            "image": "images/52.jpg"
+        },
+        {
+            "number": 53,
+            "italian": "Il pollone",
+            "dialect": "U F-NGHIAO-N",
+            "image": "images/53.jpg"
+        },
+        {
+            "number": 54,
+            "italian": "Lo sciuraballo",
+            "dialect": null,
+            "image": "images/54.jpg"
+        },
+        {
+            "number": 55,
+            "italian": "Pane e pomodoro",
+            "dialect": "A CIALLEDD",
+            "image": "images/55.jpg"
+        },
+        {
+            "number": 56,
+            "italian": "Il crocifero",
+            "dialect": "U VIACRAO-C",
+            "image": "images/56.jpg"
+        },
+        {
+            "number": 57,
+            "italian": "Il pozzo di San Nicola",
+            "dialect": "U PUZZ D SANT N-CAO-L",
+            "image": "images/57.jpg"
+        },
+        {
+            "number": 58,
+            "italian": "Il fazzoletto di stoffa",
+            "dialect": "U FAZZ-LETT A REZZ",
+            "image": "images/58.jpg"
+        },
+        {
+            "number": 59,
+            "italian": "La porta a vetri",
+            "dialect": "A LASTRIE-R",
+            "image": "images/59.jpg"
+        },
+        {
+            "number": 60,
+            "italian": "La buffetta",
+            "dialect": null,
+            "image": "images/60.jpg"
+        },
+        {
+            "number": 61,
+            "italian": "L'uomo del frantoio",
+            "dialect": "U NAGGHIE-R",
+            "image": "images/61.jpg"
+        },
+        {
+            "number": 62,
+            "italian": "Il secca fiche",
+            "dialect": null,
+            "image": "images/62.jpg"
+        },
+        {
+            "number": 63,
+            "italian": "Sparatrapp",
+            "dialect": "SPARATRAPP",
+            "image": "images/63.jpg"
+        },
+        {
+            "number": 64,
+            "italian": "I lupini",
+            "dialect": "I L-PEI-N",
+            "image": "images/64.jpg"
+        },
+        {
+            "number": 65,
+            "italian": "Il monaco",
+            "dialect": "U MON-K",
+            "image": "images/65.jpg"
+        },
+        {
+            "number": 66,
+            "italian": "I ceci fritti",
+            "dialect": "I CI-C-R FRITT",
+            "image": "images/66.jpg"
+        },
+        {
+            "number": 67,
+            "italian": "Le cartellate",
+            "dialect": null,
+            "image": "images/67.jpg"
+        },
+        {
+            "number": 68,
+            "italian": "La processione",
+            "dialect": "A PR-C-SSAO-N",
+            "image": "images/68.jpg"
+        },
+        {
+            "number": 69,
+            "italian": "Mia suocera",
+            "dialect": "S-RO-K-M",
+            "image": "images/69.jpg"
+        },
+        {
+            "number": 70,
+            "italian": "La civetta",
+            "dialect": "A K-K-V-SCIE",
+            "image": "images/70.jpg"
+        },
+        {
+            "number": 71,
+            "italian": "La cavallina (gioco)",
+            "dialect": "CAVALL E",
+            "image": "images/71.jpg"
+        },
+        {
+            "number": 72,
+            "italian": "Il lupo mannaro",
+            "dialect": "U L-POMM",
+            "image": "images/72.jpg"
+        },
+        {
+            "number": 73,
+            "italian": "I cavatelli",
+            "dialect": "I MIGNIUCCHIE",
+            "image": "images/73.jpg"
+        },
+        {
+            "number": 74,
+            "italian": "Il raspo",
+            "dialect": "U RACIUPP",
+            "image": "images/74.jpg"
+        },
+        {
+            "number": 75,
+            "italian": "Il fornello della cucina",
+            "dialect": "PIPIGASS",
+            "image": "images/75.jpg"
+        },
+        {
+            "number": 76,
+            "italian": "La gobba",
+            "dialect": "U SCIUMM",
+            "image": "images/76.jpg"
+        },
+        {
+            "number": 77,
+            "italian": "Le gambe delle donne",
+            "dialect": "I GAMM DI FE-M-N",
+            "image": "images/77.jpg"
+        },
+        {
+            "number": 78,
+            "italian": "Il velo delle donne in chiesa",
+            "dialect": "A VELETT",
+            "image": "images/78.jpg"
+        },
+        {
+            "number": 79,
+            "italian": "Piccolo pezzo di terra",
+            "dialect": "U SCIACQUER",
+            "image": "images/79.jpg"
+        },
+        {
+            "number": 80,
+            "italian": "Grattarsi in testa",
+            "dialect": "U GRATTIZZ NG-P",
+            "image": "images/80.jpg"
+        },
+        {
+            "number": 81,
+            "italian": "Il ricovero",
+            "dialect": "UAESCIE",
+            "image": "images/81.jpg"
+        },
+        {
+            "number": 82,
+            "italian": null,
+            "dialect": "A MASCIE-R",
+            "image": "images/82.jpg"
+        },
+        {
+            "number": 83,
+            "italian": "Il pianto",
+            "dialect": "U CHIANGIUDD",
+            "image": "images/83.jpg"
+        },
+        {
+            "number": 84,
+            "italian": "Timballo di finocchio lesso",
+            "dialect": "U B-N-DITT",
+            "image": "images/84.jpg"
+        },
+        {
+            "number": 85,
+            "italian": "Dolce di castagna",
+            "dialect": "A CASTAGNELL",
+            "image": "images/85.jpg"
+        },
+        {
+            "number": 86,
+            "italian": "I soldi",
+            "dialect": "I T-RREIS",
+            "image": "images/86.jpg"
+        },
+        {
+            "number": 87,
+            "italian": "La malombra",
+            "dialect": "A MALOMBR",
+            "image": "images/87.jpg"
+        },
+        {
+            "number": 88,
+            "italian": "La fuga d'amore",
+            "dialect": "A ZEIT SC-NNEU-T",
+            "image": "images/88.jpg"
+        },
+        {
+            "number": 89,
+            "italian": "Il ronzio",
+            "dialect": "U RUOSCIE",
+            "image": "images/89.jpg"
+        },
+        {
+            "number": 90,
+            "italian": "Il gaguro",
+            "dialect": "U GAGHEUR",
+            "image": "images/90.jpg"
+        }
+    ]
 }
