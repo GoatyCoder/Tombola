@@ -869,29 +869,13 @@ button {
 
 @media (min-width: 720px) {
   .app-footer__layout {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    align-items: start;
-    text-align: left;
-  }
-
-  .app-footer__documents {
-    justify-self: flex-start;
-    text-align: left;
-  }
-
-  .app-footer__intro {
-    grid-column: 2;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+    align-items: center;
   }
 
   .app-footer__powered {
     justify-self: flex-end;
     text-align: right;
-  }
-}
-
-@media (min-width: 960px) {
-  .app-footer__layout {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr);
   }
 }
 
@@ -931,48 +915,6 @@ button {
 .app-footer__association-logo {
   width: clamp(200px, 32vw, 280px);
   height: auto;
-}
-
-.app-footer__section-title {
-  margin: 0;
-  font-size: clamp(1.05rem, 2vw, 1.3rem);
-  font-weight: 700;
-}
-
-.app-footer__documents {
-  display: grid;
-  gap: clamp(0.9rem, 1.8vw, 1.3rem);
-}
-
-.app-footer__list {
-  display: grid;
-  gap: 0.6rem;
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-
-.app-footer__link {
-  color: rgba(255, 255, 255, 0.9);
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.app-footer__link:hover {
-  color: #ffffff;
-}
-
-.app-footer__link:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.45);
-  outline-offset: 3px;
-  border-radius: 0.25rem;
-}
-
-.app-footer__terms {
-  margin: 0;
-  color: rgba(255, 255, 255, 0.75);
-  font-size: clamp(0.9rem, 1.4vw, 1rem);
-  line-height: 1.55;
 }
 
 .app-footer__powered {
