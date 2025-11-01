@@ -74,14 +74,13 @@
                   disabled
                 >
                   <span class="button__label" data-draw-label>Estrai numero</span>
-                  <svg viewBox="0 0 24 24" aria-hidden="true" role="presentation" class="button__icon die-icon">
-                    <rect class="die-icon__face" x="4.5" y="4.5" width="15" height="15" rx="3.5" ry="3.5" />
-                    <circle class="die-icon__pip" cx="9.5" cy="9.5" r="1.35" />
-                    <circle class="die-icon__pip" cx="14.5" cy="14.5" r="1.35" />
-                    <circle class="die-icon__pip" cx="14.5" cy="9.5" r="1.35" />
-                    <circle class="die-icon__pip" cx="9.5" cy="14.5" r="1.35" />
-                    <circle class="die-icon__pip" cx="12" cy="12" r="1.35" />
-                  </svg>
+                  <img
+                    src="images/icon-die.svg"
+                    class="button__icon die-icon"
+                    alt=""
+                    role="presentation"
+                    aria-hidden="true"
+                  />
                 </button>
                 <button
                   type="button"
@@ -270,15 +269,14 @@
               hidden
               disabled
             >
-              <svg viewBox="0 0 24 24" aria-hidden="true" role="presentation" class="die-icon">
-                <rect class="die-icon__face" x="4.5" y="4.5" width="15" height="15" rx="3.5" ry="3.5" />
-                <circle class="die-icon__pip" cx="9.5" cy="9.5" r="1.35" />
-                <circle class="die-icon__pip" cx="14.5" cy="14.5" r="1.35" />
-                <circle class="die-icon__pip" cx="14.5" cy="9.5" r="1.35" />
-                <circle class="die-icon__pip" cx="9.5" cy="14.5" r="1.35" />
-                <circle class="die-icon__pip" cx="12" cy="12" r="1.35" />
-              </svg>
-              <span class="sr-only" data-modal-next-label>Estrai successivo</span>
+              <span class="number-dialog__next-label" data-modal-next-label>Estrai successivo</span>
+              <img
+                src="images/icon-die.svg"
+                class="die-icon"
+                alt=""
+                role="presentation"
+                aria-hidden="true"
+              />
             </button>
             <button type="button" class="number-dialog__close" aria-label="Chiudi" id="modal-close">
               <span aria-hidden="true">&times;</span>
@@ -432,14 +430,13 @@
         data-tooltip="Estrai numero"
         disabled
       >
-        <svg class="fab__icon die-icon" viewBox="0 0 24 24" role="presentation" aria-hidden="true">
-          <rect class="die-icon__face" x="4.5" y="4.5" width="15" height="15" rx="3.5" ry="3.5" />
-          <circle class="die-icon__pip" cx="9.5" cy="9.5" r="1.35" />
-          <circle class="die-icon__pip" cx="14.5" cy="14.5" r="1.35" />
-          <circle class="die-icon__pip" cx="14.5" cy="9.5" r="1.35" />
-          <circle class="die-icon__pip" cx="9.5" cy="14.5" r="1.35" />
-          <circle class="die-icon__pip" cx="12" cy="12" r="1.35" />
-        </svg>
+        <img
+          src="images/icon-die.svg"
+          class="fab__icon die-icon"
+          alt=""
+          role="presentation"
+          aria-hidden="true"
+        />
         <span class="sr-only" data-floating-draw-sr>Estrai numero</span>
       </button>
       <button
