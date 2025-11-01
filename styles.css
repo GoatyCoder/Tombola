@@ -490,7 +490,7 @@ button {
 
 .board-cell {
   position: relative;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 904 / 1024;
   display: block;
   padding: 0;
   border: 0;
