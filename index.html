@@ -210,8 +210,8 @@
 
     <div id="draw-portal" class="draw-portal" aria-hidden="true" hidden>
       <div class="draw-portal__scrim" aria-hidden="true"></div>
-      <div class="draw-portal__card" role="status" aria-live="assertive">
-        <p id="draw-animation-announcement" class="sr-only" aria-live="assertive"></p>
+      <p id="draw-animation-announcement" class="sr-only" aria-live="assertive"></p>
+      <div class="draw-portal__content" role="status" aria-live="assertive">
         <div class="draw-portal__ball" id="draw-animation-ball" aria-hidden="true">
           <span class="draw-portal__loader" id="draw-portal-loader" aria-hidden="true">
             <span class="draw-portal__loader-dot"></span>
@@ -220,18 +220,18 @@
           </span>
           <span id="draw-animation-number" class="draw-portal__number"></span>
         </div>
-        <div id="draw-sponsor-block" class="draw-portal__sponsor-block" hidden>
-          <p id="draw-sponsor-heading" class="draw-portal__sponsor-eyebrow">Sponsor dell'estrazione</p>
-          <a
-            id="draw-sponsor"
-            class="draw-portal__sponsor-link"
-            href="#"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <img id="draw-sponsor-logo" alt="" decoding="async" />
-          </a>
-        </div>
+      </div>
+      <div id="draw-sponsor-block" class="draw-portal__sponsor-block" hidden>
+        <p id="draw-sponsor-heading" class="draw-portal__sponsor-eyebrow">Sponsor dell'estrazione</p>
+        <a
+          id="draw-sponsor"
+          class="draw-portal__sponsor-link"
+          href="#"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <img id="draw-sponsor-logo" alt="" decoding="async" />
+        </a>
       </div>
     </div>
 

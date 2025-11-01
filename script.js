@@ -1746,8 +1746,7 @@ async function showDrawAnimation(entry, options = {}) {
   };
 
   const hideOverlay = (immediate = false) => {
-    drawOverlay.classList.remove('draw-portal--visible');
-    drawOverlay.classList.remove('draw-portal--closing');
+    drawOverlay.classList.remove('draw-portal--visible', 'draw-portal--closing', 'draw-portal--flight');
     const finalize = () => {
       drawOverlay.setAttribute('aria-hidden', 'true');
       drawOverlay.hidden = true;
@@ -1767,6 +1766,7 @@ async function showDrawAnimation(entry, options = {}) {
   drawOverlay.hidden = false;
   drawOverlay.setAttribute('aria-hidden', 'false');
   drawOverlay.classList.remove('draw-portal--closing');
+  drawOverlay.classList.remove('draw-portal--flight');
   drawOverlay.classList.add('draw-portal--visible');
 
   try {
@@ -1776,11 +1776,13 @@ async function showDrawAnimation(entry, options = {}) {
       revealNumber();
 
       if (targetCell) {
+        drawOverlay.classList.add('draw-portal--flight');
         await animateBallFlight(entry, fromRect, targetCell, {
           prefersReducedMotion: true,
           duration: DRAW_TIMELINE.reducedMotionFlight,
         });
       } else {
+        drawOverlay.classList.add('draw-portal--flight');
         await sleep(DRAW_TIMELINE.reducedMotionFlight);
       }
 
@@ -1803,6 +1805,7 @@ async function showDrawAnimation(entry, options = {}) {
     drawOverlay.classList.add('draw-portal--closing');
 
     await sleep(DRAW_TIMELINE.flightDelay);
+    drawOverlay.classList.add('draw-portal--flight');
     if (targetCell) {
       await animateBallFlight(entry, fromRect, targetCell, {
         duration: DRAW_TIMELINE.flightDuration,
@@ -1818,6 +1821,7 @@ async function showDrawAnimation(entry, options = {}) {
   } finally {
     setOverlayBallLoading(false);
     hideOverlay(true);
+    drawOverlay.classList.remove('draw-portal--flight');
     drawOverlayBall.classList.remove('draw-portal__ball--revealed');
     drawOverlayNumber.textContent = '';
     setAnnouncement('');
