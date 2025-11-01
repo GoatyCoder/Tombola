@@ -93,6 +93,7 @@ const DRAW_TIMELINE = Object.freeze({
   overlayHideDelay: 280,
   reducedMotionHold: 980,
   reducedMotionFlight: 420,
+  modalRevealDelay: 420,
 });
 
 const MOBILE_HISTORY_QUERY = '(max-width: 540px)';
@@ -1249,6 +1250,7 @@ async function handleDraw() {
   let restoreFloatingDrawButton = false;
   let markRecorded = false;
   let preparationError = null;
+  let shouldDelayModal = false;
 
   try {
     await prepareSponsorForNextDraw();
@@ -1271,6 +1273,7 @@ async function handleDraw() {
           }
         },
       });
+      shouldDelayModal = true;
     } catch (animationError) {
       console.warn('Errore durante l\'animazione di estrazione', animationError);
     }
@@ -1298,6 +1301,10 @@ async function handleDraw() {
 
   if (preparationError) {
     console.warn('Impossibile preparare l\'estrazione', preparationError);
+  }
+
+  if (shouldDelayModal && DRAW_TIMELINE.modalRevealDelay > 0) {
+    await sleep(DRAW_TIMELINE.modalRevealDelay);
   }
 
   handleSelection(entry, state.cellsByNumber.get(entry.number), { fromDraw: true });
