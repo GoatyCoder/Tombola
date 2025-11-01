@@ -41,6 +41,7 @@ const elements = {
   drawOverlay: document.querySelector('#draw-portal'),
   drawOverlayNumber: document.querySelector('#draw-animation-number'),
   drawOverlayBall: document.querySelector('#draw-animation-ball'),
+  drawOverlayImage: document.querySelector('#draw-animation-image'),
   drawOverlayLabel: document.querySelector('#draw-animation-label'),
   drawOverlayLoader: document.querySelector('#draw-portal-loader'),
   drawSponsorBlock: document.querySelector('#draw-sponsor-block'),
@@ -84,15 +85,15 @@ const EMBEDDED_SPONSORS = Object.freeze([
   },
 ]);
 const DRAW_TIMELINE = Object.freeze({
-  intro: 520,
-  prepareHold: 2860,
-  revealAccent: 360,
-  celebrationHold: 2280,
-  flightDelay: 320,
-  flightDuration: 1320,
-  overlayHideDelay: 360,
-  reducedMotionHold: 1900,
-  reducedMotionFlight: 520,
+  intro: 280,
+  prepareHold: 1480,
+  revealAccent: 320,
+  celebrationHold: 1180,
+  flightDelay: 240,
+  flightDuration: 920,
+  overlayHideDelay: 280,
+  reducedMotionHold: 980,
+  reducedMotionFlight: 420,
 });
 
 const MOBILE_HISTORY_QUERY = '(max-width: 540px)';
@@ -439,7 +440,7 @@ function blurButtonOnNextFrame(button) {
 }
 
 function applySponsorToOverlay(sponsor) {
-  const { drawSponsor, drawSponsorLogo, drawSponsorBlock, drawSponsorHeading } = elements;
+  const { drawSponsor, drawSponsorLogo, drawSponsorBlock, drawSponsorHeading, drawOverlay } = elements;
 
   updateSponsorBlock(
     {
@@ -451,6 +452,10 @@ function applySponsorToOverlay(sponsor) {
     sponsor,
     { preferLazy: false }
   );
+
+  if (drawOverlay) {
+    drawOverlay.classList.toggle('draw-portal--has-sponsor', Boolean(sponsor));
+  }
 }
 
 function applySponsorToModal(sponsor, options = {}) {
@@ -1445,7 +1450,7 @@ function resetGame() {
     elements.drawOverlayNumber.textContent = '';
   }
   if (elements.drawOverlayLabel) {
-    elements.drawOverlayLabel.textContent = 'Estrazione in corso...';
+    elements.drawOverlayLabel.textContent = "Preparazione dell'estrazione…";
   }
 
   state.isAnimatingDraw = false;
@@ -1693,7 +1698,7 @@ async function animateBallFlight(entry, fromRect, targetCell, options = {}) {
 }
 
 async function showDrawAnimation(entry, options = {}) {
-  const { drawOverlay, drawOverlayNumber, drawOverlayBall, drawOverlayLabel } = elements;
+  const { drawOverlay, drawOverlayNumber, drawOverlayBall, drawOverlayLabel, drawOverlayImage } = elements;
   const targetCell = state.cellsByNumber.get(entry.number);
   const { onFlightComplete = null } = options;
 
@@ -1738,7 +1743,7 @@ async function showDrawAnimation(entry, options = {}) {
     setOverlayBallLoading(false);
     drawOverlayNumber.textContent = entry.number;
     drawOverlayBall.classList.add('draw-portal__ball--revealed');
-    setCaption('Estratto il numero');
+    setCaption('Numero da segnare sul tabellone');
   };
 
   const hideOverlay = (immediate = false) => {
@@ -1755,10 +1760,14 @@ async function showDrawAnimation(entry, options = {}) {
     }
   };
 
+  if (drawOverlayImage) {
+    applyBoardCellImage(drawOverlayImage, entry);
+  }
+
   setOverlayBallLoading(true);
   drawOverlayBall.classList.remove('draw-portal__ball--revealed');
   drawOverlayNumber.textContent = '';
-  setCaption('Estrazione in corso...');
+  setCaption("Preparazione dell'estrazione…");
 
   drawOverlay.hidden = false;
   drawOverlay.setAttribute('aria-hidden', 'false');
@@ -1767,7 +1776,7 @@ async function showDrawAnimation(entry, options = {}) {
 
   try {
     if (prefersReducedMotion) {
-      setCaption('Estrazione in corso...');
+      setCaption("Preparazione dell'estrazione…");
       const fromRect = drawOverlayBall.getBoundingClientRect();
       await sleep(DRAW_TIMELINE.reducedMotionHold);
       revealNumber();
@@ -1789,7 +1798,7 @@ async function showDrawAnimation(entry, options = {}) {
     }
 
     await sleep(DRAW_TIMELINE.intro);
-    setCaption('Estrazione in corso...');
+      setCaption("Preparazione dell'estrazione…");
 
     await sleep(DRAW_TIMELINE.prepareHold);
     await sleep(DRAW_TIMELINE.revealAccent);
@@ -1799,7 +1808,7 @@ async function showDrawAnimation(entry, options = {}) {
 
     const fromRect = drawOverlayBall.getBoundingClientRect();
     drawOverlay.classList.add('draw-portal--closing');
-    setCaption('Estratto il numero');
+    setCaption('Numero pronto per il tabellone');
 
     await sleep(DRAW_TIMELINE.flightDelay);
     if (targetCell) {
@@ -1819,7 +1828,7 @@ async function showDrawAnimation(entry, options = {}) {
     hideOverlay(true);
     drawOverlayBall.classList.remove('draw-portal__ball--revealed');
     drawOverlayNumber.textContent = '';
-    setCaption('Estrazione in corso...');
+    setCaption("Preparazione dell'estrazione…");
   }
 }
 

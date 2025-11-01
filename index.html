@@ -210,32 +210,34 @@
 
     <div id="draw-portal" class="draw-portal" aria-hidden="true" hidden>
       <div class="draw-portal__scrim" aria-hidden="true"></div>
-      <div class="draw-portal__wrapper" role="status" aria-live="assertive">
-        <div class="draw-portal__orbits" aria-hidden="true">
-          <span class="draw-portal__orbit draw-portal__orbit--primary"></span>
-          <span class="draw-portal__orbit draw-portal__orbit--secondary"></span>
-          <span class="draw-portal__spark draw-portal__spark--one"></span>
-          <span class="draw-portal__spark draw-portal__spark--two"></span>
+      <div class="draw-portal__card" role="status" aria-live="assertive">
+        <div class="draw-portal__visual">
+          <div class="draw-portal__tile">
+            <img id="draw-animation-image" alt="" decoding="async" loading="lazy" />
+          </div>
+          <div class="draw-portal__ball" id="draw-animation-ball" aria-hidden="true">
+            <span class="draw-portal__loader" id="draw-portal-loader" aria-hidden="true">
+              <span class="draw-portal__loader-dot"></span>
+              <span class="draw-portal__loader-dot"></span>
+              <span class="draw-portal__loader-dot"></span>
+            </span>
+            <span id="draw-animation-number" class="draw-portal__number"></span>
+          </div>
         </div>
-        <div class="draw-portal__ball" id="draw-animation-ball" aria-hidden="true">
-          <span class="draw-portal__loader" id="draw-portal-loader" aria-hidden="true">
-            <span class="draw-portal__loader-dot"></span>
-            <span class="draw-portal__loader-dot"></span>
-            <span class="draw-portal__loader-dot"></span>
-          </span>
-          <span id="draw-animation-number" class="draw-portal__number"></span>
-        </div>
-        <p class="draw-portal__caption" id="draw-animation-label">Estrazione in corso...</p>
-        <div id="draw-sponsor-block" class="draw-portal__sponsor-block" hidden>
-          <a
-            id="draw-sponsor"
-            class="draw-portal__sponsor-link"
-            href="#"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <img id="draw-sponsor-logo" alt="" decoding="async" />
-          </a>
+        <div class="draw-portal__meta">
+          <p class="draw-portal__caption" id="draw-animation-label">Preparazione dell'estrazione…</p>
+          <div id="draw-sponsor-block" class="draw-portal__sponsor-block" hidden>
+            <p id="draw-sponsor-heading" class="draw-portal__sponsor-eyebrow">Sponsor dell'estrazione</p>
+            <a
+              id="draw-sponsor"
+              class="draw-portal__sponsor-link"
+              href="#"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <img id="draw-sponsor-logo" alt="" decoding="async" />
+            </a>
+          </div>
         </div>
       </div>
     </div>
