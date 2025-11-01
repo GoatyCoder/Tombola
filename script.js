@@ -105,7 +105,7 @@ const DRAW_TIMELINE = Object.freeze({
   modalRevealDelay: 520,
 });
 
-const MOBILE_HISTORY_QUERY = '(max-width: 540px)';
+const MOBILE_HISTORY_QUERY = 'all';
 const historyMediaMatcher =
   typeof window !== 'undefined' && 'matchMedia' in window
     ? window.matchMedia(MOBILE_HISTORY_QUERY)

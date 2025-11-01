@@ -171,7 +171,7 @@
               id="history-panel"
               class="history"
               aria-label="Cronologia estrazioni"
-              aria-hidden="false"
+              aria-hidden="true"
               tabindex="-1"
             >
               <header class="history__header">
@@ -378,36 +378,46 @@
 
     <footer class="app-footer" role="contentinfo">
       <div class="shell app-footer__shell">
-        <div class="app-footer__brand">
-          <img
-            src="images/logo_amicidelteatro_big.svg"
-            alt="Associazione Culturale Amici del Teatro di Noicattaro"
-            class="app-footer__brand-logo"
-            loading="lazy"
-            decoding="async"
-          />
-          <div class="app-footer__copy">
-            <p class="app-footer__title">Associazione Culturale Amici del Teatro</p>
-            <p class="app-footer__description">
-              La tradizione nojane raccontata e sostenuta dagli Amici del Teatro di Noicattaro.
-            </p>
-          </div>
-        </div>
-        <div class="app-footer__meta">
-          <p class="app-footer__label">Supporto tecnico</p>
+        <div class="app-footer__intro">
+          <h2 class="app-footer__title">La Tombola Nojana</h2>
+          <p class="app-footer__subtitle">Il tabellone digitale della tombolata nojane firmata Amici del Teatro.</p>
           <a
-            class="app-footer__meta-link"
-            href="mailto:GoatyCoder@proton.me"
-            aria-label="Contatta GoatyCoder via email"
+            class="app-footer__association"
+            href="https://www.amicidelteatro.info/"
+            target="_blank"
+            rel="noopener noreferrer"
           >
             <img
-              src="images/logo_goatycoder.svg"
-              alt="GoatyCoder"
-              class="app-footer__meta-logo"
-              decoding="async"
+              src="images/logo_amicidelteatro_big.svg"
+              alt="Associazione Culturale Amici del Teatro di Noicattaro"
+              class="app-footer__association-logo"
               loading="lazy"
+              decoding="async"
             />
           </a>
+        </div>
+        <div class="app-footer__bottom">
+          <div class="app-footer__meta" role="presentation">
+            <p class="app-footer__credits">
+              Associazione Culturale Amici del Teatro - info@amicidelteatro.it - C.F. 93189030724
+            </p>
+            <div class="app-footer__powered" role="presentation">
+              <span class="app-footer__powered-label">Powered by</span>
+              <a
+                class="app-footer__powered-link"
+                href="mailto:GoatyCoder@proton.me"
+                aria-label="GoatyCoder"
+              >
+                <img
+                  src="images/logo_goatycoder.svg"
+                  alt="GoatyCoder"
+                  class="app-footer__powered-logo"
+                  decoding="async"
+                  loading="lazy"
+                />
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </footer>
