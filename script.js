@@ -1143,13 +1143,15 @@ function handleBoardCellImageError(event) {
 
 function applyBoardCellImage(imageEl, entry) {
   if (!(imageEl instanceof HTMLImageElement)) {
-    return;
+    return TILE_IMAGE_FALLBACK;
   }
 
   imageEl.dataset.fallbackApplied = 'false';
   imageEl.removeEventListener('error', handleBoardCellImageError);
   imageEl.addEventListener('error', handleBoardCellImageError);
-  imageEl.src = getNumberImage(entry);
+  const source = getNumberImage(entry);
+  imageEl.src = source;
+  return source;
 }
 
 function getEntryByNumber(number) {
@@ -1569,10 +1571,10 @@ function openModal(entry, options = {}) {
     }
   }
 
-  const hasImage = Boolean(entry.image);
+  let imageSource = TILE_IMAGE_FALLBACK;
   if (elements.modalImage) {
-    applyBoardCellImage(elements.modalImage, entry);
-    elements.modalImage.alt = hasImage
+    imageSource = applyBoardCellImage(elements.modalImage, entry);
+    elements.modalImage.alt = imageSource !== TILE_IMAGE_FALLBACK
       ? entry.italian
         ? `Illustrazione del numero ${entry.number}: ${entry.italian}`
         : `Illustrazione del numero ${entry.number}`
@@ -1582,7 +1584,7 @@ function openModal(entry, options = {}) {
   if (elements.modalImageFrame) {
     elements.modalImageFrame.classList.toggle(
       'number-dialog__image-frame--placeholder',
-      !hasImage
+      imageSource === TILE_IMAGE_FALLBACK
     );
   }
 
