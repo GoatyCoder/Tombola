@@ -1467,15 +1467,31 @@ function openModal(entry, options = {}) {
   const { fromDraw = false } = options;
 
   const paddedNumber = String(entry.number).padStart(2, '0');
-  elements.modalNumber.textContent = paddedNumber;
+  elements.modalNumber.textContent = `Numero ${paddedNumber}`;
   elements.modalNumber.setAttribute('aria-label', `Numero ${entry.number}`);
 
-  const italianText = entry.italian || '—';
-  const dialectText = entry.dialect || 'Da completare';
+  const italianText = typeof entry.italian === 'string' && entry.italian.trim()
+    ? entry.italian.trim()
+    : '—';
+  const dialectText = typeof entry.dialect === 'string' && entry.dialect.trim()
+    ? entry.dialect.trim()
+    : 'Da completare';
 
-  elements.modalItalian.textContent = italianText;
+  if (elements.modalItalian) {
+    elements.modalItalian.textContent = italianText;
+    elements.modalItalian.classList.toggle(
+      'number-dialog__phrase--empty',
+      !entry.italian || !entry.italian.trim()
+    );
+  }
 
-  elements.modalDialect.textContent = dialectText;
+  if (elements.modalDialect) {
+    elements.modalDialect.textContent = dialectText;
+    elements.modalDialect.classList.toggle(
+      'number-dialog__phrase--empty',
+      !entry.dialect || !entry.dialect.trim()
+    );
+  }
 
   if (elements.modalItalianPlay) {
     const hasItalian = Boolean(entry.italian);
