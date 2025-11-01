@@ -937,7 +937,7 @@ button {
   margin: 0;
   text-transform: uppercase;
   font-size: 0.7rem;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.16em;
   color: rgba(255, 255, 255, 0.52);
   font-weight: 600;
 }
@@ -955,7 +955,7 @@ button {
 }
 
 .app-footer__powered-logo {
-  height: 1.2rem;
+  height: 1.45rem;
   width: auto;
   opacity: 0.92;
   transition: opacity 0.2s ease;
