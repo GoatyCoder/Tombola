@@ -41,8 +41,7 @@ const elements = {
   drawOverlay: document.querySelector('#draw-portal'),
   drawOverlayNumber: document.querySelector('#draw-animation-number'),
   drawOverlayBall: document.querySelector('#draw-animation-ball'),
-  drawOverlayImage: document.querySelector('#draw-animation-image'),
-  drawOverlayLabel: document.querySelector('#draw-animation-label'),
+  drawOverlayAnnouncement: document.querySelector('#draw-animation-announcement'),
   drawOverlayLoader: document.querySelector('#draw-portal-loader'),
   drawSponsorBlock: document.querySelector('#draw-sponsor-block'),
   drawSponsorHeading: document.querySelector('#draw-sponsor-heading'),
@@ -1449,8 +1448,8 @@ function resetGame() {
   if (elements.drawOverlayNumber) {
     elements.drawOverlayNumber.textContent = '';
   }
-  if (elements.drawOverlayLabel) {
-    elements.drawOverlayLabel.textContent = "Preparazione dell'estrazione…";
+  if (elements.drawOverlayAnnouncement) {
+    elements.drawOverlayAnnouncement.textContent = '';
   }
 
   state.isAnimatingDraw = false;
@@ -1698,7 +1697,7 @@ async function animateBallFlight(entry, fromRect, targetCell, options = {}) {
 }
 
 async function showDrawAnimation(entry, options = {}) {
-  const { drawOverlay, drawOverlayNumber, drawOverlayBall, drawOverlayLabel, drawOverlayImage } = elements;
+  const { drawOverlay, drawOverlayNumber, drawOverlayBall, drawOverlayAnnouncement } = elements;
   const targetCell = state.cellsByNumber.get(entry.number);
   const { onFlightComplete = null } = options;
 
@@ -1733,9 +1732,9 @@ async function showDrawAnimation(entry, options = {}) {
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  const setCaption = (text) => {
-    if (drawOverlayLabel) {
-      drawOverlayLabel.textContent = text;
+  const setAnnouncement = (text) => {
+    if (drawOverlayAnnouncement) {
+      drawOverlayAnnouncement.textContent = text;
     }
   };
 
@@ -1743,7 +1742,7 @@ async function showDrawAnimation(entry, options = {}) {
     setOverlayBallLoading(false);
     drawOverlayNumber.textContent = entry.number;
     drawOverlayBall.classList.add('draw-portal__ball--revealed');
-    setCaption('Numero da segnare sul tabellone');
+    setAnnouncement(`Numero ${entry.number}`);
   };
 
   const hideOverlay = (immediate = false) => {
@@ -1760,14 +1759,10 @@ async function showDrawAnimation(entry, options = {}) {
     }
   };
 
-  if (drawOverlayImage) {
-    applyBoardCellImage(drawOverlayImage, entry);
-  }
-
   setOverlayBallLoading(true);
   drawOverlayBall.classList.remove('draw-portal__ball--revealed');
   drawOverlayNumber.textContent = '';
-  setCaption("Preparazione dell'estrazione…");
+  setAnnouncement('');
 
   drawOverlay.hidden = false;
   drawOverlay.setAttribute('aria-hidden', 'false');
@@ -1776,7 +1771,6 @@ async function showDrawAnimation(entry, options = {}) {
 
   try {
     if (prefersReducedMotion) {
-      setCaption("Preparazione dell'estrazione…");
       const fromRect = drawOverlayBall.getBoundingClientRect();
       await sleep(DRAW_TIMELINE.reducedMotionHold);
       revealNumber();
@@ -1798,7 +1792,6 @@ async function showDrawAnimation(entry, options = {}) {
     }
 
     await sleep(DRAW_TIMELINE.intro);
-      setCaption("Preparazione dell'estrazione…");
 
     await sleep(DRAW_TIMELINE.prepareHold);
     await sleep(DRAW_TIMELINE.revealAccent);
@@ -1808,7 +1801,6 @@ async function showDrawAnimation(entry, options = {}) {
 
     const fromRect = drawOverlayBall.getBoundingClientRect();
     drawOverlay.classList.add('draw-portal--closing');
-    setCaption('Numero pronto per il tabellone');
 
     await sleep(DRAW_TIMELINE.flightDelay);
     if (targetCell) {
@@ -1828,7 +1820,7 @@ async function showDrawAnimation(entry, options = {}) {
     hideOverlay(true);
     drawOverlayBall.classList.remove('draw-portal__ball--revealed');
     drawOverlayNumber.textContent = '';
-    setCaption("Preparazione dell'estrazione…");
+    setAnnouncement('');
   }
 }
 
