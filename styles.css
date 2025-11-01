@@ -859,25 +859,8 @@ button {
 .app-footer__shell {
   display: grid;
   gap: clamp(2rem, 4vw, 2.8rem);
-}
-
-.app-footer__layout {
-  display: grid;
-  gap: clamp(1.8rem, 3.5vw, 2.4rem);
   justify-items: center;
   text-align: center;
-}
-
-@media (min-width: 720px) {
-  .app-footer__layout {
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
-    align-items: center;
-  }
-
-  .app-footer__powered {
-    justify-self: flex-end;
-    text-align: right;
-  }
 }
 
 .app-footer__intro {
@@ -918,44 +901,10 @@ button {
   height: auto;
 }
 
-.app-footer__powered {
+.app-footer__bottom {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.65rem;
   justify-items: center;
-  text-align: center;
-}
-
-.app-footer__powered-label {
-  margin: 0;
-  text-transform: uppercase;
-  font-size: 0.7rem;
-  letter-spacing: 0.22em;
-  color: rgba(255, 255, 255, 0.52);
-  font-weight: 600;
-}
-
-.app-footer__powered-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-}
-
-.app-footer__powered-link:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.45);
-  outline-offset: 6px;
-}
-
-.app-footer__powered-logo {
-  width: clamp(64px, 10vw, 84px);
-  height: auto;
-  opacity: 0.75;
-  transition: opacity var(--transition);
-}
-
-.app-footer__powered-link:hover .app-footer__powered-logo,
-.app-footer__powered-link:focus-visible .app-footer__powered-logo {
-  opacity: 0.88;
 }
 
 .app-footer__credits {
@@ -964,6 +913,49 @@ button {
   color: rgba(255, 255, 255, 0.65);
   font-size: clamp(0.84rem, 1.2vw, 0.95rem);
   line-height: 1.6;
+}
+
+.app-footer__powered {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.86);
+  text-decoration: none;
+  font-size: clamp(0.84rem, 1.2vw, 0.95rem);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.app-footer__powered:hover,
+.app-footer__powered:focus-visible {
+  border-color: rgba(255, 255, 255, 0.32);
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.app-footer__powered:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.45);
+  outline-offset: 4px;
+}
+
+.app-footer__powered-text {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+}
+
+.app-footer__powered-logo {
+  width: clamp(96px, 16vw, 128px);
+  height: auto;
+  opacity: 0.85;
+  filter: grayscale(1) brightness(1.1);
+  transition: opacity 0.2s ease;
+}
+
+.app-footer__powered:hover .app-footer__powered-logo,
+.app-footer__powered:focus-visible .app-footer__powered-logo {
+  opacity: 1;
 }
 
 .fab-group {
