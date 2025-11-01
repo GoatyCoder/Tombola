@@ -18,6 +18,8 @@ const state = {
   sponsorShowcaseRendered: false,
   resetDialogOpen: false,
   resetDialogTrigger: null,
+  sponsorPreparationPromise: null,
+  cleanupTasks: new Set(),
 };
 
 const elements = {
@@ -110,6 +112,68 @@ const historyMediaMatcher =
   typeof window !== 'undefined' && 'matchMedia' in window
     ? window.matchMedia(MOBILE_HISTORY_QUERY)
     : { matches: false };
+
+function sanitizeUrl(url) {
+  if (typeof url !== 'string') {
+    return '#';
+  }
+
+  const trimmed = url.trim();
+  if (!trimmed) {
+    return '#';
+  }
+
+  const isRelative = !/^([a-z][a-z0-9+.-]*:)?\/\//i.test(trimmed);
+
+  try {
+    const base =
+      typeof window !== 'undefined' && window.location
+        ? window.location.origin
+        : 'https://example.com';
+    const parsed = new URL(trimmed, base);
+
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      return '#';
+    }
+
+    if (isRelative) {
+      return trimmed;
+    }
+
+    return parsed.href;
+  } catch (error) {
+    return '#';
+  }
+}
+
+function registerCleanup(callback) {
+  if (typeof callback !== 'function') {
+    return;
+  }
+
+  state.cleanupTasks.add(callback);
+}
+
+function runCleanupTasks() {
+  if (!(state.cleanupTasks instanceof Set) || state.cleanupTasks.size === 0) {
+    return;
+  }
+
+  Array.from(state.cleanupTasks).forEach((cleanup) => {
+    try {
+      cleanup();
+    } catch (error) {
+      console.warn('Errore durante la pulizia delle risorse', error);
+    } finally {
+      state.cleanupTasks.delete(cleanup);
+    }
+  });
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', runCleanupTasks);
+  window.addEventListener('beforeunload', runCleanupTasks);
+}
 
 function getSponsorKey(sponsor) {
   if (!sponsor || typeof sponsor !== 'object') {
@@ -276,9 +340,15 @@ function renderSponsorShowcase(sponsors, options = {}) {
     const anchor = document.createElement('a');
     anchor.className = 'sponsor-strip__item';
     anchor.setAttribute('role', 'listitem');
-    anchor.href = sponsor.url || '#';
-    anchor.target = sponsor.url ? '_blank' : '_self';
-    anchor.rel = 'noopener noreferrer';
+    const safeUrl = sanitizeUrl(sponsor.url || '');
+    const isExternal = /^https?:\/\//i.test(safeUrl);
+    anchor.href = safeUrl;
+    anchor.target = isExternal ? '_blank' : '_self';
+    if (isExternal) {
+      anchor.rel = 'noopener noreferrer';
+    } else {
+      anchor.removeAttribute('rel');
+    }
 
     const label = getSponsorAccessibleLabel(sponsor);
     if (label) {
@@ -437,9 +507,15 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
 
   anchor.classList.remove('sponsor-link--placeholder');
   anchor.removeAttribute('aria-hidden');
-  anchor.href = sponsor.url || '#';
-  anchor.target = sponsor.url ? '_blank' : '_self';
-  anchor.rel = 'noopener noreferrer';
+  const safeUrl = sanitizeUrl(sponsor.url || '');
+  const isExternal = /^https?:\/\//i.test(safeUrl);
+  anchor.href = safeUrl;
+  anchor.target = isExternal ? '_blank' : '_self';
+  if (isExternal) {
+    anchor.rel = 'noopener noreferrer';
+  } else {
+    anchor.removeAttribute('rel');
+  }
   anchor.removeAttribute('tabindex');
   anchor.setAttribute('aria-label', getSponsorAccessibleLabel(sponsor));
   anchor.removeAttribute('title');
@@ -659,19 +735,32 @@ function setOverlayBallLoading(isLoading) {
 }
 
 async function prepareSponsorForNextDraw() {
-  const sponsors = await loadSponsors();
-
-  if (!Array.isArray(sponsors) || sponsors.length === 0) {
-    state.currentSponsor = null;
-    state.lastSponsorKey = null;
-    applySponsorToOverlay(null);
-    return;
+  if (state.sponsorPreparationPromise) {
+    return state.sponsorPreparationPromise;
   }
 
-  const sponsor = pickRandomSponsor(state.lastSponsorKey);
-  state.currentSponsor = sponsor;
-  state.lastSponsorKey = getSponsorKey(sponsor);
-  applySponsorToOverlay(sponsor);
+  const preparation = (async () => {
+    const sponsors = await loadSponsors();
+
+    if (!Array.isArray(sponsors) || sponsors.length === 0) {
+      state.currentSponsor = null;
+      state.lastSponsorKey = null;
+      applySponsorToOverlay(null);
+      return null;
+    }
+
+    const sponsor = pickRandomSponsor(state.lastSponsorKey);
+    state.currentSponsor = sponsor;
+    state.lastSponsorKey = getSponsorKey(sponsor);
+    applySponsorToOverlay(sponsor);
+    return sponsor;
+  })();
+
+  state.sponsorPreparationPromise = preparation.finally(() => {
+    state.sponsorPreparationPromise = null;
+  });
+
+  return state.sponsorPreparationPromise;
 }
 
 function updateHistoryToggleText() {
@@ -868,7 +957,7 @@ function initializeAudioPreference() {
 
 function persistDrawState() {
   if (typeof window === 'undefined' || !('localStorage' in window)) {
-    return;
+    return true;
   }
 
   try {
@@ -878,9 +967,11 @@ function persistDrawState() {
     };
     window.localStorage.setItem(DRAW_STATE_STORAGE_KEY, JSON.stringify(payload));
     state.storageErrorMessage = '';
+    return true;
   } catch (error) {
     console.warn('Impossibile salvare lo stato della partita', error);
     state.storageErrorMessage = 'Impossibile salvare lo stato della partita.';
+    return false;
   }
 }
 
@@ -1116,12 +1207,35 @@ function renderBoard() {
     cell.classList.toggle('board-cell--drawn', isDrawn);
     cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
 
-    cell.addEventListener('click', () => handleSelection(entry, cell));
     state.cellsByNumber.set(entry.number, cell);
     fragment.appendChild(cell);
   });
 
   board.appendChild(fragment);
+}
+
+function handleBoardCellClick(event) {
+  const { board } = elements;
+  if (!board) {
+    return;
+  }
+
+  const cell = event.target.closest('.board-cell');
+  if (!cell || !board.contains(cell)) {
+    return;
+  }
+
+  const number = Number(cell.dataset.number);
+  if (!Number.isInteger(number)) {
+    return;
+  }
+
+  const entry = getEntryByNumber(number);
+  if (!entry) {
+    return;
+  }
+
+  handleSelection(entry, cell);
 }
 
 function getNumberImage(entry) {
@@ -1143,6 +1257,8 @@ function handleBoardCellImageError(event) {
   }
 
   if (target.dataset.fallbackApplied === 'true') {
+    target.style.display = 'none';
+    target.removeEventListener('error', handleBoardCellImageError);
     return;
   }
 
@@ -1158,6 +1274,7 @@ function applyBoardCellImage(imageEl, entry) {
   imageEl.dataset.fallbackApplied = 'false';
   imageEl.removeEventListener('error', handleBoardCellImageError);
   imageEl.addEventListener('error', handleBoardCellImageError);
+  imageEl.style.removeProperty('display');
   const source = getNumberImage(entry);
   imageEl.src = source;
   return source;
@@ -1207,6 +1324,11 @@ function markNumberDrawn(entry, options = {}) {
     return;
   }
 
+  const previousDrawnNumbers = new Set(state.drawnNumbers);
+  const previousHistoryLength = state.drawHistory.length;
+  const hadStoredSponsor = state.sponsorByNumber.has(number);
+  const previousSponsor = hadStoredSponsor ? state.sponsorByNumber.get(number) : null;
+
   state.drawnNumbers.add(number);
 
   const sponsorData = persistSponsorForNumber(number, sponsorOverride || state.currentSponsor);
@@ -1218,11 +1340,20 @@ function markNumberDrawn(entry, options = {}) {
       dialect: entry.dialect || '',
       sponsor: sponsorData ? cloneSponsorData(sponsorData) : null,
     });
-  }
 
-  if (recordHistory) {
+    const persisted = persistDrawState();
+
+    if (!persisted) {
+      state.drawnNumbers = previousDrawnNumbers;
+      state.drawHistory.splice(previousHistoryLength);
+      if (hadStoredSponsor && previousSponsor) {
+        state.sponsorByNumber.set(number, previousSponsor);
+      } else {
+        state.sponsorByNumber.delete(number);
+      }
+    }
+
     updateDrawHistory();
-    persistDrawState();
   }
 
   if (state.storageErrorMessage) {
@@ -1231,9 +1362,10 @@ function markNumberDrawn(entry, options = {}) {
 
   const cell = state.cellsByNumber.get(number);
   if (cell) {
-    cell.classList.add('board-cell--drawn');
-    cell.setAttribute('aria-pressed', 'true');
-    if (animate) {
+    const isDrawn = state.drawnNumbers.has(number);
+    cell.classList.toggle('board-cell--drawn', isDrawn);
+    cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
+    if (isDrawn && animate) {
       cell.classList.add('board-cell--just-drawn');
       let fallbackTimeout = null;
       const finalize = () => {
@@ -1252,6 +1384,8 @@ function markNumberDrawn(entry, options = {}) {
       };
       cell.addEventListener('animationend', handleAnimationEnd);
       fallbackTimeout = window.setTimeout(finalize, 900);
+    } else {
+      cell.classList.remove('board-cell--just-drawn');
     }
   }
 }
@@ -2230,6 +2364,15 @@ function updateDrawStatus(latestEntry) {
 }
 
 function setupEventListeners() {
+  if (elements.board) {
+    elements.board.addEventListener('click', handleBoardCellClick);
+    registerCleanup(() => {
+      if (elements.board) {
+        elements.board.removeEventListener('click', handleBoardCellClick);
+      }
+    });
+  }
+
   elements.modalClose.addEventListener('click', closeModal);
   if (elements.modalDialectPlay) {
     elements.modalDialectPlay.addEventListener('click', () => {
@@ -2347,18 +2490,25 @@ function setupEventListeners() {
     });
   }
 
+  const handleHistoryMediaChange = () => {
+    closeHistoryPanel({ immediate: true });
+    syncHistoryPanelToLayout({ immediate: true });
+  };
+
   if (historyMediaMatcher && typeof historyMediaMatcher.addEventListener === 'function') {
-    historyMediaMatcher.addEventListener('change', () => {
-      closeHistoryPanel({ immediate: true });
-      syncHistoryPanelToLayout({ immediate: true });
+    historyMediaMatcher.addEventListener('change', handleHistoryMediaChange);
+    registerCleanup(() => {
+      historyMediaMatcher.removeEventListener('change', handleHistoryMediaChange);
     });
   } else if (
     historyMediaMatcher &&
     typeof historyMediaMatcher.addListener === 'function'
   ) {
-    historyMediaMatcher.addListener(() => {
-      closeHistoryPanel({ immediate: true });
-      syncHistoryPanelToLayout({ immediate: true });
+    historyMediaMatcher.addListener(handleHistoryMediaChange);
+    registerCleanup(() => {
+      if (typeof historyMediaMatcher.removeListener === 'function') {
+        historyMediaMatcher.removeListener(handleHistoryMediaChange);
+      }
     });
   }
 }
