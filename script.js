@@ -388,6 +388,7 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
       logo.loading = preferLazy ? 'lazy' : 'eager';
     }
     logo.hidden = true;
+    logo.setAttribute('hidden', '');
     logo.removeAttribute('src');
     logo.alt = '';
     return;
@@ -411,6 +412,7 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
     logo.loading = preferLazy ? 'lazy' : 'eager';
   }
   logo.hidden = false;
+  logo.removeAttribute('hidden');
   if (logo.src !== sponsor.logo) {
     logo.src = sponsor.logo || '';
   }

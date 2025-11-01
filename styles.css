@@ -1099,12 +1099,13 @@ button {
 
 .number-dialog__visual {
   display: grid;
-  justify-items: center;
+  justify-items: stretch;
 }
 
 .number-dialog__image-frame {
   position: relative;
-  width: min(100%, 260px);
+  inline-size: 100%;
+  max-inline-size: 320px;
   aspect-ratio: 1 / 1;
   border-radius: 0;
   border: 1px solid rgba(30, 24, 26, 0.12);
@@ -1112,6 +1113,7 @@ button {
   display: grid;
   place-items: center;
   overflow: hidden;
+  justify-self: center;
 }
 
 .number-dialog__image-frame img {
@@ -1172,8 +1174,8 @@ button {
 
 .number-dialog__language-card {
   display: grid;
-  gap: 0.35rem;
-  padding: 0.55rem 0.7rem;
+  gap: 0.32rem;
+  padding: 0.48rem 0.66rem;
   border-radius: var(--radius-sm);
   border: 1px solid rgba(30, 24, 26, 0.1);
   background: rgba(255, 255, 255, 0.92);
@@ -1210,40 +1212,37 @@ button {
 .number-dialog__audio-button {
   margin-left: auto;
   border: none;
-  background: rgba(30, 24, 26, 0.06);
+  background: none;
   color: var(--accent-strong);
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  padding: 0;
+  inline-size: 24px;
+  block-size: 24px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background var(--transition), color var(--transition), transform var(--transition);
+  transition: transform 0.18s ease;
+  line-height: 0;
 }
 
 .number-dialog__audio-button svg {
-  width: 16px;
-  height: 16px;
-}
-
-.number-dialog__audio-button:hover {
-  background: rgba(180, 40, 64, 0.12);
-  color: var(--accent-strong);
-  transform: translateY(-1px);
+  width: 100%;
+  height: 100%;
 }
 
 .number-dialog__audio-button:focus-visible {
   outline: 2px solid rgba(180, 40, 64, 0.55);
-  outline-offset: 2px;
-  transform: translateY(-1px);
+  outline-offset: 3px;
 }
 
 .number-dialog__audio-button:disabled,
 .number-dialog__audio-button[aria-disabled='true'] {
   cursor: not-allowed;
   opacity: 0.45;
-  transform: none;
+}
+
+.number-dialog__audio-button:active {
+  transform: scale(0.9);
 }
 
 .number-dialog__phrase {
@@ -1313,7 +1312,6 @@ button {
 
 .number-dialog__sponsor {
   display: grid;
-  gap: 0.4rem;
   justify-items: center;
 }
 
@@ -1321,15 +1319,14 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.9rem 1.3rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--surface-muted);
-  background: var(--surface);
-  gap: 0.4rem;
+  padding: 0;
+  border: none;
+  background: none;
 }
 
 .number-dialog__sponsor-link img {
-  max-height: 64px;
+  inline-size: clamp(140px, 36vw, 240px);
+  block-size: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {
