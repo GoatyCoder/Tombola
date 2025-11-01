@@ -12,6 +12,7 @@
   --accent: #b42840;
   --accent-strong: #8f1f33;
   --accent-soft: rgba(180, 40, 64, 0.12);
+  --focus-ring: #100d0e;
   --shadow-sm: 0 10px 24px rgba(20, 15, 13, 0.08);
   --shadow-lg: 0 26px 60px rgba(20, 15, 13, 0.14);
   --scrim-bg: rgba(20, 15, 13, 0.32);
@@ -311,8 +312,8 @@ button {
 }
 
 .button:focus-visible {
-  outline: 3px solid rgba(180, 40, 64, 0.35);
-  outline-offset: 2px;
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
 }
 
 .button:disabled {
@@ -375,7 +376,7 @@ button {
 }
 
 .chip:focus-visible {
-  outline: 3px solid rgba(180, 40, 64, 0.32);
+  outline: 3px solid var(--focus-ring);
   outline-offset: 3px;
 }
 
@@ -519,9 +520,13 @@ button {
   outline: none;
 }
 
-.board-cell:focus-visible,
+.board-cell:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
 .board-cell--active {
-  outline: 3px solid rgba(180, 40, 64, 0.32);
+  outline: 3px solid rgba(180, 40, 64, 0.75);
   outline-offset: 3px;
 }
 
@@ -906,7 +911,7 @@ button {
   text-transform: uppercase;
   font-size: 0.7rem;
   letter-spacing: 0.22em;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.52);
   font-weight: 600;
 }
 
@@ -1035,6 +1040,11 @@ button {
   transform: translateY(-2px);
 }
 
+.fab--primary:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
 .fab--secondary {
   background: var(--surface);
   color: var(--ink);
@@ -1044,6 +1054,11 @@ button {
 .fab--secondary:focus-visible {
   background: var(--surface-alt);
   transform: translateY(-2px);
+}
+
+.fab--secondary:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
 }
 
 .fab__icon {
@@ -1284,6 +1299,11 @@ button {
   box-shadow: 0 16px 30px rgba(94, 58, 26, 0.2);
 }
 
+.draw-portal__sponsor-link:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 4px;
+}
+
 .draw-portal__sponsor-link img {
   max-height: clamp(68px, 22vw, 94px);
   inline-size: auto;
@@ -1421,8 +1441,8 @@ button {
 }
 
 .number-dialog__next:focus-visible {
-  outline: 2px solid rgba(180, 40, 64, 0.35);
-  outline-offset: 2px;
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
 }
 
 .number-dialog__next:active:not(:disabled) {
@@ -1462,6 +1482,11 @@ button {
 .number-dialog__close:hover,
 .number-dialog__close:focus-visible {
   color: var(--accent-strong);
+}
+
+.number-dialog__close:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
 }
 
 .number-dialog__body {
@@ -1661,7 +1686,7 @@ button {
 }
 
 .number-dialog__audio-button:focus-visible {
-  outline: 2px solid rgba(180, 40, 64, 0.55);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 3px;
 }
 
