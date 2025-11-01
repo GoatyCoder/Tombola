@@ -2061,6 +2061,7 @@ function setupEventListeners() {
   if (elements.modalDialectPlay) {
     elements.modalDialectPlay.addEventListener('click', () => {
       if (!state.selected) {
+        elements.modalDialectPlay.blur();
         return;
       }
 
@@ -2069,12 +2070,14 @@ function setupEventListeners() {
       if (entry) {
         speakDialectText(entry);
       }
+      elements.modalDialectPlay.blur();
     });
   }
 
   if (elements.modalItalianPlay) {
     elements.modalItalianPlay.addEventListener('click', () => {
       if (!state.selected) {
+        elements.modalItalianPlay.blur();
         return;
       }
 
@@ -2083,6 +2086,7 @@ function setupEventListeners() {
       if (entry) {
         speakItalianText(entry);
       }
+      elements.modalItalianPlay.blur();
     });
   }
 
