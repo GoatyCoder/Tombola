@@ -1011,6 +1011,7 @@ button {
   justify-content: center;
   gap: clamp(0.5rem, 1.8vw, 0.85rem);
   width: 100%;
+  flex-wrap: wrap;
 }
 
 .app-footer__credits {
@@ -1019,6 +1020,48 @@ button {
   color: rgba(255, 255, 255, 0.65);
   font-size: clamp(0.84rem, 1.2vw, 0.95rem);
   line-height: 1.6;
+}
+
+.app-footer__links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.app-footer__links a {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: clamp(0.84rem, 1.2vw, 0.92rem);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.app-footer__links a:hover,
+.app-footer__links a:focus-visible {
+  color: rgba(255, 255, 255, 0.95);
+  text-decoration: underline;
+}
+
+.app-footer__links a:focus-visible {
+  outline: var(--border-regular) solid rgba(255, 255, 255, 0.45);
+  outline-offset: 0.25rem;
+  border-radius: 0.25rem;
+}
+
+.app-footer__separator {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.7rem;
+}
+
+.app-footer__disclaimer {
+  margin: 0;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: clamp(0.78rem, 1.1vw, 0.87rem);
+  line-height: 1.5;
+  font-style: italic;
+  flex-basis: 100%;
 }
 
 .app-footer__powered {
@@ -1081,6 +1124,14 @@ button {
   }
 
   .app-footer__credits {
+    text-align: left;
+  }
+
+  .app-footer__links {
+    justify-content: flex-start;
+  }
+
+  .app-footer__disclaimer {
     text-align: left;
   }
 
