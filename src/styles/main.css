@@ -243,7 +243,8 @@ button {
   cursor: pointer;
   line-height: 1;
   transition: transform var(--transition), box-shadow var(--transition),
-    background var(--transition), color var(--transition), border-color var(--transition);
+    background-color var(--transition), color var(--transition),
+    border-color var(--transition);
   background: transparent;
   color: var(--ink);
   border-color: rgba(30, 24, 26, 0.15);
@@ -402,7 +403,7 @@ button {
 .progress__fill {
   display: block;
   height: 100%;
-  width: 0%;
+  width: var(--progress-value, 0%);
   background: var(--accent);
   transition: width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -450,17 +451,21 @@ button {
 }
 
 .board-grid--loading::after {
-  content: 'Caricamento in corso…';
+  content: '';
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
-  font-size: clamp(1rem, 2.4vw, 1.25rem);
-  font-weight: 600;
-  color: var(--ink-soft);
-  background: rgba(246, 244, 241, 0.78);
-  backdrop-filter: blur(0.15rem);
   z-index: 2;
+  display: block;
+  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(
+      110deg,
+      rgba(246, 244, 241, 0.85) 25%,
+      rgba(255, 255, 255, 0.55) 45%,
+      rgba(246, 244, 241, 0.85) 65%
+    );
+  animation: boardSkeleton 1.2s ease-in-out infinite;
+  background-size: 200% 100%;
 }
 
 .token {
@@ -495,7 +500,7 @@ button {
   }
 }
 
-@media (max-width: 56.25rem) {
+@media (max-width: 56.24rem) {
   .board-grid {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
@@ -511,6 +516,21 @@ button {
   background: none;
   box-shadow: none;
   cursor: pointer;
+}
+
+@supports not (aspect-ratio: 1 / 1) {
+  .board-cell {
+    padding-bottom: 100%;
+  }
+
+  .board-cell__media {
+    position: absolute;
+    inset: 0;
+  }
+
+  .board-cell__token {
+    position: absolute;
+  }
 }
 
 .board-cell__media {
@@ -585,6 +605,10 @@ button {
   animation: boardCellFade 720ms ease-out;
 }
 
+.board-cell--just-drawn {
+  will-change: transform, opacity;
+}
+
 .draw-flight-ball {
   position: fixed;
   z-index: 120;
@@ -650,6 +674,15 @@ button {
   }
 }
 
+@keyframes boardSkeleton {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
 .history {
   background: var(--surface-alt);
   border-radius: 1.5rem 1.5rem 0 0;
@@ -663,6 +696,7 @@ button {
   bottom: 0;
   width: min(40rem, calc(100vw - clamp(2rem, 6vw, 4rem)));
   max-height: min(75vh, 32.5rem);
+  overflow-y: auto;
   transform: translate(-50%, 110%);
   transition: transform 0.46s cubic-bezier(0.2, 0.8, 0.2, 1);
   z-index: 40;
@@ -693,8 +727,7 @@ button {
   display: grid;
   gap: 0.4rem;
   color: var(--ink);
-  max-height: 22.5rem;
-  overflow: auto;
+  list-style: none;
 }
 
 .history-item {
@@ -814,6 +847,13 @@ button {
   visibility: hidden;
   pointer-events: none;
   transition: opacity 0.35s ease;
+}
+
+@supports not (backdrop-filter: blur(0.25rem)) {
+  .scrim {
+    backdrop-filter: none;
+    background: rgba(20, 15, 13, 0.82);
+  }
 }
 
 .history-scrim--visible {

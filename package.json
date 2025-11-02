@@ -1,0 +1,25 @@
+{
+  "name": "tombola-nojana",
+  "version": "2.0.0",
+  "description": "Tombola Nojana è un'app web accessibile e responsive per gestire estrazioni, sponsor e cronologia della tombola tradizionale.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest watch",
+    "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^9.3.3",
+    "@testing-library/jest-dom": "^6.4.3",
+    "@types/node": "^20.11.30",
+    "@vitest/coverage-v8": "^1.5.0",
+    "jsdom": "^27.1.0",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.0",
+    "vitest": "^1.5.0"
+  }
+}

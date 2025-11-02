@@ -1,75 +1,63 @@
-# Tombola Nojana – Web App dimostrativa
+# Tombola Nojana
 
-Questa repository contiene una web app statica che permette di esplorare i numeri della **Tombola Nojana** e ascoltarne la pronuncia attraverso la sintesi vocale del browser. L'applicazione offre anche uno scanner di QR code per leggere rapidamente il numero associato a ogni casella della tombola.
+Applicazione web responsive e accessibile che digitalizza la tradizione della Tombola Nojana con estrazioni animate, cronologia persistente e rotazione degli sponsor. Il progetto è stato rifattorizzato con un'architettura modulare in TypeScript per garantire manutenzione semplice, performance elevate e qualità enterprise-ready.
 
 ## Funzionalità principali
 
-- ✅ **Catalogo completo (1-90)** con corrispondenze italiano/dialetto nojano.
-- ✅ **Filtro "solo numeri completi"** per individuare rapidamente le voci con pronuncia dialettale presente.
-- ✅ **Riproduzione vocale** tramite Web Speech API (con fallback ai termini italiani quando la voce dialettale non è disponibile).
-- ✅ **Scansione QR code** basata su [`html5-qrcode`](https://github.com/mebjas/html5-qrcode): inquadra un codice contenente il numero e ascolta subito la pronuncia.
-- ✅ **Interfaccia responsive** pensata per schermi mobili e desktop, con modalità scura rispettata automaticamente.
+- 🎲 **Estrazione guidata** con stato persistente, progresso visivo e overlay animato.
+- 🧩 **Tabellone interattivo** ottimizzato per tastiera, screen reader e dispositivi touch.
+- 🗂️ **Cronologia** con apertura mobile-friendly e timestamp localizzati.
+- 🗣️ **Sintesi vocale opzionale** (con fallback automatico quando l'API non è supportata).
+- 🤝 **Gestione sponsor** con showcase dedicato e rotazione automatica durante le estrazioni.
+- 💾 **Salvataggio resiliente** su `localStorage` con validazione dei dati e messaggi d'errore user-friendly.
+- ⚙️ **Architettura modulare** con build Vite, bundle ottimizzato e test automatici via Vitest.
+
+## Requisiti
+
+- Node.js 18 o superiore
+- npm 9+
+
+## Installazione e comandi principali
+
+```bash
+npm install          # installa le dipendenze
+npm run dev          # avvia il server di sviluppo (http://localhost:5173)
+npm run build        # produce il bundle ottimizzato in dist/
+npm run preview      # anteprima della build di produzione
+npm test             # esegue la suite unitaria con coverage
+```
 
 ## Struttura del progetto
 
 ```
 .
-├── data.json      # Archivio dei numeri con testi italiano/dialetto/immagini
-├── images/        # Cartella per gli asset grafici dei numeri (es. 1.png)
-├── index.html     # Pagina principale dell'app
-├── script.js      # Logica dell'interfaccia, sintesi vocale e scanner QR
-└── styles.css     # Stili grafici (tema tombola, responsive)
+├── public/
+│   ├── data.json          # dataset dei numeri con testi e immagini
+│   ├── sponsors.json      # elenco sponsor
+│   └── images/            # asset statici
+├── src/
+│   ├── app.ts             # bootstrap dell'applicazione
+│   ├── core/              # store, costanti e tipi condivisi
+│   ├── data/              # loader remoto + persistenza
+│   ├── features/          # moduli UI (board, draw, history, modal, audio…)
+│   ├── styles/            # foglio di stile principale
+│   └── main.ts            # entrypoint Vite
+├── tests/                 # test unitari Vitest
+├── vite.config.ts
+└── README.md
 ```
 
-## Come eseguire l'app
+## Qualità, accessibilità e performance
 
-Trattandosi di una SPA statica non è necessario alcun build step. È sufficiente servire i file con un web server locale (necessario per permettere al browser di accedere alla fotocamera e leggere `data.json`).
+- **Performance**: rendering del tabellone batch con `requestIdleCallback`, immagini lazy e skeleton loader.
+- **Accessibilità**: stato annunciato con `role="status"`, navigazione via frecce e focus trap nei modali, fallback per `backdrop-filter` e `aspect-ratio`.
+- **Resilienza**: gestione centralizzata degli errori di caricamento dati, validazione del `localStorage`, blocco della sintesi vocale su device non supportati.
+- **Testing**: copertura unit test per store e sponsor manager, con configurazione Vitest + jsdom.
 
-### Utilizzando Python 3
+## Deploy
 
-```bash
-python3 -m http.server 8000
-```
-
-Quindi apri il browser su [http://localhost:8000](http://localhost:8000).
-
-### Utilizzando Node.js (`http-server`)
-
-```bash
-npx http-server -p 8000
-```
-
-> **Nota:** per permettere l'accesso alla fotocamera, il browser richiede il protocollo `https` oppure `http` su `localhost`. In produzione pubblica la pagina su un dominio `https` (GitHub Pages, Netlify, Vercel, ecc.).
-
-## Formato dei QR code
-
-Lo scanner si aspetta un QR code che contenga **semplicemente il numero** (es. `42`). Quando il valore è valido e presente in `data.json`, l'app mostra la scheda relativa e riproduce l'audio.
-
-## Gestione delle immagini dei numeri
-
-Ogni elemento in `data.json` dispone ora della proprietà opzionale `image`. Quando valorizzata, l'interfaccia utilizza l'asset associato al posto del segnaposto SVG.
-
-1. Salva l'immagine definitiva nella cartella `images/` seguendo la convenzione `NUMERO.png` (esempio: `images/18.png`). Qualsiasi formato servito dal web server statico è supportato, ma si consiglia **PNG** con fondo trasparente per uniformità.
-2. Aggiorna la voce corrispondente in `data.json` impostando `"image": "images/NUMERO.png"`. Se l'immagine non è ancora disponibile puoi lasciare la proprietà mancante o impostarla a `null` per mostrare il segnaposto.
-3. Dopo aver servito il progetto in locale (ad esempio con `python3 -m http.server 8000`), verifica che il file sia raggiungibile aprendo `http://localhost:8000/images/NUMERO.png`. La stessa struttura sarà replicata automaticamente sui deploy statici (GitHub Pages, Netlify, ecc.), assicurando che gli asset vengano caricati correttamente.
-
-## Personalizzazione delle pronunce
-
-Al momento la pronuncia sfrutta la sintesi vocale (`speechSynthesis`) del dispositivo. Per ottenere un risultato fedele al dialetto nojano è possibile:
-
-1. Registrare i file audio originali (uno per numero) e salvarli nella cartella `audio/`.
-2. Aggiornare `data.json` aggiungendo un attributo `audio` con il percorso del file.
-3. Estendere `script.js` per riprodurre i file locali al posto della sintesi vocale quando disponibili.
-
-## Stato dei dati
-
-Alcune voci dialettali non sono ancora state fornite. In questi casi la UI mostra il messaggio "Registrazione da fornire" e, alla riproduzione, viene letto il testo italiano come fallback. Puoi aggiornare `data.json` man mano che ricevi le traduzioni complete.
-
-## Requisiti del browser
-
-- Supporto alla Web Speech API per la sintesi vocale (Chrome, Edge e Safari moderni).
-- Autorizzazione all'uso della fotocamera per la scansione dei QR.
+La build di produzione (`npm run build`) genera la cartella `dist/` pronta per l'hosting su CDN o piattaforme statiche (Netlify, Vercel, GitHub Pages). Tutti gli asset statici sono serviti da `public/` e referenziati con percorsi assoluti.
 
 ## Licenza
 
-Il contenuto dei testi appartiene ai creatori della Tombola Nojana. Il codice presente in questa repository è rilasciato con licenza MIT (vedi [LICENSE](LICENSE) se presente) oppure può essere riutilizzato liberamente con attribuzione.
+Il codice è rilasciato con licenza MIT. I contenuti testuali e grafici restano di proprietà dei rispettivi autori.

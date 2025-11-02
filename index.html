@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="it" class="no-js">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,8 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css" />
-    <script defer src="script.js"></script>
+    <script type="module" src="/src/main.ts"></script>
   </head>
   <body>
     <header class="hero" role="banner">
@@ -163,7 +162,15 @@
             <div class="board-wrapper">
               <div class="board-head">
                 <h2 id="board-heading" class="board-head__title">Tabellone</h2>
-                <span id="draw-status" class="board-head__status sr-only">Caricamento del tabellone…</span>
+                <p
+                  id="draw-status"
+                  class="board-head__status"
+                  role="status"
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
+                  Caricamento del tabellone…
+                </p>
               </div>
               <div class="board-grid" id="board" aria-live="polite"></div>
             </div>
