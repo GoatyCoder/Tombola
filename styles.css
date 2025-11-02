@@ -271,8 +271,8 @@ button {
 
 .status-card__actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
   align-items: center;
 }
 
@@ -304,13 +304,18 @@ button {
   line-height: 0;
 }
 
+.status-card__actions .button {
+  min-width: 0;
+}
+
 .button__icon {
-  width: 1.35rem;
-  height: 1.35rem;
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
 .button__label {
   line-height: 1;
+  white-space: nowrap;
 }
 
 .button--dashboard {
@@ -347,8 +352,8 @@ button {
 }
 
 .die-icon {
-  width: 1.35rem;
-  height: 1.35rem;
+  width: 1.25rem;
+  height: 1.25rem;
   display: block;
   flex-shrink: 0;
   pointer-events: none;
@@ -1180,18 +1185,18 @@ button {
 }
 
 .fab__icon {
-  width: 1.4rem;
-  height: 1.4rem;
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
 .fab .die-icon {
-  width: 1.4rem;
-  height: 1.4rem;
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
 .audio-fab__icon {
-  width: 1.45rem;
-  height: 1.45rem;
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
 .audio-fab__speaker {
@@ -1226,14 +1231,19 @@ button {
   .status-card__actions {
     width: 100%;
     justify-content: space-between;
-  }
-
-  .status-card__actions .button {
-    flex: 1 1 auto;
+    gap: 0.45rem;
   }
 
   .status-card__actions .button--dashboard-icon {
     flex: 0 0 auto;
+  }
+
+  .status-card__actions .button--primary {
+    flex: 1 1 auto;
+  }
+
+  .button--dashboard {
+    padding: 0.55rem 1.05rem;
   }
 }
 
