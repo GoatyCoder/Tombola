@@ -6,19 +6,13 @@ const state = {
   entriesByNumber: new Map(),
   drawnNumbers: new Set(),
   drawHistory: [],
-  sponsorByNumber: new Map(),
   isAnimatingDraw: false,
   historyOpen: false,
   audioEnabled: true,
   storageErrorMessage: '',
-  currentSponsor: null,
-  lastSponsorKey: null,
-  sponsors: [],
-  sponsorLoadPromise: null,
   sponsorShowcaseRendered: false,
   resetDialogOpen: false,
   resetDialogTrigger: null,
-  sponsorPreparationPromise: null,
   cleanupTasks: new Set(),
 };
 
@@ -217,72 +211,280 @@ function getEmbeddedSponsors() {
   return EMBEDDED_SPONSORS.map(cloneSponsorData).filter(Boolean);
 }
 
-function loadSponsors() {
-  if (state.sponsors.length > 0) {
-    renderSponsorShowcase(state.sponsors);
-    return Promise.resolve(state.sponsors);
+class SponsorManager {
+  constructor(options = {}) {
+    const {
+      dataPath = SPONSOR_DATA_PATH,
+      getFallbackSponsors,
+      onSponsorsChanged,
+    } = options;
+
+    this.dataPath = dataPath;
+    this.fallbackProvider =
+      typeof getFallbackSponsors === 'function' ? getFallbackSponsors : () => [];
+    this.onSponsorsChanged =
+      typeof onSponsorsChanged === 'function' ? onSponsorsChanged : null;
+
+    this.assignments = new Map();
+    this.sponsors = [];
+    this.loadPromise = null;
+    this.preparationPromise = null;
+    this.currentSponsor = null;
+    this.lastSponsorKey = null;
   }
 
-  if (state.sponsorLoadPromise) {
-    return state.sponsorLoadPromise;
+  _cloneList(list) {
+    if (!Array.isArray(list)) {
+      return [];
+    }
+
+    return list.map((item) => cloneSponsorData(item)).filter(Boolean);
   }
 
-  const request = fetch(SPONSOR_DATA_PATH)
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error('Impossibile caricare gli sponsor');
-      }
-      return response.json();
-    })
-    .then((data) => {
-      const rawList = Array.isArray(data?.sponsors) ? data.sponsors : Array.isArray(data) ? data : [];
-      const normalized = rawList.map(normalizeSponsor).filter(Boolean);
-      const fallbackList = getEmbeddedSponsors();
+  _normalizeList(list) {
+    if (!Array.isArray(list)) {
+      return [];
+    }
 
-      state.sponsors = normalized.length ? normalized : fallbackList;
-      state.lastSponsorKey = null;
-      if (!state.sponsors.length) {
-        applySponsorToOverlay(null);
+    return list.map(normalizeSponsor).filter(Boolean);
+  }
+
+  _notifySponsorsChanged() {
+    if (this.onSponsorsChanged) {
+      this.onSponsorsChanged(this.getAllSponsors());
+    }
+  }
+
+  _rememberLastKeyFromSponsor(value) {
+    if (!value) {
+      this.lastSponsorKey = null;
+      return;
+    }
+
+    if (typeof value === 'string') {
+      this.lastSponsorKey = value || null;
+      return;
+    }
+
+    this.lastSponsorKey = getSponsorKey(value) || null;
+  }
+
+  _getFallbackList() {
+    try {
+      const fallback = this.fallbackProvider();
+      return this._cloneList(fallback);
+    } catch (error) {
+      console.warn('Impossibile ottenere gli sponsor di fallback', error);
+      return [];
+    }
+  }
+
+  hasSponsors() {
+    return Array.isArray(this.sponsors) && this.sponsors.length > 0;
+  }
+
+  getAllSponsors() {
+    return this._cloneList(this.sponsors);
+  }
+
+  getLastKey() {
+    return this.lastSponsorKey;
+  }
+
+  rememberSponsorKey(sponsor) {
+    this._rememberLastKeyFromSponsor(sponsor);
+  }
+
+  getPendingLoad() {
+    return this.loadPromise;
+  }
+
+  resetAssignments() {
+    this.assignments.clear();
+  }
+
+  hasAssignment(number) {
+    return Number.isInteger(number) && this.assignments.has(number);
+  }
+
+  getAssignment(number, options = {}) {
+    if (!Number.isInteger(number)) {
+      return null;
+    }
+
+    const stored = this.assignments.get(number);
+    if (!stored) {
+      return null;
+    }
+
+    return options.raw ? stored : cloneSponsorData(stored);
+  }
+
+  assignToNumber(number, sponsor) {
+    if (!Number.isInteger(number)) {
+      return null;
+    }
+
+    const normalized = cloneSponsorData(sponsor);
+    if (!normalized) {
+      return null;
+    }
+
+    this.assignments.set(number, normalized);
+    return cloneSponsorData(normalized);
+  }
+
+  restoreAssignment(number, sponsor) {
+    if (!Number.isInteger(number)) {
+      return;
+    }
+
+    if (sponsor) {
+      const normalized = cloneSponsorData(sponsor);
+      if (normalized) {
+        this.assignments.set(number, normalized);
+        return;
       }
-      renderSponsorShowcase(state.sponsors, { force: true });
-      return state.sponsors;
-    })
-    .catch((error) => {
-      console.warn('Impossibile caricare gli sponsor', error);
-      const fallbackList = getEmbeddedSponsors();
-      state.sponsors = fallbackList;
-      state.lastSponsorKey = null;
-      if (state.sponsors.length === 0) {
-        applySponsorToOverlay(null);
-        renderSponsorShowcase([], { force: true });
-      } else {
-        renderSponsorShowcase(state.sponsors, { force: true });
+    }
+
+    this.assignments.delete(number);
+  }
+
+  clearCurrentSponsor() {
+    this.currentSponsor = null;
+    this._rememberLastKeyFromSponsor(null);
+  }
+
+  getCurrentSponsor(options = {}) {
+    if (!this.currentSponsor) {
+      return null;
+    }
+
+    return options.raw ? this.currentSponsor : cloneSponsorData(this.currentSponsor);
+  }
+
+  setCurrentSponsor(sponsor) {
+    const normalized = cloneSponsorData(sponsor);
+    this.currentSponsor = normalized || null;
+    this._rememberLastKeyFromSponsor(this.currentSponsor);
+    return this.getCurrentSponsor();
+  }
+
+  async load() {
+    if (this.hasSponsors()) {
+      return Promise.resolve(this.getAllSponsors());
+    }
+
+    if (this.loadPromise) {
+      return this.loadPromise;
+    }
+
+    const task = (async () => {
+      try {
+        const response = await fetch(this.dataPath);
+        if (!response.ok) {
+          throw new Error('Impossibile caricare gli sponsor');
+        }
+
+        const data = await response.json();
+        const rawList = Array.isArray(data?.sponsors)
+          ? data.sponsors
+          : Array.isArray(data)
+            ? data
+            : [];
+        const normalized = this._normalizeList(rawList);
+
+        if (normalized.length > 0) {
+          this.sponsors = this._cloneList(normalized);
+          this._rememberLastKeyFromSponsor(null);
+          this._notifySponsorsChanged();
+          return this.getAllSponsors();
+        }
+      } catch (error) {
+        console.warn('Impossibile caricare gli sponsor', error);
       }
-      return state.sponsors;
-    })
-    .finally(() => {
-      state.sponsorLoadPromise = null;
+
+      this.sponsors = this._getFallbackList();
+      this._rememberLastKeyFromSponsor(null);
+      this._notifySponsorsChanged();
+      return this.getAllSponsors();
+    })();
+
+    this.loadPromise = task.finally(() => {
+      this.loadPromise = null;
     });
 
-  state.sponsorLoadPromise = request;
-  return request;
+    return this.loadPromise;
+  }
+
+  pickRandom(excludeKey = null) {
+    if (!this.hasSponsors()) {
+      return null;
+    }
+
+    const pool = this.sponsors.filter((sponsor) => {
+      if (!excludeKey) {
+        return true;
+      }
+
+      const key = getSponsorKey(sponsor);
+      return key !== excludeKey;
+    });
+
+    const candidates = pool.length > 0 ? pool : this.sponsors;
+    const index = Math.floor(Math.random() * candidates.length);
+    const sponsor = candidates[index] || null;
+    return sponsor ? cloneSponsorData(sponsor) : null;
+  }
+
+  async prepareNext() {
+    if (this.preparationPromise) {
+      return this.preparationPromise;
+    }
+
+    const preparation = this.load()
+      .then((sponsors) => {
+        if (!Array.isArray(sponsors) || sponsors.length === 0) {
+          this.clearCurrentSponsor();
+          return null;
+        }
+
+        const next = this.pickRandom(this.lastSponsorKey);
+        return this.setCurrentSponsor(next);
+      })
+      .catch((error) => {
+        console.warn('Impossibile preparare il prossimo sponsor', error);
+        this.clearCurrentSponsor();
+        return null;
+      })
+      .finally(() => {
+        this.preparationPromise = null;
+      });
+
+    this.preparationPromise = preparation;
+    return preparation;
+  }
+}
+
+const sponsorManager = new SponsorManager({
+  dataPath: SPONSOR_DATA_PATH,
+  getFallbackSponsors: getEmbeddedSponsors,
+  onSponsorsChanged: (sponsors) => {
+    renderSponsorShowcase(sponsors, { force: true });
+  },
+});
+
+function loadSponsors() {
+  return sponsorManager.load().then((sponsors) => {
+    if (!Array.isArray(sponsors) || sponsors.length === 0) {
+      applySponsorToOverlay(null);
+    }
+    return sponsors;
+  });
 }
 
 function pickRandomSponsor(previousKey = null) {
-  const sponsors = Array.isArray(state.sponsors) ? state.sponsors : [];
-
-  if (sponsors.length === 0) {
-    return null;
-  }
-
-  if (sponsors.length === 1) {
-    return sponsors[0];
-  }
-
-  const available = sponsors.filter((item) => item && getSponsorKey(item) !== previousKey);
-  const pool = available.length > 0 ? available : sponsors;
-  const index = Math.floor(Math.random() * pool.length);
-  return pool[index] || null;
+  return sponsorManager.pickRandom(previousKey);
 }
 
 function getSponsorAccessibleLabel(sponsor) {
@@ -589,13 +791,7 @@ function persistSponsorForNumber(number, sponsor) {
     return null;
   }
 
-  const normalized = cloneSponsorData(sponsor);
-  if (!normalized) {
-    return null;
-  }
-
-  state.sponsorByNumber.set(number, normalized);
-  return normalized;
+  return sponsorManager.assignToNumber(number, sponsor);
 }
 
 function getStoredSponsorForNumber(number) {
@@ -603,8 +799,7 @@ function getStoredSponsorForNumber(number) {
     return null;
   }
 
-  const stored = state.sponsorByNumber.get(number);
-  return stored ? cloneSponsorData(stored) : null;
+  return sponsorManager.getAssignment(number);
 }
 
 function ensureModalSponsor(entry, options = {}) {
@@ -622,29 +817,21 @@ function ensureModalSponsor(entry, options = {}) {
     return;
   }
 
-  if (fromDraw && state.currentSponsor) {
-    const remembered = persistSponsorForNumber(number, state.currentSponsor);
+  const currentSponsor = sponsorManager.getCurrentSponsor();
+
+  if (fromDraw && currentSponsor) {
+    const remembered = persistSponsorForNumber(number, currentSponsor);
     applySponsorToModal(remembered);
     return;
   }
 
   const selectRandomSponsor = () => {
-    if (!Array.isArray(state.sponsors) || state.sponsors.length === 0) {
-      return null;
-    }
-
-    const previousKey = state.lastSponsorKey || (state.currentSponsor ? getSponsorKey(state.currentSponsor) : null);
+    const previousKey = sponsorManager.getLastKey();
     const randomSponsor = pickRandomSponsor(previousKey);
-    const normalized = cloneSponsorData(randomSponsor);
-
-    if (normalized) {
-      const key = getSponsorKey(normalized);
-      if (key) {
-        state.lastSponsorKey = key;
-      }
+    if (randomSponsor) {
+      sponsorManager.rememberSponsorKey(randomSponsor);
     }
-
-    return normalized;
+    return randomSponsor || null;
   };
 
   const immediateRandom = selectRandomSponsor();
@@ -656,9 +843,9 @@ function ensureModalSponsor(entry, options = {}) {
   applySponsorToModal(null);
 
   const pending =
-    state.sponsorLoadPromise ||
-    (Array.isArray(state.sponsors) && state.sponsors.length > 0
-      ? Promise.resolve(state.sponsors)
+    sponsorManager.getPendingLoad() ||
+    (sponsorManager.hasSponsors()
+      ? Promise.resolve(sponsorManager.getAllSponsors())
       : loadSponsors());
 
   if (!pending || typeof pending.then !== 'function') {
@@ -673,8 +860,10 @@ function ensureModalSponsor(entry, options = {}) {
         return;
       }
 
-      if (fromDraw && state.currentSponsor) {
-        const remembered = persistSponsorForNumber(number, state.currentSponsor);
+      const latestCurrent = sponsorManager.getCurrentSponsor();
+
+      if (fromDraw && latestCurrent) {
+        const remembered = persistSponsorForNumber(number, latestCurrent);
         if (remembered) {
           applySponsorToModal(remembered);
           return;
@@ -696,8 +885,10 @@ function ensureModalSponsor(entry, options = {}) {
         return;
       }
 
-      if (fromDraw && state.currentSponsor) {
-        const remembered = persistSponsorForNumber(number, state.currentSponsor);
+      const latestCurrent = sponsorManager.getCurrentSponsor();
+
+      if (fromDraw && latestCurrent) {
+        const remembered = persistSponsorForNumber(number, latestCurrent);
         if (remembered) {
           applySponsorToModal(remembered);
           return;
@@ -735,32 +926,18 @@ function setOverlayBallLoading(isLoading) {
 }
 
 async function prepareSponsorForNextDraw() {
-  if (state.sponsorPreparationPromise) {
-    return state.sponsorPreparationPromise;
-  }
-
-  const preparation = (async () => {
-    const sponsors = await loadSponsors();
-
-    if (!Array.isArray(sponsors) || sponsors.length === 0) {
-      state.currentSponsor = null;
-      state.lastSponsorKey = null;
+  return sponsorManager
+    .prepareNext()
+    .then((sponsor) => {
+      applySponsorToOverlay(sponsor);
+      return sponsor;
+    })
+    .catch((error) => {
+      console.warn('Errore durante la preparazione dello sponsor', error);
+      sponsorManager.clearCurrentSponsor();
       applySponsorToOverlay(null);
       return null;
-    }
-
-    const sponsor = pickRandomSponsor(state.lastSponsorKey);
-    state.currentSponsor = sponsor;
-    state.lastSponsorKey = getSponsorKey(sponsor);
-    applySponsorToOverlay(sponsor);
-    return sponsor;
-  })();
-
-  state.sponsorPreparationPromise = preparation.finally(() => {
-    state.sponsorPreparationPromise = null;
-  });
-
-  return state.sponsorPreparationPromise;
+    });
 }
 
 function updateHistoryToggleText() {
@@ -1015,7 +1192,7 @@ function restoreDrawStateFromStorage() {
     let latestEntry = null;
 
     state.drawnNumbers = new Set();
-    state.sponsorByNumber.clear();
+    sponsorManager.resetAssignments();
 
     const normalizedHistory = [];
 
@@ -1120,7 +1297,7 @@ async function loadNumbers() {
     state.numbers = data.numbers.sort((a, b) => a.number - b.number);
     state.drawnNumbers = new Set();
     state.drawHistory = [];
-    state.sponsorByNumber = new Map();
+    sponsorManager.resetAssignments();
     state.entriesByNumber = new Map();
     state.storageErrorMessage = '';
     renderBoard();
@@ -1326,12 +1503,15 @@ function markNumberDrawn(entry, options = {}) {
 
   const previousDrawnNumbers = new Set(state.drawnNumbers);
   const previousHistoryLength = state.drawHistory.length;
-  const hadStoredSponsor = state.sponsorByNumber.has(number);
-  const previousSponsor = hadStoredSponsor ? state.sponsorByNumber.get(number) : null;
+  const hadStoredSponsor = sponsorManager.hasAssignment(number);
+  const previousSponsor = hadStoredSponsor
+    ? sponsorManager.getAssignment(number, { raw: true })
+    : null;
 
   state.drawnNumbers.add(number);
 
-  const sponsorData = persistSponsorForNumber(number, sponsorOverride || state.currentSponsor);
+  const activeSponsor = sponsorOverride || sponsorManager.getCurrentSponsor();
+  const sponsorData = persistSponsorForNumber(number, activeSponsor);
 
   if (recordHistory) {
     state.drawHistory.push({
@@ -1347,9 +1527,9 @@ function markNumberDrawn(entry, options = {}) {
       state.drawnNumbers = previousDrawnNumbers;
       state.drawHistory.splice(previousHistoryLength);
       if (hadStoredSponsor && previousSponsor) {
-        state.sponsorByNumber.set(number, previousSponsor);
+        sponsorManager.restoreAssignment(number, previousSponsor);
       } else {
-        state.sponsorByNumber.delete(number);
+        sponsorManager.restoreAssignment(number, null);
       }
     }
 
@@ -1616,8 +1796,7 @@ function performGameReset() {
 
   state.isAnimatingDraw = false;
 
-  state.currentSponsor = null;
-  state.lastSponsorKey = null;
+  sponsorManager.clearCurrentSponsor();
   applySponsorToOverlay(null);
 
   if (state.currentUtterance && 'speechSynthesis' in window) {
@@ -1627,7 +1806,7 @@ function performGameReset() {
 
   state.drawnNumbers.clear();
   state.drawHistory = [];
-  state.sponsorByNumber.clear();
+  sponsorManager.resetAssignments();
   updateDrawHistory();
   clearPersistedDrawState();
   if (state.storageErrorMessage) {
