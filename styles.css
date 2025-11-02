@@ -1012,6 +1012,7 @@ button {
   gap: clamp(0.5rem, 1.8vw, 0.85rem);
   width: 100%;
   flex-wrap: wrap;
+  margin-inline: auto;
 }
 
 .app-footer__credits {
