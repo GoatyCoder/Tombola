@@ -1,3 +1,18 @@
+const LoadingStates = Object.freeze({
+  IDLE: 'idle',
+  LOADING: 'loading',
+  SUCCESS: 'success',
+  ERROR: 'error',
+});
+
+const TombolaEvents = Object.freeze({
+  NUMBER_DRAWN: 'tombola:numberDrawn',
+  GAME_RESET: 'tombola:gameReset',
+  SPONSOR_LOADED: 'tombola:sponsorLoaded',
+  SPONSOR_SELECTED: 'tombola:sponsorSelected',
+  SPONSOR_ASSIGNED: 'tombola:sponsorAssigned',
+});
+
 const state = {
   numbers: [],
   selected: null,
@@ -6,18 +21,16 @@ const state = {
   entriesByNumber: new Map(),
   drawnNumbers: new Set(),
   drawHistory: [],
-  sponsorByNumber: new Map(),
   isAnimatingDraw: false,
   historyOpen: false,
   audioEnabled: true,
   storageErrorMessage: '',
-  currentSponsor: null,
-  lastSponsorKey: null,
-  sponsors: [],
-  sponsorLoadPromise: null,
   sponsorShowcaseRendered: false,
   resetDialogOpen: false,
   resetDialogTrigger: null,
+  cleanupTasks: new Set(),
+  dataLoadingState: LoadingStates.IDLE,
+  sponsorLoadingState: LoadingStates.IDLE,
 };
 
 const elements = {
@@ -111,12 +124,221 @@ const historyMediaMatcher =
     ? window.matchMedia(MOBILE_HISTORY_QUERY)
     : { matches: false };
 
+function sanitizeUrl(url) {
+  if (typeof url !== 'string') {
+    return '#';
+  }
+
+  const trimmed = url.trim();
+  if (!trimmed) {
+    return '#';
+  }
+
+  const isRelative = !/^([a-z][a-z0-9+.-]*:)?\/\//i.test(trimmed);
+
+  try {
+    const base =
+      typeof window !== 'undefined' && window.location
+        ? window.location.origin
+        : 'https://example.com';
+    const parsed = new URL(trimmed, base);
+
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      return '#';
+    }
+
+    if (isRelative) {
+      return trimmed;
+    }
+
+    return parsed.href;
+  } catch (error) {
+    return '#';
+  }
+}
+
+function dispatchTombolaEvent(name, detail = {}) {
+  if (!name || typeof name !== 'string') {
+    return;
+  }
+
+  if (
+    typeof window === 'undefined' ||
+    typeof window.dispatchEvent !== 'function' ||
+    typeof CustomEvent !== 'function'
+  ) {
+    return;
+  }
+
+  try {
+    window.dispatchEvent(new CustomEvent(name, { detail }));
+  } catch (error) {
+    console.warn('Impossibile inviare evento personalizzato', error);
+  }
+}
+
+function isValidLoadingState(value) {
+  return Object.values(LoadingStates).includes(value);
+}
+
+function setDataLoadingState(nextState) {
+  if (!isValidLoadingState(nextState)) {
+    console.warn('Stato di caricamento dati non valido:', nextState);
+    return;
+  }
+
+  if (state.dataLoadingState === nextState) {
+    return;
+  }
+
+  state.dataLoadingState = nextState;
+  updateLoadingUI();
+  updateDrawStatus();
+}
+
+function setSponsorLoadingState(nextState) {
+  if (!isValidLoadingState(nextState)) {
+    console.warn('Stato di caricamento sponsor non valido:', nextState);
+    return;
+  }
+
+  if (state.sponsorLoadingState === nextState) {
+    return;
+  }
+
+  state.sponsorLoadingState = nextState;
+  updateLoadingUI();
+}
+
+function registerCleanup(callback) {
+  if (typeof callback !== 'function') {
+    return () => {};
+  }
+
+  let executed = false;
+
+  const wrapped = () => {
+    if (executed) {
+      return;
+    }
+
+    executed = true;
+
+    try {
+      callback();
+    } catch (error) {
+      console.warn('Errore durante la pulizia delle risorse', error);
+    } finally {
+      state.cleanupTasks.delete(wrapped);
+    }
+  };
+
+  state.cleanupTasks.add(wrapped);
+  return () => {
+    state.cleanupTasks.delete(wrapped);
+  };
+}
+
+function runCleanupTasks() {
+  if (!(state.cleanupTasks instanceof Set) || state.cleanupTasks.size === 0) {
+    return;
+  }
+
+  Array.from(state.cleanupTasks).forEach((cleanup) => {
+    if (typeof cleanup === 'function') {
+      try {
+        cleanup();
+      } catch (error) {
+        console.warn('Errore durante la pulizia delle risorse', error);
+      }
+    } else {
+      state.cleanupTasks.delete(cleanup);
+    }
+  });
+}
+
+function updateLoadingUI() {
+  const isDataLoading = state.dataLoadingState === LoadingStates.LOADING;
+  const isDataError = state.dataLoadingState === LoadingStates.ERROR;
+  const isSponsorLoading = state.sponsorLoadingState === LoadingStates.LOADING;
+  const isSponsorError = state.sponsorLoadingState === LoadingStates.ERROR;
+
+  if (elements.board) {
+    elements.board.classList.toggle('board-grid--loading', isDataLoading);
+    if (isDataLoading) {
+      elements.board.setAttribute('aria-busy', 'true');
+    } else {
+      elements.board.removeAttribute('aria-busy');
+    }
+  }
+
+  const sponsorBlocks = [elements.drawSponsorBlock, elements.modalSponsorBlock];
+  sponsorBlocks.forEach((block) => {
+    if (!block) {
+      return;
+    }
+
+    if (!block.dataset.placeholderLabel) {
+      block.dataset.placeholderLabel = 'Sponsor in arrivo…';
+    }
+    if (!block.dataset.errorLabel) {
+      block.dataset.errorLabel = 'Nessuno sponsor disponibile';
+    }
+
+    if (isSponsorLoading) {
+      block.setAttribute('aria-busy', 'true');
+    } else {
+      block.removeAttribute('aria-busy');
+    }
+
+    block.classList.toggle('sponsor-block--loading', isSponsorLoading);
+    block.classList.toggle('sponsor-block--error', isSponsorError && !isSponsorLoading);
+  });
+
+  const sponsorHeadings = [elements.drawSponsorHeading, elements.modalSponsorHeading];
+  sponsorHeadings.forEach((heading) => {
+    if (!heading) {
+      return;
+    }
+
+    if (!heading.dataset.initialText) {
+      heading.dataset.initialText = heading.textContent || '';
+    }
+
+    let nextText = heading.dataset.initialText;
+    if (isSponsorLoading) {
+      nextText = 'Caricamento sponsor…';
+    } else if (isSponsorError) {
+      nextText = 'Sponsor non disponibile';
+    }
+
+    heading.textContent = nextText;
+  });
+
+  if (elements.drawStatus && isDataError) {
+    elements.drawStatus.setAttribute('role', 'alert');
+  } else if (elements.drawStatus) {
+    elements.drawStatus.removeAttribute('role');
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', runCleanupTasks);
+  window.addEventListener('beforeunload', runCleanupTasks);
+}
+
 function getSponsorKey(sponsor) {
   if (!sponsor || typeof sponsor !== 'object') {
     return null;
   }
 
-  return sponsor.url || sponsor.logo || null;
+  const key = sponsor.url || sponsor.logo || null;
+  if (typeof key !== 'string') {
+    return null;
+  }
+
+  const trimmed = key.trim();
+  return trimmed || null;
 }
 
 function normalizeSponsor(rawSponsor) {
@@ -153,72 +375,668 @@ function getEmbeddedSponsors() {
   return EMBEDDED_SPONSORS.map(cloneSponsorData).filter(Boolean);
 }
 
+class SponsorManager {
+  constructor(options = {}) {
+    const {
+      dataPath = SPONSOR_DATA_PATH,
+      getFallbackSponsors,
+      onSponsorsChanged,
+    } = options;
+
+    this.dataPath = dataPath;
+    this.fallbackProvider =
+      typeof getFallbackSponsors === 'function' ? getFallbackSponsors : () => [];
+    this.onSponsorsChanged =
+      typeof onSponsorsChanged === 'function' ? onSponsorsChanged : null;
+
+    this.assignments = new Map();
+    this.sponsors = [];
+    this.loadPromise = null;
+    this.preparationPromise = null;
+    this.currentSponsor = null;
+    this.lastSponsorKey = null;
+  }
+
+  _cloneList(list) {
+    if (!Array.isArray(list)) {
+      return [];
+    }
+
+    return list.map((item) => cloneSponsorData(item)).filter(Boolean);
+  }
+
+  _normalizeList(list) {
+    if (!Array.isArray(list)) {
+      return [];
+    }
+
+    return list.map(normalizeSponsor).filter(Boolean);
+  }
+
+  _notifySponsorsChanged(origin = 'unknown') {
+    const snapshot = this.getAllSponsors();
+    if (this.onSponsorsChanged) {
+      this.onSponsorsChanged(snapshot);
+    }
+
+    dispatchTombolaEvent(TombolaEvents.SPONSOR_LOADED, {
+      sponsors: snapshot,
+      origin,
+    });
+  }
+
+  _rememberLastKeyFromSponsor(value) {
+    if (!value) {
+      this.lastSponsorKey = null;
+      return;
+    }
+
+    if (typeof value === 'string') {
+      this.lastSponsorKey = value || null;
+      return;
+    }
+
+    this.lastSponsorKey = getSponsorKey(value) || null;
+  }
+
+  _getFallbackList() {
+    try {
+      const fallback = this.fallbackProvider();
+      return this._cloneList(fallback);
+    } catch (error) {
+      console.warn('Impossibile ottenere gli sponsor di fallback', error);
+      return [];
+    }
+  }
+
+  hasSponsors() {
+    return Array.isArray(this.sponsors) && this.sponsors.length > 0;
+  }
+
+  getAllSponsors() {
+    return this._cloneList(this.sponsors);
+  }
+
+  getLastKey() {
+    return this.lastSponsorKey;
+  }
+
+  rememberSponsorKey(sponsor) {
+    this._rememberLastKeyFromSponsor(sponsor);
+  }
+
+  getPendingLoad() {
+    return this.loadPromise;
+  }
+
+  resetAssignments() {
+    this.assignments.clear();
+  }
+
+  hasAssignment(number) {
+    return Number.isInteger(number) && this.assignments.has(number);
+  }
+
+  getAssignment(number, options = {}) {
+    if (!Number.isInteger(number)) {
+      return null;
+    }
+
+    const stored = this.assignments.get(number);
+    if (!stored) {
+      return null;
+    }
+
+    return options.raw ? stored : cloneSponsorData(stored);
+  }
+
+  assignToNumber(number, sponsor) {
+    if (!Number.isInteger(number)) {
+      return null;
+    }
+
+    const normalized = cloneSponsorData(sponsor);
+    if (!normalized) {
+      return null;
+    }
+
+    this.assignments.set(number, normalized);
+    const cloned = cloneSponsorData(normalized);
+    dispatchTombolaEvent(TombolaEvents.SPONSOR_ASSIGNED, {
+      number,
+      sponsor: cloned,
+    });
+    return cloned;
+  }
+
+  restoreAssignment(number, sponsor) {
+    if (!Number.isInteger(number)) {
+      return;
+    }
+
+    if (sponsor) {
+      const normalized = cloneSponsorData(sponsor);
+      if (normalized) {
+        this.assignments.set(number, normalized);
+        dispatchTombolaEvent(TombolaEvents.SPONSOR_ASSIGNED, {
+          number,
+          sponsor: cloneSponsorData(normalized),
+        });
+        return;
+      }
+    }
+
+    this.assignments.delete(number);
+    dispatchTombolaEvent(TombolaEvents.SPONSOR_ASSIGNED, {
+      number,
+      sponsor: null,
+    });
+  }
+
+  clearCurrentSponsor() {
+    this.currentSponsor = null;
+    this._rememberLastKeyFromSponsor(null);
+  }
+
+  getCurrentSponsor(options = {}) {
+    if (!this.currentSponsor) {
+      return null;
+    }
+
+    return options.raw ? this.currentSponsor : cloneSponsorData(this.currentSponsor);
+  }
+
+  setCurrentSponsor(sponsor) {
+    const normalized = cloneSponsorData(sponsor);
+    this.currentSponsor = normalized || null;
+    this._rememberLastKeyFromSponsor(this.currentSponsor);
+    const snapshot = this.getCurrentSponsor();
+    dispatchTombolaEvent(TombolaEvents.SPONSOR_SELECTED, {
+      sponsor: snapshot,
+    });
+    return snapshot;
+  }
+
+  async load() {
+    if (this.hasSponsors()) {
+      return Promise.resolve(this.getAllSponsors());
+    }
+
+    if (this.loadPromise) {
+      return this.loadPromise;
+    }
+
+    const task = (async () => {
+      try {
+        const response = await fetch(this.dataPath);
+        if (!response.ok) {
+          throw new Error('Impossibile caricare gli sponsor');
+        }
+
+        const data = await response.json();
+        const rawList = Array.isArray(data?.sponsors)
+          ? data.sponsors
+          : Array.isArray(data)
+            ? data
+            : [];
+        const normalized = this._normalizeList(rawList);
+
+        if (normalized.length > 0) {
+          this.sponsors = this._cloneList(normalized);
+          this._rememberLastKeyFromSponsor(null);
+          this._notifySponsorsChanged('remote');
+          return this.getAllSponsors();
+        }
+      } catch (error) {
+        console.warn('Impossibile caricare gli sponsor', error);
+      }
+
+      this.sponsors = this._getFallbackList();
+      this._rememberLastKeyFromSponsor(null);
+      this._notifySponsorsChanged('fallback');
+      return this.getAllSponsors();
+    })();
+
+    this.loadPromise = task.finally(() => {
+      this.loadPromise = null;
+    });
+
+    return this.loadPromise;
+  }
+
+  pickRandom(excludeKey = null) {
+    if (!this.hasSponsors()) {
+      return null;
+    }
+
+    const sanitizedExcludeKey =
+      typeof excludeKey === 'string' && excludeKey.trim() !== ''
+        ? excludeKey.trim()
+        : null;
+    const pool = sanitizedExcludeKey
+      ? this.sponsors.filter((sponsor) => getSponsorKey(sponsor) !== sanitizedExcludeKey)
+      : this.sponsors;
+
+    const candidates = Array.isArray(pool) && pool.length > 0 ? pool : this.sponsors;
+    const index = Math.floor(Math.random() * candidates.length);
+    const sponsor = candidates[index] || null;
+    return sponsor ? cloneSponsorData(sponsor) : null;
+  }
+
+  async prepareNext() {
+    if (this.preparationPromise) {
+      return this.preparationPromise;
+    }
+
+    const preparation = this.load()
+      .then((sponsors) => {
+        if (!Array.isArray(sponsors) || sponsors.length === 0) {
+          this.clearCurrentSponsor();
+          return null;
+        }
+
+        const next = this.pickRandom(this.lastSponsorKey);
+        return this.setCurrentSponsor(next);
+      })
+      .catch((error) => {
+        console.warn('Impossibile preparare il prossimo sponsor', error);
+        this.clearCurrentSponsor();
+        return null;
+      })
+      .finally(() => {
+        this.preparationPromise = null;
+      });
+
+    this.preparationPromise = preparation;
+    return preparation;
+  }
+}
+
+const sponsorManager = new SponsorManager({
+  dataPath: SPONSOR_DATA_PATH,
+  getFallbackSponsors: getEmbeddedSponsors,
+  onSponsorsChanged: (sponsors) => {
+    renderSponsorShowcase(sponsors, { force: true });
+  },
+});
+
+/**
+ * Gestisce le animazioni del portale di estrazione, rispettando le preferenze
+ * di movimento dell'utente e fornendo un punto centrale per eventuali cleanup.
+ */
+class AnimationManager {
+  constructor(options = {}) {
+    const { elements: uiElements, timeline = DRAW_TIMELINE } = options;
+
+    this.elements = uiElements || {};
+    this.timeline = Object.freeze({ ...timeline });
+    this.prefersReducedMotion = false;
+    this.motionMatcher = null;
+    this.motionChangeHandler = null;
+    this.cleanupCallbacks = new Set();
+
+    this.initializeMotionPreferences();
+  }
+
+  initializeMotionPreferences() {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return;
+    }
+
+    const matcher = window.matchMedia('(prefers-reduced-motion: reduce)');
+    this.motionMatcher = matcher;
+    this.prefersReducedMotion = Boolean(matcher.matches);
+
+    const handleChange = (event) => {
+      if (event && typeof event.matches === 'boolean') {
+        this.prefersReducedMotion = event.matches;
+      } else if (this.motionMatcher) {
+        this.prefersReducedMotion = Boolean(this.motionMatcher.matches);
+      }
+    };
+
+    this.motionChangeHandler = handleChange;
+
+    if (typeof matcher.addEventListener === 'function') {
+      matcher.addEventListener('change', handleChange);
+      this.cleanupCallbacks.add(() => matcher.removeEventListener('change', handleChange));
+    } else if (typeof matcher.addListener === 'function') {
+      matcher.addListener(handleChange);
+      this.cleanupCallbacks.add(() => {
+        if (typeof matcher.removeListener === 'function') {
+          matcher.removeListener(handleChange);
+        }
+      });
+    }
+  }
+
+  prefersReducedMotionEnabled() {
+    if (typeof this.prefersReducedMotion === 'boolean') {
+      return this.prefersReducedMotion;
+    }
+
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return false;
+    }
+
+    try {
+      return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  setOverlayBallLoading(isLoading) {
+    const { drawOverlayBall, drawOverlay } = this.elements;
+
+    if (!drawOverlayBall) {
+      return;
+    }
+
+    const loadingClass = 'draw-portal__ball--loading';
+    const revealClass = 'draw-portal__ball--revealed';
+
+    if (isLoading) {
+      drawOverlayBall.classList.add(loadingClass);
+      drawOverlayBall.classList.remove(revealClass);
+      drawOverlayBall.setAttribute('aria-busy', 'true');
+      if (drawOverlay) {
+        drawOverlay.classList.add('draw-portal--charging');
+      }
+    } else {
+      drawOverlayBall.classList.remove(loadingClass);
+      drawOverlayBall.removeAttribute('aria-busy');
+      if (drawOverlay) {
+        drawOverlay.classList.remove('draw-portal--charging');
+      }
+    }
+  }
+
+  async animateBallFlight(entry, fromRect, targetCell, options = {}) {
+    if (!targetCell || !fromRect) {
+      return;
+    }
+
+    const {
+      prefersReducedMotion = false,
+      duration = this.timeline.flightDuration,
+    } = options;
+
+    targetCell.classList.add('board-cell--incoming');
+
+    const finalize = () => {
+      targetCell.classList.remove('board-cell--incoming');
+    };
+
+    try {
+      targetCell.scrollIntoView({
+        behavior: prefersReducedMotion ? 'auto' : 'smooth',
+        block: 'center',
+        inline: 'center',
+      });
+    } catch (error) {
+      targetCell.scrollIntoView();
+    }
+
+    await waitForScrollIdle({
+      timeout: prefersReducedMotion ? 320 : 900,
+      idleThreshold: prefersReducedMotion ? 80 : 160,
+    });
+
+    if (prefersReducedMotion) {
+      await sleep(220);
+      finalize();
+      return;
+    }
+
+    const { wrapper: flightBall } = createTokenElement(entry.number, {
+      tag: 'div',
+      className: 'draw-flight-ball',
+    });
+
+    const startX = fromRect.left + fromRect.width / 2;
+    const startY = fromRect.top + fromRect.height / 2;
+    flightBall.style.width = `${fromRect.width}px`;
+    flightBall.style.height = `${fromRect.height}px`;
+    flightBall.style.left = `${startX}px`;
+    flightBall.style.top = `${startY}px`;
+    document.body.appendChild(flightBall);
+
+    if (typeof flightBall.animate !== 'function') {
+      await sleep(duration);
+      flightBall.remove();
+      finalize();
+      return;
+    }
+
+    const targetRect = targetCell.getBoundingClientRect();
+    const endX = targetRect.left + targetRect.width / 2;
+    const endY = targetRect.top + targetRect.height / 2;
+    const deltaX = endX - startX;
+    const deltaY = endY - startY;
+    const scale = Math.max(Math.min(targetRect.width / fromRect.width || 1, 1.35), 0.6);
+
+    await new Promise((resolve) => {
+      const cleanup = () => {
+        flightBall.remove();
+        finalize();
+        resolve();
+      };
+
+      try {
+        const animation = flightBall.animate(
+          [
+            { transform: 'translate(-50%, -50%) scale(0.98)', opacity: 0.98 },
+            {
+              transform: `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(${scale})`,
+              opacity: 0.94,
+            },
+          ],
+          {
+            duration,
+            easing: 'cubic-bezier(0.18, 0.82, 0.24, 1.06)',
+            fill: 'forwards',
+          }
+        );
+
+        animation.addEventListener('finish', cleanup, { once: true });
+        animation.addEventListener('cancel', cleanup, { once: true });
+      } catch (error) {
+        cleanup();
+      }
+    });
+  }
+
+  async showDrawAnimation(entry, options = {}) {
+    const { onFlightComplete = null } = options;
+    const {
+      drawOverlay,
+      drawOverlayNumber,
+      drawOverlayBall,
+      drawOverlayAnnouncement,
+    } = this.elements;
+    const targetCell = state.cellsByNumber.get(entry.number);
+
+    let flightNotified = false;
+    const notifyFlightComplete = () => {
+      if (flightNotified) {
+        return;
+      }
+      flightNotified = true;
+      if (typeof onFlightComplete === 'function') {
+        try {
+          onFlightComplete();
+        } catch (error) {
+          console.warn("Errore durante l'aggiornamento della casella estratta", error);
+        }
+      }
+    };
+
+    if (!drawOverlay || !drawOverlayNumber || !drawOverlayBall) {
+      if (targetCell) {
+        try {
+          targetCell.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'center',
+          });
+        } catch (error) {
+          targetCell.scrollIntoView();
+        }
+      }
+      return false;
+    }
+
+    const prefersReducedMotion = this.prefersReducedMotionEnabled();
+    const setAnnouncement = (text) => {
+      if (drawOverlayAnnouncement) {
+        drawOverlayAnnouncement.textContent = text;
+      }
+    };
+
+    const revealNumber = () => {
+      this.setOverlayBallLoading(false);
+      drawOverlayNumber.textContent = entry.number;
+      drawOverlayBall.classList.add('draw-portal__ball--revealed');
+      setAnnouncement(`Numero ${entry.number}`);
+    };
+
+    const hideOverlay = (immediate = false) => {
+      drawOverlay.classList.remove(
+        'draw-portal--visible',
+        'draw-portal--closing',
+        'draw-portal--flight'
+      );
+      const finalize = () => {
+        drawOverlay.setAttribute('aria-hidden', 'true');
+        drawOverlay.hidden = true;
+      };
+      if (immediate) {
+        finalize();
+      } else {
+        window.setTimeout(finalize, 20);
+      }
+    };
+
+    this.setOverlayBallLoading(true);
+    drawOverlayBall.classList.remove('draw-portal__ball--revealed');
+    drawOverlayNumber.textContent = '';
+    setAnnouncement('');
+
+    drawOverlay.hidden = false;
+    drawOverlay.setAttribute('aria-hidden', 'false');
+    drawOverlay.classList.remove('draw-portal--closing');
+    drawOverlay.classList.remove('draw-portal--flight');
+    drawOverlay.classList.add('draw-portal--visible');
+
+    let didAnimate = true;
+
+    try {
+      if (prefersReducedMotion) {
+        const fromRect = drawOverlayBall.getBoundingClientRect();
+        await sleep(this.timeline.reducedMotionHold);
+        revealNumber();
+
+        drawOverlay.classList.add('draw-portal--flight');
+        if (targetCell) {
+          await this.animateBallFlight(entry, fromRect, targetCell, {
+            prefersReducedMotion: true,
+            duration: this.timeline.reducedMotionFlight,
+          });
+        } else {
+          await sleep(this.timeline.reducedMotionFlight);
+        }
+
+        notifyFlightComplete();
+
+        drawOverlay.classList.add('draw-portal--closing');
+        await sleep(this.timeline.overlayHideDelay);
+      } else {
+        await sleep(this.timeline.intro);
+        await sleep(this.timeline.prepareHold);
+        await sleep(this.timeline.revealAccent);
+        revealNumber();
+
+        await sleep(this.timeline.celebrationHold);
+
+        const fromRect = drawOverlayBall.getBoundingClientRect();
+        drawOverlay.classList.add('draw-portal--closing');
+
+        await sleep(this.timeline.flightDelay);
+        drawOverlay.classList.add('draw-portal--flight');
+        if (targetCell) {
+          await this.animateBallFlight(entry, fromRect, targetCell, {
+            duration: this.timeline.flightDuration,
+            prefersReducedMotion,
+          });
+        } else {
+          await sleep(this.timeline.flightDuration);
+        }
+
+        notifyFlightComplete();
+
+        await sleep(this.timeline.overlayHideDelay);
+      }
+    } finally {
+      this.setOverlayBallLoading(false);
+      hideOverlay(true);
+      drawOverlay.classList.remove('draw-portal--flight');
+      drawOverlayBall.classList.remove('draw-portal__ball--revealed');
+      drawOverlayNumber.textContent = '';
+      setAnnouncement('');
+    }
+
+    return didAnimate;
+  }
+
+  getModalRevealDelay() {
+    const delay = Number(this.timeline.modalRevealDelay);
+    return Number.isFinite(delay) && delay > 0 ? delay : 0;
+  }
+
+  destroy() {
+    if (this.cleanupCallbacks.size === 0) {
+      return;
+    }
+
+    Array.from(this.cleanupCallbacks).forEach((callback) => {
+      try {
+        callback();
+      } catch (error) {
+        console.warn('Errore durante la pulizia delle animazioni', error);
+      } finally {
+        this.cleanupCallbacks.delete(callback);
+      }
+    });
+  }
+}
+
+const animationManager = new AnimationManager({ elements, timeline: DRAW_TIMELINE });
+registerCleanup(() => animationManager.destroy());
+
 function loadSponsors() {
-  if (state.sponsors.length > 0) {
-    renderSponsorShowcase(state.sponsors);
-    return Promise.resolve(state.sponsors);
-  }
-
-  if (state.sponsorLoadPromise) {
-    return state.sponsorLoadPromise;
-  }
-
-  const request = fetch(SPONSOR_DATA_PATH)
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error('Impossibile caricare gli sponsor');
-      }
-      return response.json();
-    })
-    .then((data) => {
-      const rawList = Array.isArray(data?.sponsors) ? data.sponsors : Array.isArray(data) ? data : [];
-      const normalized = rawList.map(normalizeSponsor).filter(Boolean);
-      const fallbackList = getEmbeddedSponsors();
-
-      state.sponsors = normalized.length ? normalized : fallbackList;
-      state.lastSponsorKey = null;
-      if (!state.sponsors.length) {
+  setSponsorLoadingState(LoadingStates.LOADING);
+  return sponsorManager
+    .load()
+    .then((sponsors) => {
+      if (!Array.isArray(sponsors) || sponsors.length === 0) {
+        setSponsorLoadingState(LoadingStates.ERROR);
         applySponsorToOverlay(null);
+      } else {
+        setSponsorLoadingState(LoadingStates.SUCCESS);
       }
-      renderSponsorShowcase(state.sponsors, { force: true });
-      return state.sponsors;
+      return sponsors;
     })
     .catch((error) => {
       console.warn('Impossibile caricare gli sponsor', error);
-      const fallbackList = getEmbeddedSponsors();
-      state.sponsors = fallbackList;
-      state.lastSponsorKey = null;
-      if (state.sponsors.length === 0) {
-        applySponsorToOverlay(null);
-        renderSponsorShowcase([], { force: true });
-      } else {
-        renderSponsorShowcase(state.sponsors, { force: true });
-      }
-      return state.sponsors;
-    })
-    .finally(() => {
-      state.sponsorLoadPromise = null;
+      setSponsorLoadingState(LoadingStates.ERROR);
+      applySponsorToOverlay(null);
+      throw error;
     });
-
-  state.sponsorLoadPromise = request;
-  return request;
 }
 
 function pickRandomSponsor(previousKey = null) {
-  const sponsors = Array.isArray(state.sponsors) ? state.sponsors : [];
-
-  if (sponsors.length === 0) {
-    return null;
-  }
-
-  if (sponsors.length === 1) {
-    return sponsors[0];
-  }
-
-  const available = sponsors.filter((item) => item && getSponsorKey(item) !== previousKey);
-  const pool = available.length > 0 ? available : sponsors;
-  const index = Math.floor(Math.random() * pool.length);
-  return pool[index] || null;
+  return sponsorManager.pickRandom(previousKey);
 }
 
 function getSponsorAccessibleLabel(sponsor) {
@@ -276,9 +1094,15 @@ function renderSponsorShowcase(sponsors, options = {}) {
     const anchor = document.createElement('a');
     anchor.className = 'sponsor-strip__item';
     anchor.setAttribute('role', 'listitem');
-    anchor.href = sponsor.url || '#';
-    anchor.target = sponsor.url ? '_blank' : '_self';
-    anchor.rel = 'noopener noreferrer';
+    const safeUrl = sanitizeUrl(sponsor.url || '');
+    const isExternal = /^https?:\/\//i.test(safeUrl);
+    anchor.href = safeUrl;
+    anchor.target = isExternal ? '_blank' : '_self';
+    if (isExternal) {
+      anchor.rel = 'noopener noreferrer';
+    } else {
+      anchor.removeAttribute('rel');
+    }
 
     const label = getSponsorAccessibleLabel(sponsor);
     if (label) {
@@ -437,9 +1261,15 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
 
   anchor.classList.remove('sponsor-link--placeholder');
   anchor.removeAttribute('aria-hidden');
-  anchor.href = sponsor.url || '#';
-  anchor.target = sponsor.url ? '_blank' : '_self';
-  anchor.rel = 'noopener noreferrer';
+  const safeUrl = sanitizeUrl(sponsor.url || '');
+  const isExternal = /^https?:\/\//i.test(safeUrl);
+  anchor.href = safeUrl;
+  anchor.target = isExternal ? '_blank' : '_self';
+  if (isExternal) {
+    anchor.rel = 'noopener noreferrer';
+  } else {
+    anchor.removeAttribute('rel');
+  }
   anchor.removeAttribute('tabindex');
   anchor.setAttribute('aria-label', getSponsorAccessibleLabel(sponsor));
   anchor.removeAttribute('title');
@@ -476,6 +1306,8 @@ function blurButtonOnNextFrame(button) {
 
 function applySponsorToOverlay(sponsor) {
   const { drawSponsor, drawSponsorLogo, drawSponsorBlock, drawSponsorHeading, drawOverlay } = elements;
+  const shouldShowPlaceholder =
+    !sponsor && state.sponsorLoadingState === LoadingStates.ERROR;
 
   updateSponsorBlock(
     {
@@ -485,7 +1317,7 @@ function applySponsorToOverlay(sponsor) {
       heading: drawSponsorHeading,
     },
     sponsor,
-    { preferLazy: false }
+    { preferLazy: false, showPlaceholder: shouldShowPlaceholder }
   );
 
   if (drawOverlay) {
@@ -495,6 +1327,8 @@ function applySponsorToOverlay(sponsor) {
 
 function applySponsorToModal(sponsor, options = {}) {
   const { modalSponsorBlock, modalSponsor, modalSponsorLogo, modalSponsorHeading } = elements;
+  const shouldShowPlaceholder =
+    !sponsor && state.sponsorLoadingState === LoadingStates.ERROR;
 
   updateSponsorBlock(
     {
@@ -504,7 +1338,7 @@ function applySponsorToModal(sponsor, options = {}) {
       heading: modalSponsorHeading,
     },
     sponsor,
-    { preferLazy: false, ...options }
+    { preferLazy: false, showPlaceholder: shouldShowPlaceholder, ...options }
   );
 }
 
@@ -513,13 +1347,7 @@ function persistSponsorForNumber(number, sponsor) {
     return null;
   }
 
-  const normalized = cloneSponsorData(sponsor);
-  if (!normalized) {
-    return null;
-  }
-
-  state.sponsorByNumber.set(number, normalized);
-  return normalized;
+  return sponsorManager.assignToNumber(number, sponsor);
 }
 
 function getStoredSponsorForNumber(number) {
@@ -527,8 +1355,7 @@ function getStoredSponsorForNumber(number) {
     return null;
   }
 
-  const stored = state.sponsorByNumber.get(number);
-  return stored ? cloneSponsorData(stored) : null;
+  return sponsorManager.getAssignment(number);
 }
 
 function ensureModalSponsor(entry, options = {}) {
@@ -546,29 +1373,21 @@ function ensureModalSponsor(entry, options = {}) {
     return;
   }
 
-  if (fromDraw && state.currentSponsor) {
-    const remembered = persistSponsorForNumber(number, state.currentSponsor);
+  const currentSponsor = sponsorManager.getCurrentSponsor();
+
+  if (fromDraw && currentSponsor) {
+    const remembered = persistSponsorForNumber(number, currentSponsor);
     applySponsorToModal(remembered);
     return;
   }
 
   const selectRandomSponsor = () => {
-    if (!Array.isArray(state.sponsors) || state.sponsors.length === 0) {
-      return null;
-    }
-
-    const previousKey = state.lastSponsorKey || (state.currentSponsor ? getSponsorKey(state.currentSponsor) : null);
+    const previousKey = sponsorManager.getLastKey();
     const randomSponsor = pickRandomSponsor(previousKey);
-    const normalized = cloneSponsorData(randomSponsor);
-
-    if (normalized) {
-      const key = getSponsorKey(normalized);
-      if (key) {
-        state.lastSponsorKey = key;
-      }
+    if (randomSponsor) {
+      sponsorManager.rememberSponsorKey(randomSponsor);
     }
-
-    return normalized;
+    return randomSponsor || null;
   };
 
   const immediateRandom = selectRandomSponsor();
@@ -580,9 +1399,9 @@ function ensureModalSponsor(entry, options = {}) {
   applySponsorToModal(null);
 
   const pending =
-    state.sponsorLoadPromise ||
-    (Array.isArray(state.sponsors) && state.sponsors.length > 0
-      ? Promise.resolve(state.sponsors)
+    sponsorManager.getPendingLoad() ||
+    (sponsorManager.hasSponsors()
+      ? Promise.resolve(sponsorManager.getAllSponsors())
       : loadSponsors());
 
   if (!pending || typeof pending.then !== 'function') {
@@ -597,8 +1416,10 @@ function ensureModalSponsor(entry, options = {}) {
         return;
       }
 
-      if (fromDraw && state.currentSponsor) {
-        const remembered = persistSponsorForNumber(number, state.currentSponsor);
+      const latestCurrent = sponsorManager.getCurrentSponsor();
+
+      if (fromDraw && latestCurrent) {
+        const remembered = persistSponsorForNumber(number, latestCurrent);
         if (remembered) {
           applySponsorToModal(remembered);
           return;
@@ -620,8 +1441,10 @@ function ensureModalSponsor(entry, options = {}) {
         return;
       }
 
-      if (fromDraw && state.currentSponsor) {
-        const remembered = persistSponsorForNumber(number, state.currentSponsor);
+      const latestCurrent = sponsorManager.getCurrentSponsor();
+
+      if (fromDraw && latestCurrent) {
+        const remembered = persistSponsorForNumber(number, latestCurrent);
         if (remembered) {
           applySponsorToModal(remembered);
           return;
@@ -632,46 +1455,27 @@ function ensureModalSponsor(entry, options = {}) {
     });
 }
 
-function setOverlayBallLoading(isLoading) {
-  const { drawOverlayBall, drawOverlay } = elements;
-
-  if (!drawOverlayBall) {
-    return;
-  }
-
-  const loadingClass = 'draw-portal__ball--loading';
-  const revealClass = 'draw-portal__ball--revealed';
-
-  if (isLoading) {
-    drawOverlayBall.classList.add(loadingClass);
-    drawOverlayBall.classList.remove(revealClass);
-    drawOverlayBall.setAttribute('aria-busy', 'true');
-    if (drawOverlay) {
-      drawOverlay.classList.add('draw-portal--charging');
-    }
-  } else {
-    drawOverlayBall.classList.remove(loadingClass);
-    drawOverlayBall.removeAttribute('aria-busy');
-    if (drawOverlay) {
-      drawOverlay.classList.remove('draw-portal--charging');
-    }
-  }
-}
-
+/**
+ * Prepara lo sponsor che verrà mostrato nella prossima estrazione.
+ * @returns {Promise<object|null>}
+ */
 async function prepareSponsorForNextDraw() {
-  const sponsors = await loadSponsors();
-
-  if (!Array.isArray(sponsors) || sponsors.length === 0) {
-    state.currentSponsor = null;
-    state.lastSponsorKey = null;
-    applySponsorToOverlay(null);
-    return;
-  }
-
-  const sponsor = pickRandomSponsor(state.lastSponsorKey);
-  state.currentSponsor = sponsor;
-  state.lastSponsorKey = getSponsorKey(sponsor);
-  applySponsorToOverlay(sponsor);
+  setSponsorLoadingState(LoadingStates.LOADING);
+  return sponsorManager
+    .prepareNext()
+    .then((sponsor) => {
+      const nextState = sponsor ? LoadingStates.SUCCESS : LoadingStates.ERROR;
+      setSponsorLoadingState(nextState);
+      applySponsorToOverlay(sponsor);
+      return sponsor;
+    })
+    .catch((error) => {
+      console.warn('Errore durante la preparazione dello sponsor', error);
+      sponsorManager.clearCurrentSponsor();
+      setSponsorLoadingState(LoadingStates.ERROR);
+      applySponsorToOverlay(null);
+      return null;
+    });
 }
 
 function updateHistoryToggleText() {
@@ -868,7 +1672,7 @@ function initializeAudioPreference() {
 
 function persistDrawState() {
   if (typeof window === 'undefined' || !('localStorage' in window)) {
-    return;
+    return true;
   }
 
   try {
@@ -878,9 +1682,11 @@ function persistDrawState() {
     };
     window.localStorage.setItem(DRAW_STATE_STORAGE_KEY, JSON.stringify(payload));
     state.storageErrorMessage = '';
+    return true;
   } catch (error) {
     console.warn('Impossibile salvare lo stato della partita', error);
     state.storageErrorMessage = 'Impossibile salvare lo stato della partita.';
+    return false;
   }
 }
 
@@ -924,7 +1730,7 @@ function restoreDrawStateFromStorage() {
     let latestEntry = null;
 
     state.drawnNumbers = new Set();
-    state.sponsorByNumber.clear();
+    sponsorManager.resetAssignments();
 
     const normalizedHistory = [];
 
@@ -1020,6 +1826,7 @@ function restoreDrawStateFromStorage() {
 }
 
 async function loadNumbers() {
+  setDataLoadingState(LoadingStates.LOADING);
   try {
     const response = await fetch('data.json');
     if (!response.ok) {
@@ -1029,7 +1836,7 @@ async function loadNumbers() {
     state.numbers = data.numbers.sort((a, b) => a.number - b.number);
     state.drawnNumbers = new Set();
     state.drawHistory = [];
-    state.sponsorByNumber = new Map();
+    sponsorManager.resetAssignments();
     state.entriesByNumber = new Map();
     state.storageErrorMessage = '';
     renderBoard();
@@ -1037,6 +1844,7 @@ async function loadNumbers() {
 
     const latestEntry = restoreDrawStateFromStorage();
     updateDrawStatus(latestEntry || undefined);
+    setDataLoadingState(LoadingStates.SUCCESS);
   } catch (error) {
     console.error(error);
     state.storageErrorMessage = '';
@@ -1059,6 +1867,7 @@ async function loadNumbers() {
         floatingSr.textContent = disabledMessage;
       }
     }
+    setDataLoadingState(LoadingStates.ERROR);
   }
 }
 
@@ -1116,12 +1925,35 @@ function renderBoard() {
     cell.classList.toggle('board-cell--drawn', isDrawn);
     cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
 
-    cell.addEventListener('click', () => handleSelection(entry, cell));
     state.cellsByNumber.set(entry.number, cell);
     fragment.appendChild(cell);
   });
 
   board.appendChild(fragment);
+}
+
+function handleBoardCellClick(event) {
+  const { board } = elements;
+  if (!board) {
+    return;
+  }
+
+  const cell = event.target.closest('.board-cell');
+  if (!cell || !board.contains(cell)) {
+    return;
+  }
+
+  const number = Number(cell.dataset.number);
+  if (!Number.isInteger(number)) {
+    return;
+  }
+
+  const entry = getEntryByNumber(number);
+  if (!entry) {
+    return;
+  }
+
+  handleSelection(entry, cell);
 }
 
 function getNumberImage(entry) {
@@ -1143,6 +1975,8 @@ function handleBoardCellImageError(event) {
   }
 
   if (target.dataset.fallbackApplied === 'true') {
+    target.style.display = 'none';
+    target.removeEventListener('error', handleBoardCellImageError);
     return;
   }
 
@@ -1158,6 +1992,7 @@ function applyBoardCellImage(imageEl, entry) {
   imageEl.dataset.fallbackApplied = 'false';
   imageEl.removeEventListener('error', handleBoardCellImageError);
   imageEl.addEventListener('error', handleBoardCellImageError);
+  imageEl.style.removeProperty('display');
   const source = getNumberImage(entry);
   imageEl.src = source;
   return source;
@@ -1176,25 +2011,39 @@ function getEntryByNumber(number) {
 }
 
 
-function handleSelection(
-  entry,
-  cell = state.cellsByNumber.get(entry.number),
-  options = {}
-) {
-  if (!entry || !cell) return;
+/**
+ * Gestisce la selezione e l'apertura del dettaglio di un numero del tabellone.
+ * @param {{ number: number, italian?: string, dialect?: string }} entry
+ * @param {HTMLElement} [cell]
+ * @param {{ fromDraw?: boolean }} [options]
+ */
+function handleSelection(entry, cell, options = {}) {
+  if (!entry) {
+    return;
+  }
+
+  const targetCell = cell || state.cellsByNumber.get(entry.number);
+  if (!targetCell) {
+    return;
+  }
 
   const { fromDraw = false } = options;
 
   if (state.selected) {
     state.selected.classList.remove('board-cell--active');
   }
-  state.selected = cell;
-  cell.classList.add('board-cell--active');
+  state.selected = targetCell;
+  targetCell.classList.add('board-cell--active');
 
   openModal(entry, { fromDraw });
   speakEntry(entry);
 }
 
+/**
+ * Marca un numero come estratto aggiornando stato, cronologia e sponsor.
+ * @param {{ number: number, italian?: string, dialect?: string }} entry
+ * @param {{ animate?: boolean, sponsor?: object|null, recordHistory?: boolean }} [options]
+ */
 function markNumberDrawn(entry, options = {}) {
   if (!entry) {
     return;
@@ -1207,22 +2056,42 @@ function markNumberDrawn(entry, options = {}) {
     return;
   }
 
+  const previousDrawnNumbers = new Set(state.drawnNumbers);
+  const previousHistoryLength = state.drawHistory.length;
+  const hadStoredSponsor = sponsorManager.hasAssignment(number);
+  const previousSponsor = hadStoredSponsor
+    ? sponsorManager.getAssignment(number, { raw: true })
+    : null;
+
   state.drawnNumbers.add(number);
 
-  const sponsorData = persistSponsorForNumber(number, sponsorOverride || state.currentSponsor);
+  const activeSponsor = sponsorOverride || sponsorManager.getCurrentSponsor();
+  const sponsorData = persistSponsorForNumber(number, activeSponsor);
+  const sponsorPayload = sponsorData ? cloneSponsorData(sponsorData) : null;
+  let shouldNotify = true;
 
   if (recordHistory) {
     state.drawHistory.push({
       number,
       italian: entry.italian || '',
       dialect: entry.dialect || '',
-      sponsor: sponsorData ? cloneSponsorData(sponsorData) : null,
+      sponsor: sponsorPayload,
     });
-  }
 
-  if (recordHistory) {
+    const persisted = persistDrawState();
+
+    if (!persisted) {
+      state.drawnNumbers = previousDrawnNumbers;
+      state.drawHistory.splice(previousHistoryLength);
+      if (hadStoredSponsor && previousSponsor) {
+        sponsorManager.restoreAssignment(number, previousSponsor);
+      } else {
+        sponsorManager.restoreAssignment(number, null);
+      }
+      shouldNotify = false;
+    }
+
     updateDrawHistory();
-    persistDrawState();
   }
 
   if (state.storageErrorMessage) {
@@ -1231,9 +2100,10 @@ function markNumberDrawn(entry, options = {}) {
 
   const cell = state.cellsByNumber.get(number);
   if (cell) {
-    cell.classList.add('board-cell--drawn');
-    cell.setAttribute('aria-pressed', 'true');
-    if (animate) {
+    const isDrawn = state.drawnNumbers.has(number);
+    cell.classList.toggle('board-cell--drawn', isDrawn);
+    cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
+    if (isDrawn && animate) {
       cell.classList.add('board-cell--just-drawn');
       let fallbackTimeout = null;
       const finalize = () => {
@@ -1252,10 +2122,28 @@ function markNumberDrawn(entry, options = {}) {
       };
       cell.addEventListener('animationend', handleAnimationEnd);
       fallbackTimeout = window.setTimeout(finalize, 900);
+    } else {
+      cell.classList.remove('board-cell--just-drawn');
     }
+  }
+
+  if (shouldNotify && recordHistory) {
+    dispatchTombolaEvent(TombolaEvents.NUMBER_DRAWN, {
+      entry: {
+        number,
+        italian: entry.italian || '',
+        dialect: entry.dialect || '',
+      },
+      sponsor: sponsorPayload,
+      animate,
+    });
   }
 }
 
+/**
+ * Gestisce il ciclo completo di una nuova estrazione, incluse animazioni,
+ * aggiornamenti dello stato e apertura del dettaglio del numero.
+ */
 async function handleDraw() {
   if (state.isAnimatingDraw) {
     return;
@@ -1302,15 +2190,18 @@ async function handleDraw() {
     }
 
     try {
-      await showDrawAnimation(entry, {
-        onFlightComplete: () => {
-          if (!markRecorded) {
-            markNumberDrawn(entry, { animate: true });
-            markRecorded = true;
-          }
-        },
-      });
-      shouldDelayModal = true;
+      const manager = animationManager;
+      if (manager && typeof manager.showDrawAnimation === 'function') {
+        const didAnimate = await manager.showDrawAnimation(entry, {
+          onFlightComplete: () => {
+            if (!markRecorded) {
+              markNumberDrawn(entry, { animate: true });
+              markRecorded = true;
+            }
+          },
+        });
+        shouldDelayModal = didAnimate && manager.getModalRevealDelay() > 0;
+      }
     } catch (animationError) {
       console.warn('Errore durante l\'animazione di estrazione', animationError);
     }
@@ -1340,8 +2231,12 @@ async function handleDraw() {
     console.warn('Impossibile preparare l\'estrazione', preparationError);
   }
 
-  if (shouldDelayModal && DRAW_TIMELINE.modalRevealDelay > 0) {
-    await sleep(DRAW_TIMELINE.modalRevealDelay);
+  const modalRevealDelay = animationManager
+    ? animationManager.getModalRevealDelay()
+    : Number(DRAW_TIMELINE.modalRevealDelay) || 0;
+
+  if (shouldDelayModal && modalRevealDelay > 0) {
+    await sleep(modalRevealDelay);
   }
 
   handleSelection(entry, state.cellsByNumber.get(entry.number), { fromDraw: true });
@@ -1452,10 +2347,15 @@ function updateDrawHistory() {
   historyList.scrollTop = 0;
 }
 
+/**
+ * Ripristina completamente lo stato della partita e ripulisce gli elementi UI.
+ */
 function performGameReset() {
   if (!state.numbers.length) {
     return;
   }
+
+  const drawnBeforeReset = state.drawnNumbers.size;
 
   if (!elements.modal.hasAttribute('hidden')) {
     closeModal({ returnFocus: false });
@@ -1482,8 +2382,7 @@ function performGameReset() {
 
   state.isAnimatingDraw = false;
 
-  state.currentSponsor = null;
-  state.lastSponsorKey = null;
+  sponsorManager.clearCurrentSponsor();
   applySponsorToOverlay(null);
 
   if (state.currentUtterance && 'speechSynthesis' in window) {
@@ -1493,7 +2392,7 @@ function performGameReset() {
 
   state.drawnNumbers.clear();
   state.drawHistory = [];
-  state.sponsorByNumber.clear();
+  sponsorManager.resetAssignments();
   updateDrawHistory();
   clearPersistedDrawState();
   if (state.storageErrorMessage) {
@@ -1516,6 +2415,11 @@ function performGameReset() {
   if (elements.drawButton) {
     elements.drawButton.focus();
   }
+
+  dispatchTombolaEvent(TombolaEvents.GAME_RESET, {
+    drawnCount: drawnBeforeReset,
+    totalNumbers: state.numbers.length,
+  });
 }
 
 function openResetDialog() {
@@ -1591,6 +2495,9 @@ function closeResetDialog(options = {}) {
   state.resetDialogTrigger = null;
 }
 
+/**
+ * Avvia il flusso di azzeramento della partita, mostrando conferme quando serve.
+ */
 function resetGame() {
   if (!state.numbers.length) {
     return;
@@ -1726,231 +2633,11 @@ function closeModal(options = {}) {
     elements.modalImageFrame.classList.remove('number-dialog__image-frame--placeholder');
   }
   if (returnFocus && state.selected) {
-    state.selected.focus();
-  }
-}
-
-async function animateBallFlight(entry, fromRect, targetCell, options = {}) {
-  if (!targetCell || !fromRect) {
-    return;
-  }
-
-  const { prefersReducedMotion = false, duration = DRAW_TIMELINE.flightDuration } = options;
-
-  targetCell.classList.add('board-cell--incoming');
-
-  const finalize = () => {
-    targetCell.classList.remove('board-cell--incoming');
-  };
-
-  try {
-    targetCell.scrollIntoView({
-      behavior: prefersReducedMotion ? 'auto' : 'smooth',
-      block: 'center',
-      inline: 'center',
-    });
-  } catch (error) {
-    targetCell.scrollIntoView();
-  }
-
-  await waitForScrollIdle({
-    timeout: prefersReducedMotion ? 320 : 900,
-    idleThreshold: prefersReducedMotion ? 80 : 160,
-  });
-
-  if (prefersReducedMotion) {
-    await sleep(220);
-    finalize();
-    return;
-  }
-
-  const { wrapper: flightBall } = createTokenElement(entry.number, {
-    tag: 'div',
-    className: 'draw-flight-ball',
-  });
-
-  const startX = fromRect.left + fromRect.width / 2;
-  const startY = fromRect.top + fromRect.height / 2;
-  flightBall.style.width = `${fromRect.width}px`;
-  flightBall.style.height = `${fromRect.height}px`;
-  flightBall.style.left = `${startX}px`;
-  flightBall.style.top = `${startY}px`;
-  document.body.appendChild(flightBall);
-
-  if (typeof flightBall.animate !== 'function') {
-    await sleep(duration);
-    flightBall.remove();
-    finalize();
-    return;
-  }
-
-  const targetRect = targetCell.getBoundingClientRect();
-  const endX = targetRect.left + targetRect.width / 2;
-  const endY = targetRect.top + targetRect.height / 2;
-  const deltaX = endX - startX;
-  const deltaY = endY - startY;
-  const scale = Math.max(Math.min(targetRect.width / fromRect.width || 1, 1.35), 0.6);
-
-  await new Promise((resolve) => {
-    const cleanup = () => {
-      flightBall.remove();
-      finalize();
-      resolve();
-    };
-
-    try {
-      const animation = flightBall.animate(
-        [
-          { transform: 'translate(-50%, -50%) scale(0.98)', opacity: 0.98 },
-          {
-            transform: `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(${scale})`,
-            opacity: 0.94,
-          },
-        ],
-        {
-          duration,
-          easing: 'cubic-bezier(0.18, 0.82, 0.24, 1.06)',
-          fill: 'forwards',
-        }
-      );
-
-      animation.addEventListener('finish', cleanup, { once: true });
-      animation.addEventListener('cancel', cleanup, { once: true });
-    } catch (error) {
-      cleanup();
-    }
-  });
-}
-
-async function showDrawAnimation(entry, options = {}) {
-  const { drawOverlay, drawOverlayNumber, drawOverlayBall, drawOverlayAnnouncement } = elements;
-  const targetCell = state.cellsByNumber.get(entry.number);
-  const { onFlightComplete = null } = options;
-
-  let flightNotified = false;
-  const notifyFlightComplete = () => {
-    if (flightNotified) {
-      return;
-    }
-    flightNotified = true;
-    if (typeof onFlightComplete === 'function') {
-      try {
-        onFlightComplete();
-      } catch (error) {
-        console.warn('Errore durante l\'aggiornamento della casella estratta', error);
-      }
-    }
-  };
-
-  if (!drawOverlay || !drawOverlayNumber || !drawOverlayBall) {
-    if (targetCell) {
-      try {
-        targetCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-      } catch (error) {
-        targetCell.scrollIntoView();
-      }
-    }
-    return;
-  }
-
-  const prefersReducedMotion =
-    typeof window !== 'undefined' &&
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  const setAnnouncement = (text) => {
-    if (drawOverlayAnnouncement) {
-      drawOverlayAnnouncement.textContent = text;
-    }
-  };
-
-  const revealNumber = () => {
-    setOverlayBallLoading(false);
-    drawOverlayNumber.textContent = entry.number;
-    drawOverlayBall.classList.add('draw-portal__ball--revealed');
-    setAnnouncement(`Numero ${entry.number}`);
-  };
-
-  const hideOverlay = (immediate = false) => {
-    drawOverlay.classList.remove('draw-portal--visible', 'draw-portal--closing', 'draw-portal--flight');
-    const finalize = () => {
-      drawOverlay.setAttribute('aria-hidden', 'true');
-      drawOverlay.hidden = true;
-    };
-    if (immediate) {
-      finalize();
+    if (document.body.contains(state.selected)) {
+      state.selected.focus();
     } else {
-      window.setTimeout(finalize, 20);
+      state.selected = null;
     }
-  };
-
-  setOverlayBallLoading(true);
-  drawOverlayBall.classList.remove('draw-portal__ball--revealed');
-  drawOverlayNumber.textContent = '';
-  setAnnouncement('');
-
-  drawOverlay.hidden = false;
-  drawOverlay.setAttribute('aria-hidden', 'false');
-  drawOverlay.classList.remove('draw-portal--closing');
-  drawOverlay.classList.remove('draw-portal--flight');
-  drawOverlay.classList.add('draw-portal--visible');
-
-  try {
-    if (prefersReducedMotion) {
-      const fromRect = drawOverlayBall.getBoundingClientRect();
-      await sleep(DRAW_TIMELINE.reducedMotionHold);
-      revealNumber();
-
-      if (targetCell) {
-        drawOverlay.classList.add('draw-portal--flight');
-        await animateBallFlight(entry, fromRect, targetCell, {
-          prefersReducedMotion: true,
-          duration: DRAW_TIMELINE.reducedMotionFlight,
-        });
-      } else {
-        drawOverlay.classList.add('draw-portal--flight');
-        await sleep(DRAW_TIMELINE.reducedMotionFlight);
-      }
-
-      notifyFlightComplete();
-
-      drawOverlay.classList.add('draw-portal--closing');
-      await sleep(DRAW_TIMELINE.overlayHideDelay);
-      return;
-    }
-
-    await sleep(DRAW_TIMELINE.intro);
-
-    await sleep(DRAW_TIMELINE.prepareHold);
-    await sleep(DRAW_TIMELINE.revealAccent);
-    revealNumber();
-
-    await sleep(DRAW_TIMELINE.celebrationHold);
-
-    const fromRect = drawOverlayBall.getBoundingClientRect();
-    drawOverlay.classList.add('draw-portal--closing');
-
-    await sleep(DRAW_TIMELINE.flightDelay);
-    drawOverlay.classList.add('draw-portal--flight');
-    if (targetCell) {
-      await animateBallFlight(entry, fromRect, targetCell, {
-        duration: DRAW_TIMELINE.flightDuration,
-        prefersReducedMotion,
-      });
-    } else {
-      await sleep(DRAW_TIMELINE.flightDuration);
-    }
-
-    notifyFlightComplete();
-
-    await sleep(DRAW_TIMELINE.overlayHideDelay);
-  } finally {
-    setOverlayBallLoading(false);
-    hideOverlay(true);
-    drawOverlay.classList.remove('draw-portal--flight');
-    drawOverlayBall.classList.remove('draw-portal__ball--revealed');
-    drawOverlayNumber.textContent = '';
-    setAnnouncement('');
   }
 }
 
@@ -2083,6 +2770,8 @@ function updateDrawStatus(latestEntry) {
 
   const total = state.numbers.length;
   const drawnCount = state.drawnNumbers.size;
+  const isDataLoading = state.dataLoadingState === LoadingStates.LOADING;
+  const isDataError = state.dataLoadingState === LoadingStates.ERROR;
 
   let normalizedEntry = null;
 
@@ -2154,7 +2843,11 @@ function updateDrawStatus(latestEntry) {
 
   let message = state.storageErrorMessage || 'Caricamento del tabellone…';
 
-  if (!state.storageErrorMessage && total > 0) {
+  if (isDataLoading) {
+    message = 'Caricamento del tabellone…';
+  } else if (isDataError) {
+    message = 'Errore nel caricamento dei numeri.';
+  } else if (!state.storageErrorMessage && total > 0) {
     if (normalizedEntry) {
       const detail = normalizedEntry.italian || normalizedEntry.dialect || '';
       message = `Estratto il numero ${normalizedEntry.number}`;
@@ -2179,12 +2872,16 @@ function updateDrawStatus(latestEntry) {
   const finished = drawnCount === total && total > 0;
 
   if (drawButton) {
-    drawButton.disabled = noNumbersLoaded || finished;
+    drawButton.disabled = noNumbersLoaded || finished || isDataLoading || isDataError;
 
     let drawLabel = 'Estrai numero';
 
     if (finished) {
       drawLabel = 'Fine estrazioni';
+    } else if (isDataLoading) {
+      drawLabel = 'Caricamento in corso';
+    } else if (isDataError) {
+      drawLabel = 'Estrazione non disponibile';
     } else if (!noNumbersLoaded && drawnCount === 0) {
       drawLabel = 'Estrai primo numero';
     } else if (!noNumbersLoaded && drawnCount > 0) {
@@ -2202,11 +2899,16 @@ function updateDrawStatus(latestEntry) {
   if (elements.floatingDrawButton) {
     const floatingButton = elements.floatingDrawButton;
     const floatingSr = floatingButton.querySelector('[data-floating-draw-sr]');
-    floatingButton.disabled = noNumbersLoaded || finished;
+    floatingButton.disabled =
+      noNumbersLoaded || finished || isDataLoading || isDataError;
 
     let srMessage = 'Estrai numero';
 
-    if (noNumbersLoaded) {
+    if (isDataLoading) {
+      srMessage = 'Caricamento del tabellone in corso';
+    } else if (isDataError) {
+      srMessage = 'Estrazione non disponibile';
+    } else if (noNumbersLoaded) {
       srMessage = 'Caricamento del tabellone in corso';
     } else if (finished) {
       srMessage = 'Tutte le estrazioni sono completate';
@@ -2225,11 +2927,20 @@ function updateDrawStatus(latestEntry) {
   }
 
   if (resetButton) {
-    resetButton.disabled = drawnCount === 0;
+    resetButton.disabled = drawnCount === 0 || isDataLoading || isDataError;
   }
 }
 
 function setupEventListeners() {
+  if (elements.board) {
+    elements.board.addEventListener('click', handleBoardCellClick);
+    registerCleanup(() => {
+      if (elements.board) {
+        elements.board.removeEventListener('click', handleBoardCellClick);
+      }
+    });
+  }
+
   elements.modalClose.addEventListener('click', closeModal);
   if (elements.modalDialectPlay) {
     elements.modalDialectPlay.addEventListener('click', () => {
@@ -2347,18 +3058,25 @@ function setupEventListeners() {
     });
   }
 
+  const handleHistoryMediaChange = () => {
+    closeHistoryPanel({ immediate: true });
+    syncHistoryPanelToLayout({ immediate: true });
+  };
+
   if (historyMediaMatcher && typeof historyMediaMatcher.addEventListener === 'function') {
-    historyMediaMatcher.addEventListener('change', () => {
-      closeHistoryPanel({ immediate: true });
-      syncHistoryPanelToLayout({ immediate: true });
+    historyMediaMatcher.addEventListener('change', handleHistoryMediaChange);
+    registerCleanup(() => {
+      historyMediaMatcher.removeEventListener('change', handleHistoryMediaChange);
     });
   } else if (
     historyMediaMatcher &&
     typeof historyMediaMatcher.addListener === 'function'
   ) {
-    historyMediaMatcher.addListener(() => {
-      closeHistoryPanel({ immediate: true });
-      syncHistoryPanelToLayout({ immediate: true });
+    historyMediaMatcher.addListener(handleHistoryMediaChange);
+    registerCleanup(() => {
+      if (typeof historyMediaMatcher.removeListener === 'function') {
+        historyMediaMatcher.removeListener(handleHistoryMediaChange);
+      }
     });
   }
 }
@@ -2367,8 +3085,9 @@ function init() {
   initializeAudioPreference();
   setupEventListeners();
   syncHistoryPanelToLayout({ immediate: true });
+  updateLoadingUI();
   loadNumbers();
-  loadSponsors();
+  loadSponsors().catch(() => {});
 }
 
 if (document.readyState === 'loading') {
