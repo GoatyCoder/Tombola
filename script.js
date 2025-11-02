@@ -120,12 +120,6 @@ const DRAW_TIMELINE = Object.freeze({
   modalRevealDelay: 520,
 });
 
-const MOBILE_HISTORY_QUERY = 'screen and (max-width: 56.24rem)';
-const historyMediaMatcher =
-  typeof window !== 'undefined' && 'matchMedia' in window
-    ? window.matchMedia(MOBILE_HISTORY_QUERY)
-    : { matches: false };
-
 function sanitizeUrl(url) {
   if (typeof url !== 'string') {
     return '#';
@@ -1644,16 +1638,11 @@ function updateHistoryToggleText() {
     return;
   }
 
-  const mobileLayout = Boolean(historyMediaMatcher.matches);
   const { dataset } = historyToggle;
-
-  let nextLabel = dataset.labelDesktop || 'Cronologia';
-
-  if (mobileLayout) {
-    nextLabel = state.historyOpen
-      ? dataset.labelMobileOpen || 'Chiudi cronologia'
-      : dataset.labelMobileClosed || 'Cronologia';
-  }
+  const openLabel =
+    dataset.labelMobileOpen || dataset.labelDesktopOpen || 'Chiudi cronologia';
+  const closedLabel = dataset.labelMobileClosed || dataset.labelDesktop || 'Cronologia';
+  const nextLabel = state.historyOpen ? openLabel : closedLabel;
 
   historyToggleLabel.textContent = nextLabel;
   historyToggle.setAttribute('aria-label', nextLabel);
@@ -1667,25 +1656,6 @@ function syncHistoryPanelToLayout(options = {}) {
   if (!historyPanel) {
     state.historyOpen = false;
     updateHistoryToggleText();
-    return;
-  }
-
-  const mobileLayout = Boolean(historyMediaMatcher.matches);
-
-  if (!mobileLayout) {
-    state.historyOpen = false;
-    historyPanel.classList.remove('history--open');
-    historyPanel.setAttribute('aria-hidden', 'false');
-    historyPanel.hidden = false;
-    if (historyToggle) {
-      historyToggle.setAttribute('aria-expanded', 'false');
-    }
-    updateHistoryToggleText();
-    if (historyScrim) {
-      historyScrim.classList.remove('history-scrim--visible');
-      historyScrim.hidden = true;
-      historyScrim.setAttribute('aria-hidden', 'true');
-    }
     return;
   }
 
@@ -1753,14 +1723,6 @@ function closeHistoryPanel(options = {}) {
 }
 
 function toggleHistoryPanel() {
-  if (!historyMediaMatcher.matches) {
-    if (elements.historyPanel) {
-      elements.historyPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-    updateHistoryToggleText();
-    return;
-  }
-
   if (state.historyOpen) {
     closeHistoryPanel();
   } else {
@@ -2353,7 +2315,7 @@ async function handleDraw() {
     return;
   }
 
-  if (state.historyOpen && historyMediaMatcher.matches) {
+  if (state.historyOpen) {
     closeHistoryPanel();
   }
 
@@ -3278,7 +3240,7 @@ function setupEventListeners() {
       return;
     }
 
-    if (state.historyOpen && historyMediaMatcher.matches) {
+    if (state.historyOpen) {
       closeHistoryPanel();
     }
   });
@@ -3311,27 +3273,6 @@ function setupEventListeners() {
     });
   }
 
-  const handleHistoryMediaChange = () => {
-    closeHistoryPanel({ immediate: true });
-    syncHistoryPanelToLayout({ immediate: true });
-  };
-
-  if (historyMediaMatcher && typeof historyMediaMatcher.addEventListener === 'function') {
-    historyMediaMatcher.addEventListener('change', handleHistoryMediaChange);
-    registerCleanup(() => {
-      historyMediaMatcher.removeEventListener('change', handleHistoryMediaChange);
-    });
-  } else if (
-    historyMediaMatcher &&
-    typeof historyMediaMatcher.addListener === 'function'
-  ) {
-    historyMediaMatcher.addListener(handleHistoryMediaChange);
-    registerCleanup(() => {
-      if (typeof historyMediaMatcher.removeListener === 'function') {
-        historyMediaMatcher.removeListener(handleHistoryMediaChange);
-      }
-    });
-  }
 }
 
 function init() {
