@@ -1098,7 +1098,7 @@ button {
   left: auto;
   display: grid;
   gap: var(--space-xs);
-  z-index: 45;
+  z-index: 20;
 }
 
 .fab {
