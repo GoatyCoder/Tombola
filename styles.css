@@ -136,25 +136,38 @@ button {
   align-items: start;
 }
 
+
 .hero__brand {
   display: flex;
-  align-items: flex-start;
-  gap: var(--space-lg);
-  flex-wrap: wrap;
-}
-
-.hero__titles {
-  display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  align-items: flex-start;
+  gap: clamp(0.9rem, 2vw, 1.2rem);
 }
 
+.hero__presenter-group {
+  display: inline-flex;
+  align-items: center;
+  gap: clamp(0.45rem, 1.5vw, 0.75rem);
+  white-space: nowrap;
+}
+
+.hero__presenter-name,
 .hero__presenter {
-  font-size: clamp(0.9rem, 1.6vw, 1.05rem);
-  letter-spacing: 0.18em;
+  font-size: clamp(0.75rem, 1.2vw, 0.95rem);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   font-weight: 600;
   color: var(--accent-strong);
+}
+
+.hero__presenter-logo {
+  display: inline-flex;
+  align-items: center;
+}
+
+.hero__presenter-logo img {
+  width: auto;
+  height: clamp(1.4rem, 4vw, 1.9rem);
 }
 
 .hero__title {
