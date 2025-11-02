@@ -474,6 +474,360 @@ const sponsorManager = new SponsorManager({
   },
 });
 
+/**
+ * Gestisce le animazioni del portale di estrazione, rispettando le preferenze
+ * di movimento dell'utente e fornendo un punto centrale per eventuali cleanup.
+ */
+class AnimationManager {
+  constructor(options = {}) {
+    const { elements: uiElements, timeline = DRAW_TIMELINE } = options;
+
+    this.elements = uiElements || {};
+    this.timeline = { ...timeline };
+    this.prefersReducedMotion = false;
+    this.motionMatcher = null;
+    this.motionChangeHandler = null;
+    this.cleanupCallbacks = new Set();
+
+    this.initializeMotionPreferences();
+  }
+
+  initializeMotionPreferences() {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return;
+    }
+
+    const matcher = window.matchMedia('(prefers-reduced-motion: reduce)');
+    this.motionMatcher = matcher;
+    this.prefersReducedMotion = Boolean(matcher.matches);
+
+    const handleChange = (event) => {
+      if (event && typeof event.matches === 'boolean') {
+        this.prefersReducedMotion = event.matches;
+      } else if (this.motionMatcher) {
+        this.prefersReducedMotion = Boolean(this.motionMatcher.matches);
+      }
+    };
+
+    this.motionChangeHandler = handleChange;
+
+    if (typeof matcher.addEventListener === 'function') {
+      matcher.addEventListener('change', handleChange);
+      this.cleanupCallbacks.add(() => matcher.removeEventListener('change', handleChange));
+    } else if (typeof matcher.addListener === 'function') {
+      matcher.addListener(handleChange);
+      this.cleanupCallbacks.add(() => {
+        if (typeof matcher.removeListener === 'function') {
+          matcher.removeListener(handleChange);
+        }
+      });
+    }
+  }
+
+  prefersReducedMotionEnabled() {
+    if (typeof this.prefersReducedMotion === 'boolean') {
+      return this.prefersReducedMotion;
+    }
+
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return false;
+    }
+
+    try {
+      return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  setOverlayBallLoading(isLoading) {
+    const { drawOverlayBall, drawOverlay } = this.elements;
+
+    if (!drawOverlayBall) {
+      return;
+    }
+
+    const loadingClass = 'draw-portal__ball--loading';
+    const revealClass = 'draw-portal__ball--revealed';
+
+    if (isLoading) {
+      drawOverlayBall.classList.add(loadingClass);
+      drawOverlayBall.classList.remove(revealClass);
+      drawOverlayBall.setAttribute('aria-busy', 'true');
+      if (drawOverlay) {
+        drawOverlay.classList.add('draw-portal--charging');
+      }
+    } else {
+      drawOverlayBall.classList.remove(loadingClass);
+      drawOverlayBall.removeAttribute('aria-busy');
+      if (drawOverlay) {
+        drawOverlay.classList.remove('draw-portal--charging');
+      }
+    }
+  }
+
+  async animateBallFlight(entry, fromRect, targetCell, options = {}) {
+    if (!targetCell || !fromRect) {
+      return;
+    }
+
+    const {
+      prefersReducedMotion = false,
+      duration = this.timeline.flightDuration,
+    } = options;
+
+    targetCell.classList.add('board-cell--incoming');
+
+    const finalize = () => {
+      targetCell.classList.remove('board-cell--incoming');
+    };
+
+    try {
+      targetCell.scrollIntoView({
+        behavior: prefersReducedMotion ? 'auto' : 'smooth',
+        block: 'center',
+        inline: 'center',
+      });
+    } catch (error) {
+      targetCell.scrollIntoView();
+    }
+
+    await waitForScrollIdle({
+      timeout: prefersReducedMotion ? 320 : 900,
+      idleThreshold: prefersReducedMotion ? 80 : 160,
+    });
+
+    if (prefersReducedMotion) {
+      await sleep(220);
+      finalize();
+      return;
+    }
+
+    const { wrapper: flightBall } = createTokenElement(entry.number, {
+      tag: 'div',
+      className: 'draw-flight-ball',
+    });
+
+    const startX = fromRect.left + fromRect.width / 2;
+    const startY = fromRect.top + fromRect.height / 2;
+    flightBall.style.width = `${fromRect.width}px`;
+    flightBall.style.height = `${fromRect.height}px`;
+    flightBall.style.left = `${startX}px`;
+    flightBall.style.top = `${startY}px`;
+    document.body.appendChild(flightBall);
+
+    if (typeof flightBall.animate !== 'function') {
+      await sleep(duration);
+      flightBall.remove();
+      finalize();
+      return;
+    }
+
+    const targetRect = targetCell.getBoundingClientRect();
+    const endX = targetRect.left + targetRect.width / 2;
+    const endY = targetRect.top + targetRect.height / 2;
+    const deltaX = endX - startX;
+    const deltaY = endY - startY;
+    const scale = Math.max(Math.min(targetRect.width / fromRect.width || 1, 1.35), 0.6);
+
+    await new Promise((resolve) => {
+      const cleanup = () => {
+        flightBall.remove();
+        finalize();
+        resolve();
+      };
+
+      try {
+        const animation = flightBall.animate(
+          [
+            { transform: 'translate(-50%, -50%) scale(0.98)', opacity: 0.98 },
+            {
+              transform: `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(${scale})`,
+              opacity: 0.94,
+            },
+          ],
+          {
+            duration,
+            easing: 'cubic-bezier(0.18, 0.82, 0.24, 1.06)',
+            fill: 'forwards',
+          }
+        );
+
+        animation.addEventListener('finish', cleanup, { once: true });
+        animation.addEventListener('cancel', cleanup, { once: true });
+      } catch (error) {
+        cleanup();
+      }
+    });
+  }
+
+  async showDrawAnimation(entry, options = {}) {
+    const { onFlightComplete = null } = options;
+    const {
+      drawOverlay,
+      drawOverlayNumber,
+      drawOverlayBall,
+      drawOverlayAnnouncement,
+    } = this.elements;
+    const targetCell = state.cellsByNumber.get(entry.number);
+
+    let flightNotified = false;
+    const notifyFlightComplete = () => {
+      if (flightNotified) {
+        return;
+      }
+      flightNotified = true;
+      if (typeof onFlightComplete === 'function') {
+        try {
+          onFlightComplete();
+        } catch (error) {
+          console.warn("Errore durante l'aggiornamento della casella estratta", error);
+        }
+      }
+    };
+
+    if (!drawOverlay || !drawOverlayNumber || !drawOverlayBall) {
+      if (targetCell) {
+        try {
+          targetCell.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'center',
+          });
+        } catch (error) {
+          targetCell.scrollIntoView();
+        }
+      }
+      return false;
+    }
+
+    const prefersReducedMotion = this.prefersReducedMotionEnabled();
+    const setAnnouncement = (text) => {
+      if (drawOverlayAnnouncement) {
+        drawOverlayAnnouncement.textContent = text;
+      }
+    };
+
+    const revealNumber = () => {
+      this.setOverlayBallLoading(false);
+      drawOverlayNumber.textContent = entry.number;
+      drawOverlayBall.classList.add('draw-portal__ball--revealed');
+      setAnnouncement(`Numero ${entry.number}`);
+    };
+
+    const hideOverlay = (immediate = false) => {
+      drawOverlay.classList.remove(
+        'draw-portal--visible',
+        'draw-portal--closing',
+        'draw-portal--flight'
+      );
+      const finalize = () => {
+        drawOverlay.setAttribute('aria-hidden', 'true');
+        drawOverlay.hidden = true;
+      };
+      if (immediate) {
+        finalize();
+      } else {
+        window.setTimeout(finalize, 20);
+      }
+    };
+
+    this.setOverlayBallLoading(true);
+    drawOverlayBall.classList.remove('draw-portal__ball--revealed');
+    drawOverlayNumber.textContent = '';
+    setAnnouncement('');
+
+    drawOverlay.hidden = false;
+    drawOverlay.setAttribute('aria-hidden', 'false');
+    drawOverlay.classList.remove('draw-portal--closing');
+    drawOverlay.classList.remove('draw-portal--flight');
+    drawOverlay.classList.add('draw-portal--visible');
+
+    let didAnimate = true;
+
+    try {
+      if (prefersReducedMotion) {
+        const fromRect = drawOverlayBall.getBoundingClientRect();
+        await sleep(this.timeline.reducedMotionHold);
+        revealNumber();
+
+        drawOverlay.classList.add('draw-portal--flight');
+        if (targetCell) {
+          await this.animateBallFlight(entry, fromRect, targetCell, {
+            prefersReducedMotion: true,
+            duration: this.timeline.reducedMotionFlight,
+          });
+        } else {
+          await sleep(this.timeline.reducedMotionFlight);
+        }
+
+        notifyFlightComplete();
+
+        drawOverlay.classList.add('draw-portal--closing');
+        await sleep(this.timeline.overlayHideDelay);
+      } else {
+        await sleep(this.timeline.intro);
+        await sleep(this.timeline.prepareHold);
+        await sleep(this.timeline.revealAccent);
+        revealNumber();
+
+        await sleep(this.timeline.celebrationHold);
+
+        const fromRect = drawOverlayBall.getBoundingClientRect();
+        drawOverlay.classList.add('draw-portal--closing');
+
+        await sleep(this.timeline.flightDelay);
+        drawOverlay.classList.add('draw-portal--flight');
+        if (targetCell) {
+          await this.animateBallFlight(entry, fromRect, targetCell, {
+            duration: this.timeline.flightDuration,
+            prefersReducedMotion,
+          });
+        } else {
+          await sleep(this.timeline.flightDuration);
+        }
+
+        notifyFlightComplete();
+
+        await sleep(this.timeline.overlayHideDelay);
+      }
+    } finally {
+      this.setOverlayBallLoading(false);
+      hideOverlay(true);
+      drawOverlay.classList.remove('draw-portal--flight');
+      drawOverlayBall.classList.remove('draw-portal__ball--revealed');
+      drawOverlayNumber.textContent = '';
+      setAnnouncement('');
+    }
+
+    return didAnimate;
+  }
+
+  getModalRevealDelay() {
+    const delay = Number(this.timeline.modalRevealDelay);
+    return Number.isFinite(delay) && delay > 0 ? delay : 0;
+  }
+
+  destroy() {
+    if (this.cleanupCallbacks.size === 0) {
+      return;
+    }
+
+    Array.from(this.cleanupCallbacks).forEach((callback) => {
+      try {
+        callback();
+      } catch (error) {
+        console.warn('Errore durante la pulizia delle animazioni', error);
+      } finally {
+        this.cleanupCallbacks.delete(callback);
+      }
+    });
+  }
+}
+
+const animationManager = new AnimationManager({ elements, timeline: DRAW_TIMELINE });
+registerCleanup(() => animationManager.destroy());
+
 function loadSponsors() {
   return sponsorManager.load().then((sponsors) => {
     if (!Array.isArray(sponsors) || sponsors.length === 0) {
@@ -897,32 +1251,6 @@ function ensureModalSponsor(entry, options = {}) {
 
       applySponsorToModal(null);
     });
-}
-
-function setOverlayBallLoading(isLoading) {
-  const { drawOverlayBall, drawOverlay } = elements;
-
-  if (!drawOverlayBall) {
-    return;
-  }
-
-  const loadingClass = 'draw-portal__ball--loading';
-  const revealClass = 'draw-portal__ball--revealed';
-
-  if (isLoading) {
-    drawOverlayBall.classList.add(loadingClass);
-    drawOverlayBall.classList.remove(revealClass);
-    drawOverlayBall.setAttribute('aria-busy', 'true');
-    if (drawOverlay) {
-      drawOverlay.classList.add('draw-portal--charging');
-    }
-  } else {
-    drawOverlayBall.classList.remove(loadingClass);
-    drawOverlayBall.removeAttribute('aria-busy');
-    if (drawOverlay) {
-      drawOverlay.classList.remove('draw-portal--charging');
-    }
-  }
 }
 
 async function prepareSponsorForNextDraw() {
@@ -1616,15 +1944,18 @@ async function handleDraw() {
     }
 
     try {
-      await showDrawAnimation(entry, {
-        onFlightComplete: () => {
-          if (!markRecorded) {
-            markNumberDrawn(entry, { animate: true });
-            markRecorded = true;
-          }
-        },
-      });
-      shouldDelayModal = true;
+      const manager = animationManager;
+      if (manager && typeof manager.showDrawAnimation === 'function') {
+        const didAnimate = await manager.showDrawAnimation(entry, {
+          onFlightComplete: () => {
+            if (!markRecorded) {
+              markNumberDrawn(entry, { animate: true });
+              markRecorded = true;
+            }
+          },
+        });
+        shouldDelayModal = didAnimate && manager.getModalRevealDelay() > 0;
+      }
     } catch (animationError) {
       console.warn('Errore durante l\'animazione di estrazione', animationError);
     }
@@ -1654,8 +1985,12 @@ async function handleDraw() {
     console.warn('Impossibile preparare l\'estrazione', preparationError);
   }
 
-  if (shouldDelayModal && DRAW_TIMELINE.modalRevealDelay > 0) {
-    await sleep(DRAW_TIMELINE.modalRevealDelay);
+  const modalRevealDelay = animationManager
+    ? animationManager.getModalRevealDelay()
+    : Number(DRAW_TIMELINE.modalRevealDelay) || 0;
+
+  if (shouldDelayModal && modalRevealDelay > 0) {
+    await sleep(modalRevealDelay);
   }
 
   handleSelection(entry, state.cellsByNumber.get(entry.number), { fromDraw: true });
@@ -2039,231 +2374,11 @@ function closeModal(options = {}) {
     elements.modalImageFrame.classList.remove('number-dialog__image-frame--placeholder');
   }
   if (returnFocus && state.selected) {
-    state.selected.focus();
-  }
-}
-
-async function animateBallFlight(entry, fromRect, targetCell, options = {}) {
-  if (!targetCell || !fromRect) {
-    return;
-  }
-
-  const { prefersReducedMotion = false, duration = DRAW_TIMELINE.flightDuration } = options;
-
-  targetCell.classList.add('board-cell--incoming');
-
-  const finalize = () => {
-    targetCell.classList.remove('board-cell--incoming');
-  };
-
-  try {
-    targetCell.scrollIntoView({
-      behavior: prefersReducedMotion ? 'auto' : 'smooth',
-      block: 'center',
-      inline: 'center',
-    });
-  } catch (error) {
-    targetCell.scrollIntoView();
-  }
-
-  await waitForScrollIdle({
-    timeout: prefersReducedMotion ? 320 : 900,
-    idleThreshold: prefersReducedMotion ? 80 : 160,
-  });
-
-  if (prefersReducedMotion) {
-    await sleep(220);
-    finalize();
-    return;
-  }
-
-  const { wrapper: flightBall } = createTokenElement(entry.number, {
-    tag: 'div',
-    className: 'draw-flight-ball',
-  });
-
-  const startX = fromRect.left + fromRect.width / 2;
-  const startY = fromRect.top + fromRect.height / 2;
-  flightBall.style.width = `${fromRect.width}px`;
-  flightBall.style.height = `${fromRect.height}px`;
-  flightBall.style.left = `${startX}px`;
-  flightBall.style.top = `${startY}px`;
-  document.body.appendChild(flightBall);
-
-  if (typeof flightBall.animate !== 'function') {
-    await sleep(duration);
-    flightBall.remove();
-    finalize();
-    return;
-  }
-
-  const targetRect = targetCell.getBoundingClientRect();
-  const endX = targetRect.left + targetRect.width / 2;
-  const endY = targetRect.top + targetRect.height / 2;
-  const deltaX = endX - startX;
-  const deltaY = endY - startY;
-  const scale = Math.max(Math.min(targetRect.width / fromRect.width || 1, 1.35), 0.6);
-
-  await new Promise((resolve) => {
-    const cleanup = () => {
-      flightBall.remove();
-      finalize();
-      resolve();
-    };
-
-    try {
-      const animation = flightBall.animate(
-        [
-          { transform: 'translate(-50%, -50%) scale(0.98)', opacity: 0.98 },
-          {
-            transform: `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(${scale})`,
-            opacity: 0.94,
-          },
-        ],
-        {
-          duration,
-          easing: 'cubic-bezier(0.18, 0.82, 0.24, 1.06)',
-          fill: 'forwards',
-        }
-      );
-
-      animation.addEventListener('finish', cleanup, { once: true });
-      animation.addEventListener('cancel', cleanup, { once: true });
-    } catch (error) {
-      cleanup();
-    }
-  });
-}
-
-async function showDrawAnimation(entry, options = {}) {
-  const { drawOverlay, drawOverlayNumber, drawOverlayBall, drawOverlayAnnouncement } = elements;
-  const targetCell = state.cellsByNumber.get(entry.number);
-  const { onFlightComplete = null } = options;
-
-  let flightNotified = false;
-  const notifyFlightComplete = () => {
-    if (flightNotified) {
-      return;
-    }
-    flightNotified = true;
-    if (typeof onFlightComplete === 'function') {
-      try {
-        onFlightComplete();
-      } catch (error) {
-        console.warn('Errore durante l\'aggiornamento della casella estratta', error);
-      }
-    }
-  };
-
-  if (!drawOverlay || !drawOverlayNumber || !drawOverlayBall) {
-    if (targetCell) {
-      try {
-        targetCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-      } catch (error) {
-        targetCell.scrollIntoView();
-      }
-    }
-    return;
-  }
-
-  const prefersReducedMotion =
-    typeof window !== 'undefined' &&
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  const setAnnouncement = (text) => {
-    if (drawOverlayAnnouncement) {
-      drawOverlayAnnouncement.textContent = text;
-    }
-  };
-
-  const revealNumber = () => {
-    setOverlayBallLoading(false);
-    drawOverlayNumber.textContent = entry.number;
-    drawOverlayBall.classList.add('draw-portal__ball--revealed');
-    setAnnouncement(`Numero ${entry.number}`);
-  };
-
-  const hideOverlay = (immediate = false) => {
-    drawOverlay.classList.remove('draw-portal--visible', 'draw-portal--closing', 'draw-portal--flight');
-    const finalize = () => {
-      drawOverlay.setAttribute('aria-hidden', 'true');
-      drawOverlay.hidden = true;
-    };
-    if (immediate) {
-      finalize();
+    if (document.body.contains(state.selected)) {
+      state.selected.focus();
     } else {
-      window.setTimeout(finalize, 20);
+      state.selected = null;
     }
-  };
-
-  setOverlayBallLoading(true);
-  drawOverlayBall.classList.remove('draw-portal__ball--revealed');
-  drawOverlayNumber.textContent = '';
-  setAnnouncement('');
-
-  drawOverlay.hidden = false;
-  drawOverlay.setAttribute('aria-hidden', 'false');
-  drawOverlay.classList.remove('draw-portal--closing');
-  drawOverlay.classList.remove('draw-portal--flight');
-  drawOverlay.classList.add('draw-portal--visible');
-
-  try {
-    if (prefersReducedMotion) {
-      const fromRect = drawOverlayBall.getBoundingClientRect();
-      await sleep(DRAW_TIMELINE.reducedMotionHold);
-      revealNumber();
-
-      if (targetCell) {
-        drawOverlay.classList.add('draw-portal--flight');
-        await animateBallFlight(entry, fromRect, targetCell, {
-          prefersReducedMotion: true,
-          duration: DRAW_TIMELINE.reducedMotionFlight,
-        });
-      } else {
-        drawOverlay.classList.add('draw-portal--flight');
-        await sleep(DRAW_TIMELINE.reducedMotionFlight);
-      }
-
-      notifyFlightComplete();
-
-      drawOverlay.classList.add('draw-portal--closing');
-      await sleep(DRAW_TIMELINE.overlayHideDelay);
-      return;
-    }
-
-    await sleep(DRAW_TIMELINE.intro);
-
-    await sleep(DRAW_TIMELINE.prepareHold);
-    await sleep(DRAW_TIMELINE.revealAccent);
-    revealNumber();
-
-    await sleep(DRAW_TIMELINE.celebrationHold);
-
-    const fromRect = drawOverlayBall.getBoundingClientRect();
-    drawOverlay.classList.add('draw-portal--closing');
-
-    await sleep(DRAW_TIMELINE.flightDelay);
-    drawOverlay.classList.add('draw-portal--flight');
-    if (targetCell) {
-      await animateBallFlight(entry, fromRect, targetCell, {
-        duration: DRAW_TIMELINE.flightDuration,
-        prefersReducedMotion,
-      });
-    } else {
-      await sleep(DRAW_TIMELINE.flightDuration);
-    }
-
-    notifyFlightComplete();
-
-    await sleep(DRAW_TIMELINE.overlayHideDelay);
-  } finally {
-    setOverlayBallLoading(false);
-    hideOverlay(true);
-    drawOverlay.classList.remove('draw-portal--flight');
-    drawOverlayBall.classList.remove('draw-portal__ball--revealed');
-    drawOverlayNumber.textContent = '';
-    setAnnouncement('');
   }
 }
 
