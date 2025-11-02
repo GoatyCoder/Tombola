@@ -177,6 +177,10 @@ button {
   padding-block: var(--space-page-block);
 }
 
+.layout__section {
+  display: block;
+}
+
 .dashboard__shell {
   display: grid;
 }
@@ -488,11 +492,13 @@ button {
 
 .board-area__shell {
   display: grid;
+  position: relative;
 }
 
 .board-area__layout {
   display: grid;
   gap: clamp(1.4rem, 3vw, 2rem);
+  padding-bottom: calc(3.75rem + var(--space-md));
 }
 
 .board-wrapper {
@@ -743,7 +749,8 @@ button {
   border: var(--border-hairline) solid rgba(30, 24, 26, 0.1);
   display: grid;
   gap: 1rem;
-  width: min(40rem, calc(100vw - clamp(2rem, 6vw, 4rem)));
+  width: min(40rem, calc(100% - (var(--space-page-inline) * 2)));
+  max-width: calc(100% - (var(--space-page-inline) * 2));
   max-height: min(65vh, 32.5rem);
   position: fixed;
   left: 50%;
@@ -881,6 +888,7 @@ button {
     left: 0;
     right: 0;
     width: 100%;
+    max-width: 100%;
     transform: translateY(110%);
   }
 
@@ -943,33 +951,48 @@ button {
 .sponsor__strip {
   display: grid;
   gap: clamp(1rem, 2vw, 1.6rem);
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
   align-items: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 .sponsor-strip__item {
+  display: flex;
+}
+
+.sponsor-strip__link {
   display: flex;
   align-items: center;
   justify-content: center;
   padding: clamp(0.4rem, 1.2vw, 0.75rem);
   border-radius: var(--radius-sm);
   position: relative;
+  width: 100%;
+  color: inherit;
+  text-decoration: none;
+  transition: background var(--transition), color var(--transition);
 }
 
-.sponsor-strip__item img {
+.sponsor-strip__link img {
   max-height: 4rem;
   width: auto;
 }
 
-.sponsor-strip__item:focus-visible {
+.sponsor-strip__link:hover {
+  background: rgba(16, 13, 14, 0.04);
+}
+
+.sponsor-strip__link:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
   background: rgba(16, 13, 14, 0.04);
 }
 
 @media (min-width: 40rem) {
-  .sponsor__strip {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .sponsor-strip__link {
+    padding: clamp(0.5rem, 1vw, 0.85rem);
   }
 }
 
@@ -1149,14 +1172,18 @@ button {
   }
 }
 
-.fab-group {
-  position: fixed;
-  top: auto;
-  right: var(--space-sm);
+.board-area__floating {
+  position: absolute;
+  right: var(--space-page-inline);
   bottom: calc(env(safe-area-inset-bottom) + var(--space-sm));
-  left: auto;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.fab-group {
   display: grid;
   gap: var(--space-xs);
+  pointer-events: auto;
   z-index: 20;
 }
 

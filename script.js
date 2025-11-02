@@ -1244,9 +1244,11 @@ function renderSponsorShowcase(sponsors, options = {}) {
       return;
     }
 
+    const item = document.createElement('li');
+    item.className = 'sponsor-strip__item';
+
     const anchor = document.createElement('a');
-    anchor.className = 'sponsor-strip__item';
-    anchor.setAttribute('role', 'listitem');
+    anchor.className = 'sponsor-strip__link';
     const safeUrl = sanitizeUrl(sponsor.url || '');
     const isExternal = /^https?:\/\//i.test(safeUrl);
     anchor.href = safeUrl;
@@ -1276,7 +1278,8 @@ function renderSponsorShowcase(sponsors, options = {}) {
     }
 
     anchor.appendChild(logo);
-    sponsorShowcaseList.appendChild(anchor);
+    item.appendChild(anchor);
+    sponsorShowcaseList.appendChild(item);
   });
 
   sponsorShowcase.hidden = false;
