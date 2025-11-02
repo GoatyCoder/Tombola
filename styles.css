@@ -27,7 +27,7 @@
   --space-lg: clamp(1.4rem, 3vw, 2rem);
   --space-xl: clamp(1.8rem, 4vw, 2.4rem);
   --space-2xl: clamp(2.4rem, 5vw, 3.6rem);
-  --space-page-inline: clamp(1.4rem, 4vw, 2.6rem);
+  --space-page-inline: clamp(0.85rem, 4vw, 2.6rem);
   --space-page-block: clamp(2.2rem, 6vw, 4.2rem);
   --space-layout-gap: clamp(2rem, 5vw, 3rem);
   --space-section-gap: clamp(1.2rem, 3vw, 2rem);
@@ -175,7 +175,7 @@ button {
   flex: 1;
   display: grid;
   gap: var(--space-layout-gap);
-  padding-block: var(--space-page-block);
+  padding-block: var(--space-page-block) 0;
 }
 
 .layout__section {
@@ -194,7 +194,7 @@ button {
 .status-card {
   background: var(--surface);
   border-radius: var(--radius-lg);
-  padding: clamp(1.25rem, 2.6vw, 1.6rem);
+  padding: clamp(0.9rem, 2.8vw, 1.6rem);
   box-shadow: var(--shadow-sm);
   display: grid;
   gap: var(--space-sm);
@@ -277,7 +277,7 @@ button {
 .status-card__actions {
   display: flex;
   flex-wrap: nowrap;
-  gap: clamp(0.4rem, 1.6vw, 0.55rem);
+  gap: clamp(0.25rem, 1.1vw, 0.45rem);
   align-items: center;
   width: 100%;
 }
@@ -286,7 +286,7 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
+  gap: clamp(0.45rem, 1.4vw, 0.6rem);
   border-radius: 999rem;
   border: var(--border-hairline) solid transparent;
   padding: 0.7rem 1.6rem;
@@ -333,8 +333,8 @@ button {
 }
 
 .button--dashboard {
-  padding: 0.55rem clamp(0.9rem, 2.8vw, 1.2rem);
-  font-size: 0.95rem;
+  padding: 0.5rem clamp(0.7rem, 2.4vw, 1.1rem);
+  font-size: clamp(0.86rem, 2.4vw, 0.95rem);
   background: rgba(255, 255, 255, 0.78);
   color: var(--ink);
   border-color: rgba(30, 24, 26, 0.16);
@@ -356,7 +356,7 @@ button {
 }
 
 .button--dashboard-icon {
-  padding: clamp(0.45rem, 1.6vw, 0.55rem);
+  padding: clamp(0.32rem, 1.2vw, 0.45rem);
   min-width: 0;
 }
 
@@ -367,20 +367,20 @@ button {
 
 @media (max-width: 26rem) {
   .status-card__actions {
-    gap: 0.35rem;
+    gap: 0.24rem;
   }
 
   .button {
-    gap: 0.5rem;
+    gap: 0.42rem;
   }
 
   .button--dashboard {
-    padding: 0.5rem 0.9rem;
-    font-size: 0.9rem;
+    padding: 0.45rem 0.68rem;
+    font-size: 0.85rem;
   }
 
   .button--dashboard-icon {
-    padding: 0.45rem;
+    padding: 0.32rem;
   }
 }
 
