@@ -1107,37 +1107,11 @@ button {
 
 @media (min-width: 48rem) {
   .app-footer__shell {
-    justify-items: stretch;
-    text-align: left;
-  }
-
-  .app-footer__intro {
-    justify-items: start;
-    text-align: left;
+    width: min(100%, 65rem);
   }
 
   .app-footer__meta {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1.1rem;
-  }
-
-  .app-footer__credits {
-    text-align: left;
-  }
-
-  .app-footer__links {
-    justify-content: flex-start;
-  }
-
-  .app-footer__disclaimer {
-    text-align: left;
-  }
-
-  .app-footer__powered {
-    justify-content: flex-end;
-    margin-top: 0;
+    max-width: 50rem;
   }
 }
 
