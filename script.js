@@ -1795,7 +1795,40 @@ async function loadNumbers() {
       throw new Error('Impossibile caricare i dati');
     }
     const data = await response.json();
-    state.numbers = data.numbers.sort((a, b) => a.number - b.number);
+    const incomingNumbers = Array.isArray(data?.numbers) ? data.numbers : null;
+    if (!incomingNumbers) {
+      throw new Error('Formato dati non valido');
+    }
+
+    const seenNumbers = new Set();
+    const sanitizedNumbers = [];
+
+    incomingNumbers.forEach((item) => {
+      if (!item || typeof item !== 'object') {
+        return;
+      }
+
+      const numericValue = Number(item.number);
+      if (!Number.isFinite(numericValue) || seenNumbers.has(numericValue)) {
+        return;
+      }
+
+      seenNumbers.add(numericValue);
+      sanitizedNumbers.push({
+        ...item,
+        number: numericValue,
+        italian: typeof item.italian === 'string' ? item.italian : '',
+        dialect: typeof item.dialect === 'string' ? item.dialect : '',
+      });
+    });
+
+    if (!sanitizedNumbers.length) {
+      throw new Error('Nessun numero valido trovato');
+    }
+
+    sanitizedNumbers.sort((a, b) => a.number - b.number);
+
+    state.numbers = sanitizedNumbers;
     state.drawnNumbers = new Set();
     state.drawHistory = [];
     sponsorManager.resetAssignments();
@@ -1809,7 +1842,14 @@ async function loadNumbers() {
     setDataLoadingState(LoadingStates.SUCCESS);
   } catch (error) {
     console.error(error);
-    state.storageErrorMessage = '';
+    state.numbers = [];
+    state.drawnNumbers = new Set();
+    state.drawHistory = [];
+    state.entriesByNumber = new Map();
+    state.cellsByNumber = new Map();
+    state.selected = null;
+    sponsorManager.resetAssignments();
+    state.storageErrorMessage = 'Impossibile caricare i numeri della tombola.';
     elements.board.innerHTML =
       '<p class="board-error">Errore nel caricamento dei dati della tombola.</p>';
     if (elements.drawStatus) {
@@ -1830,6 +1870,7 @@ async function loadNumbers() {
       }
     }
     setDataLoadingState(LoadingStates.ERROR);
+    updateDrawHistory();
   }
 }
 
@@ -2306,7 +2347,11 @@ function updateDrawHistory() {
     historyList.appendChild(listItem);
   }
 
-  historyList.scrollTop = 0;
+  if (typeof historyList.scrollTo === 'function') {
+    historyList.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    historyList.scrollTop = 0;
+  }
 }
 
 /**
