@@ -13,14 +13,19 @@
   --accent-strong: #8f1f33;
   --accent-soft: rgba(180, 40, 64, 0.12);
   --focus-ring: #100d0e;
-  --shadow-sm: 0 10px 24px rgba(20, 15, 13, 0.08);
-  --shadow-lg: 0 26px 60px rgba(20, 15, 13, 0.14);
+  --shadow-sm: 0 0.625rem 1.5rem rgba(20, 15, 13, 0.08);
+  --shadow-lg: 0 1.625rem 3.75rem rgba(20, 15, 13, 0.14);
   --scrim-bg: rgba(20, 15, 13, 0.32);
-  --scrim-blur: 4px;
-  --radius-lg: 28px;
-  --radius-md: 20px;
-  --radius-sm: 14px;
+  --scrim-blur: 0.25rem;
+  --radius-lg: 1.75rem;
+  --radius-md: 1.25rem;
+  --radius-sm: 0.875rem;
   --transition: 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+  --border-hairline: 0.0625rem;
+  --border-regular: 0.125rem;
+  --focus-ring-width: 0.1875rem;
+  --focus-ring-offset: 0.1875rem;
+  --focus-ring-offset-lg: 0.25rem;
 }
 
 * {
@@ -54,17 +59,17 @@ button {
 }
 
 .shell {
-  width: min(1120px, 100%);
+  width: min(70rem, 100%);
   margin: 0 auto;
   padding-inline: clamp(1.4rem, 4vw, 2.6rem);
 }
 
 .sr-only {
   position: absolute;
-  width: 1px;
-  height: 1px;
+  width: var(--border-hairline);
+  height: var(--border-hairline);
   padding: 0;
-  margin: -1px;
+  margin: calc(var(--border-hairline) * -1);
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
@@ -73,7 +78,7 @@ button {
 
 .hero {
   background: var(--surface);
-  border-bottom: 1px solid var(--surface-muted);
+  border-bottom: var(--border-hairline) solid var(--surface-muted);
   padding-block: clamp(2.6rem, 6vw, 4.4rem);
 }
 
@@ -142,7 +147,7 @@ button {
   box-shadow: var(--shadow-sm);
   display: grid;
   gap: clamp(0.9rem, 2vw, 1.2rem);
-  border: 1px solid rgba(30, 24, 26, 0.08);
+  border: var(--border-hairline) solid rgba(30, 24, 26, 0.08);
 }
 
 .status-card--overview {
@@ -176,7 +181,7 @@ button {
   margin-top: 0.2rem;
 }
 
-@media (min-width: 720px) {
+@media (min-width: 45rem) {
   .status-card__summary {
     grid-template-columns: minmax(0, 1fr) minmax(0, 0.82fr);
     align-items: start;
@@ -230,8 +235,8 @@ button {
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
-  border-radius: 999px;
-  border: 1px solid transparent;
+  border-radius: 999rem;
+  border: var(--border-hairline) solid transparent;
   padding: 0.7rem 1.6rem;
   font-weight: 600;
   font-size: 0.98rem;
@@ -268,7 +273,7 @@ button {
   background: rgba(255, 255, 255, 0.78);
   color: var(--ink);
   border-color: rgba(30, 24, 26, 0.16);
-  box-shadow: 0 12px 24px rgba(20, 15, 13, 0.08);
+  box-shadow: 0 0.75rem 1.5rem rgba(20, 15, 13, 0.08);
 }
 
 .button--dashboard:hover,
@@ -307,13 +312,13 @@ button {
 .button:hover,
 .button:focus-visible {
   background: var(--surface-alt);
-  transform: translateY(-2px);
-  box-shadow: 0 14px 28px rgba(20, 15, 13, 0.12);
+  transform: translateY(-0.125rem);
+  box-shadow: 0 0.875rem 1.75rem rgba(20, 15, 13, 0.12);
 }
 
 .button:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 3px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .button:disabled {
@@ -327,13 +332,13 @@ button {
   background: var(--accent);
   color: var(--surface);
   border-color: transparent;
-  box-shadow: 0 16px 32px rgba(180, 40, 64, 0.24);
+  box-shadow: 0 1rem 2rem rgba(180, 40, 64, 0.24);
 }
 
 .button--primary:hover,
 .button--primary:focus-visible {
   background: var(--accent-strong);
-  box-shadow: 0 18px 40px rgba(143, 31, 51, 0.28);
+  box-shadow: 0 1.125rem 2.5rem rgba(143, 31, 51, 0.28);
 }
 
 .button--primary:disabled {
@@ -346,8 +351,8 @@ button {
   align-items: center;
   gap: 0.45rem;
   padding: 0.45rem 0.9rem;
-  border-radius: 999px;
-  border: 1px solid rgba(30, 24, 26, 0.12);
+  border-radius: 999rem;
+  border: var(--border-hairline) solid rgba(30, 24, 26, 0.12);
   background: var(--surface);
   font-size: 0.92rem;
   font-weight: 600;
@@ -371,13 +376,13 @@ button {
 .chip:focus-visible {
   background: var(--surface-alt);
   border-color: rgba(180, 40, 64, 0.25);
-  transform: translateY(-1px);
-  box-shadow: 0 12px 24px rgba(20, 15, 13, 0.1);
+  transform: translateY(-0.0625rem);
+  box-shadow: 0 0.75rem 1.5rem rgba(20, 15, 13, 0.1);
 }
 
 .chip:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 3px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .chip[aria-expanded='true'] {
@@ -389,7 +394,7 @@ button {
   position: relative;
   width: 100%;
   height: 0.45rem;
-  border-radius: 999px;
+  border-radius: 999rem;
   background: var(--surface-muted);
   overflow: hidden;
 }
@@ -439,6 +444,25 @@ button {
   gap: clamp(0.25rem, 1vw, 0.5rem);
 }
 
+.board-grid--loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.board-grid--loading::after {
+  content: 'Caricamento in corso…';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: clamp(1rem, 2.4vw, 1.25rem);
+  font-weight: 600;
+  color: var(--ink-soft);
+  background: rgba(246, 244, 241, 0.78);
+  backdrop-filter: blur(0.15rem);
+  z-index: 2;
+}
+
 .token {
   --token-border-width: clamp(0.18rem, 0.6vw, 0.3rem);
   --token-shadow: inset 0 0 0.6rem rgba(0, 0, 0, 0.12);
@@ -465,13 +489,13 @@ button {
   text-shadow: 0 0.1rem 0 rgba(0, 0, 0, 0.2);
 }
 
-@media (min-width: 900px) {
+@media (min-width: 56.25rem) {
   .board-grid {
     grid-template-columns: repeat(10, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 899.98px) {
+@media (max-width: 56.25rem) {
   .board-grid {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
@@ -514,13 +538,13 @@ button {
 }
 
 .board-cell:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 3px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .board-cell--active {
-  outline: 3px solid rgba(180, 40, 64, 0.75);
-  outline-offset: 3px;
+  outline: 0.1875rem solid rgba(180, 40, 64, 0.75);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .board-cell--drawn .board-cell__media {
@@ -537,7 +561,7 @@ button {
   content: '';
   position: absolute;
   inset: clamp(0.2rem, 2%, 0.35rem);
-  border: 2px solid rgba(180, 40, 64, 0.38);
+  border: var(--border-regular) solid rgba(180, 40, 64, 0.38);
   pointer-events: none;
   animation: boardCellIncoming 540ms ease-in-out infinite alternate;
   border-radius: clamp(0.35rem, 1vw, 0.5rem);
@@ -547,7 +571,7 @@ button {
   content: '';
   position: absolute;
   inset: clamp(0.18rem, 2%, 0.32rem);
-  border: 2px solid rgba(180, 40, 64, 0.45);
+  border: var(--border-regular) solid rgba(180, 40, 64, 0.45);
   pointer-events: none;
   border-radius: clamp(0.35rem, 1vw, 0.5rem);
   animation: boardCellCelebrateGlow 880ms ease-out;
@@ -570,7 +594,7 @@ button {
   pointer-events: none;
   --token-border-width: clamp(0.18rem, 0.6vw, 0.28rem);
   --token-number-size: clamp(1.6rem, 4vw, 2.2rem);
-  --token-shadow: inset 0 0 0.6rem rgba(0, 0, 0, 0.12), 0 12px 24px rgba(20, 14, 12, 0.16);
+  --token-shadow: inset 0 0 0.6rem rgba(0, 0, 0, 0.12), 0 0.75rem 1.5rem rgba(20, 14, 12, 0.16);
 }
 
 @keyframes boardCellIncoming {
@@ -628,17 +652,17 @@ button {
 
 .history {
   background: var(--surface-alt);
-  border-radius: 24px 24px 0 0;
+  border-radius: 1.5rem 1.5rem 0 0;
   padding: clamp(1.4rem, 3vw, 2rem);
-  box-shadow: 0 -18px 46px rgba(20, 15, 13, 0.28);
-  border: 1px solid rgba(30, 24, 26, 0.1);
+  box-shadow: 0 -1.125rem 2.875rem rgba(20, 15, 13, 0.28);
+  border: var(--border-hairline) solid rgba(30, 24, 26, 0.1);
   display: grid;
   gap: 1rem;
   position: fixed;
   left: 50%;
   bottom: 0;
-  width: min(640px, calc(100vw - clamp(2rem, 6vw, 4rem)));
-  max-height: min(75vh, 520px);
+  width: min(40rem, calc(100vw - clamp(2rem, 6vw, 4rem)));
+  max-height: min(75vh, 32.5rem);
   transform: translate(-50%, 110%);
   transition: transform 0.46s cubic-bezier(0.2, 0.8, 0.2, 1);
   z-index: 40;
@@ -669,7 +693,7 @@ button {
   display: grid;
   gap: 0.4rem;
   color: var(--ink);
-  max-height: 360px;
+  max-height: 22.5rem;
   overflow: auto;
 }
 
@@ -682,7 +706,7 @@ button {
   padding: 0.7rem 0.85rem;
   border-radius: var(--radius-sm);
   background: var(--surface);
-  border: 1px solid rgba(30, 24, 26, 0.08);
+  border: var(--border-hairline) solid rgba(30, 24, 26, 0.08);
 }
 
 .history-item__order {
@@ -767,7 +791,7 @@ button {
   visibility: visible;
 }
 
-@media (max-width: 540px) {
+@media (max-width: 33.75rem) {
   .history {
     left: 0;
     right: 0;
@@ -801,8 +825,8 @@ button {
 
 .sponsor {
   background: var(--surface);
-  border-top: 1px solid var(--surface-muted);
-  border-bottom: 1px solid var(--surface-muted);
+  border-top: var(--border-hairline) solid var(--surface-muted);
+  border-bottom: var(--border-hairline) solid var(--surface-muted);
   padding-block: clamp(2.4rem, 5vw, 3.4rem);
 }
 
@@ -840,11 +864,11 @@ button {
 }
 
 .sponsor-strip__item img {
-  max-height: 64px;
+  max-height: 4rem;
   width: auto;
 }
 
-@media (min-width: 640px) {
+@media (min-width: 40rem) {
   .sponsor__strip {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -854,7 +878,7 @@ button {
   background: #1b1819;
   color: rgba(255, 255, 255, 0.86);
   padding-block: clamp(2.1rem, 4.6vw, 3.1rem);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0.0625rem 0 rgba(255, 255, 255, 0.08);
 }
 
 .app-footer__shell {
@@ -862,7 +886,7 @@ button {
   gap: clamp(1.3rem, 2.8vw, 2rem);
   justify-items: center;
   text-align: center;
-  width: min(100%, 960px);
+  width: min(100%, 60rem);
   margin-inline: auto;
 }
 
@@ -894,13 +918,13 @@ button {
 }
 
 .app-footer__association:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.45);
-  outline-offset: 6px;
+  outline: var(--border-regular) solid rgba(255, 255, 255, 0.45);
+  outline-offset: 0.375rem;
   border-radius: 0.75rem;
 }
 
 .app-footer__association-logo {
-  width: clamp(200px, 32vw, 280px);
+  width: clamp(12.5rem, 32vw, 17.5rem);
   height: auto;
 }
 
@@ -950,8 +974,8 @@ button {
 }
 
 .app-footer__powered-link:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.45);
-  outline-offset: 4px;
+  outline: var(--border-regular) solid rgba(255, 255, 255, 0.45);
+  outline-offset: var(--focus-ring-offset-lg);
 }
 
 .app-footer__powered-logo {
@@ -966,7 +990,7 @@ button {
   opacity: 1;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 48rem) {
   .app-footer__shell {
     justify-items: stretch;
     text-align: left;
@@ -1005,7 +1029,7 @@ button {
 .fab {
   width: 3.5rem;
   height: 3.5rem;
-  border-radius: 999px;
+  border-radius: 999rem;
   border: none;
   display: inline-flex;
   align-items: center;
@@ -1030,12 +1054,12 @@ button {
 .fab--primary:hover,
 .fab--primary:focus-visible {
   background: var(--accent-strong);
-  transform: translateY(-2px);
+  transform: translateY(-0.125rem);
 }
 
 .fab--primary:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 3px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .fab--secondary {
@@ -1046,12 +1070,12 @@ button {
 .fab--secondary:hover,
 .fab--secondary:focus-visible {
   background: var(--surface-alt);
-  transform: translateY(-2px);
+  transform: translateY(-0.125rem);
 }
 
 .fab--secondary:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 3px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .fab__icon {
@@ -1097,7 +1121,7 @@ button {
 }
 
 /* Responsive adjustments */
-@media (max-width: 560px) {
+@media (max-width: 35rem) {
   .status-card__actions {
     width: 100%;
     justify-content: space-between;
@@ -1142,7 +1166,7 @@ button {
 
 .draw-portal--flight .draw-portal__scrim {
   opacity: 0;
-  backdrop-filter: blur(0px);
+  backdrop-filter: blur(0);
 }
 
 .draw-portal__content {
@@ -1167,7 +1191,7 @@ button {
 
 .draw-portal__ball {
   position: relative;
-  width: clamp(120px, 28vw, 144px);
+  width: clamp(7.5rem, 28vw, 9rem);
   aspect-ratio: 1 / 1;
   display: grid;
   place-items: center;
@@ -1175,7 +1199,7 @@ button {
   transition: transform 240ms ease, box-shadow 240ms ease;
   --token-border-width: clamp(0.18rem, 0.6vw, 0.28rem);
   --token-number-size: clamp(2.2rem, 6vw, 3rem);
-  --token-shadow: inset 0 0 0.55rem rgba(0, 0, 0, 0.12), 0 12px 22px rgba(20, 12, 14, 0.16);
+  --token-shadow: inset 0 0 0.55rem rgba(0, 0, 0, 0.12), 0 0.75rem 1.375rem rgba(20, 12, 14, 0.16);
 }
 
 .draw-portal__ball::after {
@@ -1183,7 +1207,7 @@ button {
   position: absolute;
   inset: 6%;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.32);
+  border: var(--border-hairline) solid rgba(255, 255, 255, 0.32);
   pointer-events: none;
   opacity: 0.6;
 }
@@ -1214,7 +1238,7 @@ button {
 
 .draw-portal__ball--revealed {
   animation: drawPortalTokenPop 420ms cubic-bezier(0.22, 0.75, 0.3, 1.08);
-  box-shadow: inset 0 0 0.6rem rgba(0, 0, 0, 0.16), 0 12px 22px rgba(20, 12, 14, 0.16);
+  box-shadow: inset 0 0 0.6rem rgba(0, 0, 0, 0.16), 0 0.75rem 1.375rem rgba(20, 12, 14, 0.16);
 }
 
 .draw-portal__number {
@@ -1257,14 +1281,46 @@ button {
   padding: 0.85rem 1.2rem;
   border-radius: var(--radius-md);
   background: rgba(255, 248, 236, 0.92);
-  border: 1px solid rgba(206, 158, 96, 0.6);
-  box-shadow: 0 12px 26px rgba(94, 58, 26, 0.18);
-  width: min(100%, 280px);
+  border: var(--border-hairline) solid rgba(206, 158, 96, 0.6);
+  box-shadow: 0 0.75rem 1.625rem rgba(94, 58, 26, 0.18);
+  width: min(100%, 17.5rem);
   text-align: center;
   transition: opacity 200ms ease, transform 220ms ease;
   pointer-events: auto;
   position: relative;
   z-index: 1;
+}
+
+.sponsor-block--placeholder {
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+.sponsor-block--loading::after,
+.sponsor-block--error::after {
+  content: attr(data-placeholder-label);
+  display: block;
+  font-size: clamp(0.8rem, 2vw, 0.95rem);
+  font-weight: 600;
+  color: rgba(128, 74, 32, 0.78);
+}
+
+.sponsor-block--loading .draw-portal__sponsor-link,
+.sponsor-block--loading .number-dialog__sponsor-link,
+.sponsor-block--placeholder .draw-portal__sponsor-link,
+.sponsor-block--placeholder .number-dialog__sponsor-link {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+
+.sponsor-block--error::after {
+  content: attr(data-error-label);
+  color: rgba(143, 31, 51, 0.82);
+}
+
+.sponsor-block--error .draw-portal__sponsor-link,
+.sponsor-block--error .number-dialog__sponsor-link {
+  display: none;
 }
 
 .draw-portal__sponsor-eyebrow {
@@ -1282,29 +1338,29 @@ button {
   padding: 0.2rem 0.4rem;
   border-radius: var(--radius-sm);
   background: #fff7ec;
-  box-shadow: 0 10px 20px rgba(94, 58, 26, 0.16);
+  box-shadow: 0 0.625rem 1.25rem rgba(94, 58, 26, 0.16);
   transition: transform var(--transition), box-shadow var(--transition);
 }
 
 .draw-portal__sponsor-link:hover,
 .draw-portal__sponsor-link:focus-visible {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 30px rgba(94, 58, 26, 0.2);
+  transform: translateY(-0.125rem);
+  box-shadow: 0 1rem 1.875rem rgba(94, 58, 26, 0.2);
 }
 
 .draw-portal__sponsor-link:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 4px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-lg);
 }
 
 .draw-portal__sponsor-link img {
-  max-height: clamp(68px, 22vw, 94px);
+  max-height: clamp(4.25rem, 22vw, 5.875rem);
   inline-size: auto;
 }
 
 .draw-portal--flight .draw-portal__sponsor-block {
   opacity: 0;
-  transform: translateY(14px);
+  transform: translateY(0.875rem);
   pointer-events: none;
 }
 
@@ -1315,7 +1371,7 @@ button {
 @keyframes drawPortalEnter {
   from {
     opacity: 0;
-    transform: translateY(14px) scale(0.96);
+    transform: translateY(0.875rem) scale(0.96);
   }
   to {
     opacity: 1;
@@ -1377,9 +1433,9 @@ button {
 }
 
 .number-dialog {
-  width: min(430px, 100%);
+  width: min(26.875rem, 100%);
   background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(30, 24, 26, 0.12);
+  border: var(--border-hairline) solid rgba(30, 24, 26, 0.12);
   border-radius: var(--radius-md);
   padding: clamp(0.75rem, 2.3vw, 1.05rem);
   box-shadow: none;
@@ -1406,7 +1462,7 @@ button {
   border: none;
   background: transparent;
   color: var(--accent-strong);
-  border-radius: 999px;
+  border-radius: 999rem;
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -1434,8 +1490,8 @@ button {
 }
 
 .number-dialog__next:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 3px;
+  outline: var(--border-regular) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .number-dialog__next:active:not(:disabled) {
@@ -1478,8 +1534,8 @@ button {
 }
 
 .number-dialog__close:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 3px;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .number-dialog__body {
@@ -1487,7 +1543,7 @@ button {
   gap: clamp(0.65rem, 2.2vw, 1rem);
 }
 
-@media (min-width: 720px) {
+@media (min-width: 45rem) {
   .number-dialog__body {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: start;
@@ -1503,10 +1559,10 @@ button {
 .number-dialog__image-frame {
   position: relative;
   inline-size: 100%;
-  max-inline-size: 240px;
+  max-inline-size: 15rem;
   aspect-ratio: 1 / 1;
   border-radius: 0;
-  border: 1px solid rgba(30, 24, 26, 0.12);
+  border: var(--border-hairline) solid rgba(30, 24, 26, 0.12);
   background: var(--surface);
   display: grid;
   place-items: center;
@@ -1525,9 +1581,9 @@ button {
   background: repeating-linear-gradient(
     135deg,
     var(--surface-alt),
-    var(--surface-alt) 16px,
-    var(--surface-muted) 16px,
-    var(--surface-muted) 32px
+    var(--surface-alt) 1rem,
+    var(--surface-muted) 1rem,
+    var(--surface-muted) 2rem
   );
 }
 
@@ -1545,14 +1601,14 @@ button {
   justify-content: center;
   background: rgba(255, 255, 255, 0.82);
   padding: 0.2rem 0.6rem;
-  border-radius: 4px;
+  border-radius: 0.25rem;
   pointer-events: none;
 }
 
 .confirm-dialog {
-  width: min(360px, 100%);
+  width: min(22.5rem, 100%);
   background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(30, 24, 26, 0.12);
+  border: var(--border-hairline) solid rgba(30, 24, 26, 0.12);
   border-radius: var(--radius-md);
   padding: clamp(1rem, 3vw, 1.35rem);
   display: grid;
@@ -1590,7 +1646,7 @@ button {
   font-size: 0.9rem;
 }
 
-@media (max-width: 420px) {
+@media (max-width: 26.25rem) {
   .confirm-dialog__actions {
     flex-direction: column;
   }
@@ -1614,7 +1670,7 @@ button {
   gap: clamp(0.5rem, 1.6vw, 0.8rem);
 }
 
-@media (min-width: 540px) {
+@media (min-width: 33.75rem) {
   .number-dialog__languages {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1625,7 +1681,7 @@ button {
   gap: 0.28rem;
   padding: 0.34rem 0.52rem;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(30, 24, 26, 0.1);
+  border: var(--border-hairline) solid rgba(30, 24, 26, 0.1);
   background: rgba(255, 255, 255, 0.92);
 }
 
@@ -1646,8 +1702,8 @@ button {
 }
 
 .number-dialog__language-emblem img {
-  width: 26px;
-  height: 26px;
+  width: 1.625rem;
+  height: 1.625rem;
   object-fit: contain;
 }
 
@@ -1663,8 +1719,8 @@ button {
   background: none;
   color: var(--accent-strong);
   padding: 0;
-  inline-size: 22px;
-  block-size: 22px;
+  inline-size: 1.375rem;
+  block-size: 1.375rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1679,8 +1735,8 @@ button {
 }
 
 .number-dialog__audio-button:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 3px;
+  outline: var(--border-regular) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .number-dialog__audio-button:disabled,
@@ -1710,7 +1766,7 @@ button {
 }
 
 .number-dialog__footer {
-  border-top: 1px solid rgba(30, 24, 26, 0.1);
+  border-top: var(--border-hairline) solid rgba(30, 24, 26, 0.1);
   padding-top: 0.6rem;
   margin-top: 0.1rem;
   display: grid;
@@ -1728,14 +1784,14 @@ button {
   justify-content: center;
   padding: 0.45rem 1.4rem;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(30, 24, 26, 0.08);
+  border: var(--border-hairline) solid rgba(30, 24, 26, 0.08);
   background: rgba(255, 255, 255, 0.96);
-  box-shadow: inset 0 0 0 1px rgba(180, 40, 64, 0.14);
+  box-shadow: inset 0 0 0 0.0625rem rgba(180, 40, 64, 0.14);
 }
 
 .number-dialog__sponsor-link img {
-  inline-size: clamp(190px, 50vw, 300px);
-  max-height: 86px;
+  inline-size: clamp(11.875rem, 50vw, 18.75rem);
+  max-height: 5.375rem;
   block-size: auto;
 }
 
