@@ -272,8 +272,9 @@ button {
 .status-card__actions {
   display: flex;
   flex-wrap: nowrap;
-  gap: 0.5rem;
+  gap: clamp(0.4rem, 1.6vw, 0.55rem);
   align-items: center;
+  width: 100%;
 }
 
 .button {
@@ -308,6 +309,14 @@ button {
   min-width: 0;
 }
 
+.status-card__actions .button--primary {
+  flex: 1 1 auto;
+}
+
+.status-card__actions .button--dashboard-icon {
+  flex: 0 0 auto;
+}
+
 .button__icon {
   width: 1.25rem;
   height: 1.25rem;
@@ -319,7 +328,7 @@ button {
 }
 
 .button--dashboard {
-  padding: 0.55rem 1.2rem;
+  padding: 0.55rem clamp(0.9rem, 2.8vw, 1.2rem);
   font-size: 0.95rem;
   background: rgba(255, 255, 255, 0.78);
   color: var(--ink);
@@ -342,13 +351,32 @@ button {
 }
 
 .button--dashboard-icon {
-  padding: 0.55rem;
+  padding: clamp(0.45rem, 1.6vw, 0.55rem);
   min-width: 0;
 }
 
 .button--dashboard-icon .button__icon {
   width: 1.25rem;
   height: 1.25rem;
+}
+
+@media (max-width: 26rem) {
+  .status-card__actions {
+    gap: 0.35rem;
+  }
+
+  .button {
+    gap: 0.5rem;
+  }
+
+  .button--dashboard {
+    padding: 0.5rem 0.9rem;
+    font-size: 0.9rem;
+  }
+
+  .button--dashboard-icon {
+    padding: 0.45rem;
+  }
 }
 
 .die-icon {
