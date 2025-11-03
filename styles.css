@@ -166,7 +166,7 @@ button {
 
 .hero__presenter-logo img {
   width: auto;
-  height: clamp(3rem, 9vw, 4.5rem);
+  height: clamp(2.6rem, 7vw, 3.9rem);
 }
 
 .hero__title {
