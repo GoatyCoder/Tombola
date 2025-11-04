@@ -1483,22 +1483,36 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
 
   anchor.classList.remove('sponsor-link--placeholder');
   anchor.removeAttribute('aria-hidden');
-  const safeUrl = sanitizeUrl(sponsor.url || '');
-  const isExternal = /^https?:\/\//i.test(safeUrl);
-  anchor.href = safeUrl;
-  anchor.target = isExternal ? '_blank' : '_self';
-  if (isExternal) {
-    anchor.rel = 'noopener noreferrer';
+  
+  const hasUrl = typeof sponsor.url === 'string' && sponsor.url.trim();
+  
+  if (hasUrl) {
+    const safeUrl = sanitizeUrl(sponsor.url);
+    const isExternal = /^https?:\/\//i.test(safeUrl);
+    anchor.href = safeUrl;
+    anchor.target = isExternal ? '_blank' : '_self';
+    if (isExternal) {
+      anchor.rel = 'noopener noreferrer';
+    } else {
+      anchor.removeAttribute('rel');
+    }
+    anchor.removeAttribute('tabindex');
+    anchor.setAttribute('aria-label', getSponsorAccessibleLabel(sponsor));
+    const displayName = getSponsorDisplayName(sponsor);
+    if (displayName) {
+      anchor.title = displayName;
+    } else {
+      anchor.removeAttribute('title');
+    }
   } else {
+    anchor.removeAttribute('href');
+    anchor.style.cursor = 'default';
+    anchor.style.pointerEvents = 'none';
+    anchor.removeAttribute('target');
     anchor.removeAttribute('rel');
-  }
-  anchor.removeAttribute('tabindex');
-  anchor.setAttribute('aria-label', getSponsorAccessibleLabel(sponsor));
-  const displayName = getSponsorDisplayName(sponsor);
-  if (displayName) {
-    anchor.title = displayName;
-  } else {
+    anchor.removeAttribute('aria-label');
     anchor.removeAttribute('title');
+    anchor.setAttribute('tabindex', '-1');
   }
 
   if ('loading' in logo) {
