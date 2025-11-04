@@ -993,11 +993,21 @@ button {
   transition: background var(--transition), color var(--transition);
 }
 
-.sponsor-strip__content {
+.sponsor-strip__figure {
+  margin: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: clamp(0.3rem, 1vw, 0.45rem);
+}
+
+.sponsor-strip__figure figcaption {
+  font-size: 0.78rem;
+  line-height: 1.2;
+  color: var(--ink-subtle);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .sponsor-strip__logo {

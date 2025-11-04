@@ -97,14 +97,17 @@ const EMBEDDED_SPONSORS = Object.freeze([
   {
     logo: 'images/sponsor-panificio-stella.svg',
     url: 'https://www.panificiostella.it/',
+    name: 'Panificio Stella',
   },
   {
     logo: 'images/sponsor-agrumi-del-sud.svg',
     url: 'https://www.agrumidelsud.it/',
+    name: 'Agrumi del Sud',
   },
   {
     logo: 'images/sponsor-cantina-nojana.svg',
     url: 'https://www.cantinanojana.it/',
+    name: 'Cantina Nojana',
   },
 ]);
 const DRAW_TIMELINE = Object.freeze({
@@ -500,12 +503,16 @@ function normalizeSponsor(rawSponsor) {
 
   const logo = typeof rawSponsor.logo === 'string' ? rawSponsor.logo.trim() : '';
   const url = typeof rawSponsor.url === 'string' ? rawSponsor.url.trim() : '';
+  const name =
+    typeof rawSponsor.name === 'string' && rawSponsor.name.trim()
+      ? rawSponsor.name.trim()
+      : '';
 
   if (!logo || !url) {
     return null;
   }
 
-  return { logo, url };
+  return { logo, url, name };
 }
 
 function cloneSponsorData(sponsor) {
@@ -515,12 +522,19 @@ function cloneSponsorData(sponsor) {
 
   const logo = typeof sponsor.logo === 'string' ? sponsor.logo.trim() : '';
   const url = typeof sponsor.url === 'string' ? sponsor.url.trim() : '';
+  const name =
+    typeof sponsor.name === 'string' && sponsor.name.trim() ? sponsor.name.trim() : '';
 
   if (!logo || !url) {
     return null;
   }
 
-  return { logo, url };
+  const cloned = { logo, url };
+  if (name) {
+    cloned.name = name;
+  }
+
+  return cloned;
 }
 
 function getEmbeddedSponsors() {
@@ -1299,9 +1313,15 @@ function renderSponsorShowcase(sponsors, options = {}) {
       anchor.removeAttribute('title');
     }
 
+    const logoSrc =
+      typeof sponsor.logo === 'string' && sponsor.logo.trim() ? sponsor.logo.trim() : '';
+    if (!logoSrc) {
+      return;
+    }
+
     const logo = document.createElement('img');
     logo.alt = '';
-    logo.src = sponsor.logo || '';
+    logo.src = logoSrc;
     if ('decoding' in logo) {
       logo.decoding = 'async';
     }
@@ -1309,22 +1329,22 @@ function renderSponsorShowcase(sponsors, options = {}) {
       logo.loading = 'lazy';
     }
 
-    const content = document.createElement('span');
-    content.className = 'sponsor-strip__content';
+    const figure = document.createElement('figure');
+    figure.className = 'sponsor-strip__figure';
 
     const logoWrapper = document.createElement('span');
     logoWrapper.className = 'sponsor-strip__logo';
     logoWrapper.appendChild(logo);
-    content.appendChild(logoWrapper);
+    figure.appendChild(logoWrapper);
 
     if (displayName) {
-      const caption = document.createElement('span');
+      const caption = document.createElement('figcaption');
       caption.className = 'sponsor-strip__name';
       caption.textContent = displayName;
-      content.appendChild(caption);
+      figure.appendChild(caption);
     }
 
-    anchor.appendChild(content);
+    anchor.appendChild(figure);
     item.appendChild(anchor);
     sponsorShowcaseList.appendChild(item);
   });
@@ -1487,8 +1507,10 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
   }
   logo.hidden = false;
   logo.removeAttribute('hidden');
-  if (logo.src !== sponsor.logo) {
-    logo.src = sponsor.logo || '';
+  const logoSrc =
+    typeof sponsor.logo === 'string' && sponsor.logo.trim() ? sponsor.logo.trim() : '';
+  if (logoSrc && logo.src !== logoSrc) {
+    logo.src = logoSrc;
   }
   logo.alt = '';
 
