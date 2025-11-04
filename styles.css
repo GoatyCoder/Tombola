@@ -146,8 +146,8 @@ button {
 
 .hero__presenter-group {
   display: inline-flex;
-  align-items: center;
-  gap: clamp(0.45rem, 1.5vw, 0.75rem);
+  align-items: flex-end;
+  gap: clamp(0.4rem, 1.2vw, 0.6rem);
   white-space: nowrap;
 }
 
@@ -166,7 +166,7 @@ button {
 
 .hero__presenter-logo img {
   width: auto;
-  height: clamp(3.4rem, 11vw, 5.6rem);
+  height: clamp(1.8rem, 7vw, 3.2rem);
 }
 
 .hero__title {
