@@ -34,6 +34,11 @@
       "logo": "images/sponsor/ilsorriso.png",
       "url": "#",
       "name": "Panificio Il Sorriso"
+    },
+    {
+      "logo": "images/sponsor/ecasa.png",
+      "url": "https://www.ecasa-immobiliare.it/",
+      "name": "È Casa Immobiliare"
     }
   ]
 }
