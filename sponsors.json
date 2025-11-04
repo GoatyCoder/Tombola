@@ -7,12 +7,12 @@
     },
     {
       "logo": "images/sponsor/ProLoco.png",
-      "url": null,
+      "url": "#",
       "name": "Pro Loco Noicàttaro"
     },
     {
       "logo": "images/sponsor/arca.png",
-      "url": null,
+      "url": "#",
       "name": "Pasticceria L'Arca Di Porrelli Arcangelo"
     },
     {
@@ -27,12 +27,12 @@
     },
     {
       "logo": "images/sponsor/grafica2P.png",
-      "url": null,
+      "url": "#",
       "name": "Grafica 2P"
     },
     {
       "logo": "images/sponsor/ilsorriso.png",
-      "url": null,
+      "url": "#",
       "name": "Panificio Il Sorriso"
     }
   ]
