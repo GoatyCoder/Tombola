@@ -1,75 +1,60 @@
-# Tombola Nojana – Web App dimostrativa
+# Tombola Nojana
 
-Questa repository contiene una web app statica che permette di esplorare i numeri della **Tombola Nojana** e ascoltarne la pronuncia attraverso la sintesi vocale del browser. L'applicazione offre anche uno scanner di QR code per leggere rapidamente il numero associato a ogni casella della tombola.
+Interfaccia web statica per condurre la tombola tradizionale nojana in modo digitale. La pagina offre estrazioni animate, annuncio vocale opzionale, cronologia dettagliata e un pannello sponsor, pensati per l'utilizzo durante eventi dal vivo o trasmissioni in streaming.
 
 ## Funzionalità principali
-
-- ✅ **Catalogo completo (1-90)** con corrispondenze italiano/dialetto nojano.
-- ✅ **Filtro "solo numeri completi"** per individuare rapidamente le voci con pronuncia dialettale presente.
-- ✅ **Riproduzione vocale** tramite Web Speech API (con fallback ai termini italiani quando la voce dialettale non è disponibile).
-- ✅ **Scansione QR code** basata su [`html5-qrcode`](https://github.com/mebjas/html5-qrcode): inquadra un codice contenente il numero e ascolta subito la pronuncia.
-- ✅ **Interfaccia responsive** pensata per schermi mobili e desktop, con modalità scura rispettata automaticamente.
+- **Tabellone interattivo 1–90** con stati "estratto" e "attivo" sincronizzati tra griglia, cronologia e dialoghi di dettaglio.
+- **Animazioni di estrazione** con sovrapposizione dedicata e gestione progressiva delle tempistiche per modalità standard o "ridotta" (rispetto della preferenza _prefers-reduced-motion_).
+- **Annuncio audio opzionale** tramite Web Speech API con memorizzazione della preferenza in `localStorage` e fallback silenzioso.
+- **Cronologia consultabile** come foglio mobile su smartphone e pannello laterale su desktop, con ultimo numero evidenziato e scorrimento automatico.
+- **Sponsor rotativi** caricati da `sponsors.json` con placeholder integrati e assegnazione persistente per numero estratto.
+- **Persistenza della partita** (numeri estratti e cronologia) in `localStorage` con gestione errori e messaggi utente dedicati.
 
 ## Struttura del progetto
-
 ```
 .
-├── data.json      # Archivio dei numeri con testi italiano/dialetto/immagini
-├── images/        # Cartella per gli asset grafici dei numeri (es. 1.png)
-├── index.html     # Pagina principale dell'app
-├── script.js      # Logica dell'interfaccia, sintesi vocale e scanner QR
-└── styles.css     # Stili grafici (tema tombola, responsive)
+├── data.json        # Elenco numeri con traduzioni e metadati
+├── index.html       # Pagina principale e struttura dell'interfaccia
+├── script.js        # Logica dell'applicazione, stato, animazioni e audio
+├── sponsors.json    # Configurazione sponsor remoti
+├── styles.css       # Stili e design token
+└── images/          # Asset grafici per tabellone e sponsor
 ```
 
-## Come eseguire l'app
-
-Trattandosi di una SPA statica non è necessario alcun build step. È sufficiente servire i file con un web server locale (necessario per permettere al browser di accedere alla fotocamera e leggere `data.json`).
-
-### Utilizzando Python 3
+## Avvio in locale
+La web app non richiede build: è sufficiente servire i file statici da un web server (necessario per permettere a `fetch` di leggere `data.json` e `sponsors.json`).
 
 ```bash
+# con Python 3
 python3 -m http.server 8000
-```
 
-Quindi apri il browser su [http://localhost:8000](http://localhost:8000).
-
-### Utilizzando Node.js (`http-server`)
-
-```bash
+# con Node.js (http-server)
 npx http-server -p 8000
 ```
 
-> **Nota:** per permettere l'accesso alla fotocamera, il browser richiede il protocollo `https` oppure `http` su `localhost`. In produzione pubblica la pagina su un dominio `https` (GitHub Pages, Netlify, Vercel, ecc.).
+Apri quindi <http://localhost:8000> nel browser. Per la riproduzione vocale e l'accesso eventuale alla fotocamera (per futuri sviluppi) è consigliato utilizzare HTTPS in produzione.
 
-## Formato dei QR code
+## Personalizzazione dati
+- **Numeri**: aggiorna `data.json` modificando nomi italiani, dialettali e immagini (`image` con percorso relativo). In assenza di immagine viene mostrato un segnaposto.
+- **Sponsor**: gestiti tramite `sponsors.json` oppure fallback integrati in `script.js`. Ogni sponsor deve includere `logo` (percorso immagine) e `url`.
+- **Stato iniziale**: per partire da tabellone pulito elimina la chiave `TOMBOLA_DRAW_STATE` dal `localStorage` del dominio.
 
-Lo scanner si aspetta un QR code che contenga **semplicemente il numero** (es. `42`). Quando il valore è valido e presente in `data.json`, l'app mostra la scheda relativa e riproduce l'audio.
+## Accessibilità e usabilità
+- Navigazione da tastiera completa con _skip link_, comandi con `:focus-visible` e dialoghi modali dotati di focus trap e isolamento del contenuto retrostante.
+- Annunci live via `aria-live` per ultimo numero estratto, barra di avanzamento e cronologia.
+- Cronologia e animazioni rispettano le preferenze di movimento ridotto (`prefers-reduced-motion`).
+- Palette cromatica ottimizzata per il contrasto WCAG AA su pulsanti principali e testi su sfondi accent.
 
-## Gestione delle immagini dei numeri
+## Considerazioni per la produzione
+- Servire gli asset con caching statico e `Content-Type` corretti; le immagini possono essere convertite in WebP mantenendo i fallback dichiarati in `data.json`/`sponsors.json`.
+- Per contesti multi-istanza, sostituire il semplice `localStorage` con uno storage centralizzato o sincronizzato lato server.
+- L'annuncio vocale dipende dalla disponibilità della Web Speech API: valutare un fallback audio personalizzato o disabilitare la funzione sui browser non supportati.
+- Prevedere una pipeline di validazione per `data.json` e `sponsors.json` (es. linting JSON) per evitare crash dovuti a formati errati.
 
-Ogni elemento in `data.json` dispone ora della proprietà opzionale `image`. Quando valorizzata, l'interfaccia utilizza l'asset associato al posto del segnaposto SVG.
-
-1. Salva l'immagine definitiva nella cartella `images/` seguendo la convenzione `NUMERO.png` (esempio: `images/18.png`). Qualsiasi formato servito dal web server statico è supportato, ma si consiglia **PNG** con fondo trasparente per uniformità.
-2. Aggiorna la voce corrispondente in `data.json` impostando `"image": "images/NUMERO.png"`. Se l'immagine non è ancora disponibile puoi lasciare la proprietà mancante o impostarla a `null` per mostrare il segnaposto.
-3. Dopo aver servito il progetto in locale (ad esempio con `python3 -m http.server 8000`), verifica che il file sia raggiungibile aprendo `http://localhost:8000/images/NUMERO.png`. La stessa struttura sarà replicata automaticamente sui deploy statici (GitHub Pages, Netlify, ecc.), assicurando che gli asset vengano caricati correttamente.
-
-## Personalizzazione delle pronunce
-
-Al momento la pronuncia sfrutta la sintesi vocale (`speechSynthesis`) del dispositivo. Per ottenere un risultato fedele al dialetto nojano è possibile:
-
-1. Registrare i file audio originali (uno per numero) e salvarli nella cartella `audio/`.
-2. Aggiornare `data.json` aggiungendo un attributo `audio` con il percorso del file.
-3. Estendere `script.js` per riprodurre i file locali al posto della sintesi vocale quando disponibili.
-
-## Stato dei dati
-
-Alcune voci dialettali non sono ancora state fornite. In questi casi la UI mostra il messaggio "Registrazione da fornire" e, alla riproduzione, viene letto il testo italiano come fallback. Puoi aggiornare `data.json` man mano che ricevi le traduzioni complete.
-
-## Requisiti del browser
-
-- Supporto alla Web Speech API per la sintesi vocale (Chrome, Edge e Safari moderni).
-- Autorizzazione all'uso della fotocamera per la scansione dei QR.
+## Stato attuale e limitazioni
+- Nessuna autenticazione o multiutenza: l'app è pensata per l'uso su un unico dispositivo.
+- Le immagini vengono caricate in modo eager; per eventi con connessioni lente si consiglia di adottare varianti ottimizzate o CDN.
+- Non è presente un sistema di build: eventuali ottimizzazioni (minificazione, bundling) vanno aggiunte esternamente.
 
 ## Licenza
-
-Il contenuto dei testi appartiene ai creatori della Tombola Nojana. Il codice presente in questa repository è rilasciato con licenza MIT (vedi [LICENSE](LICENSE) se presente) oppure può essere riutilizzato liberamente con attribuzione.
+Il codice può essere riutilizzato internamente previa attribuzione agli autori originali della Tombola Nojana. Valuta l'aggiunta di una licenza formale se prevedi una distribuzione pubblica.

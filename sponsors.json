@@ -1,16 +1,39 @@
 {
   "sponsors": [
     {
-      "logo": "images/sponsor-panificio-stella.svg",
-      "url": "https://www.panificiostella.it/"
+      "logo": "images/sponsor/LUTE.png",
+      "url": null,
+      "name": "LUTE Noicàttaro"
     },
     {
-      "logo": "images/sponsor-agrumi-del-sud.svg",
-      "url": "https://www.agrumidelsud.it/"
+      "logo": "images/sponsor/ProLoco.png",
+      "url": null,
+      "name": "Pro Loco Noicàttaro"
     },
     {
-      "logo": "images/sponsor-cantina-nojana.svg",
-      "url": "https://www.cantinanojana.it/"
+      "logo": "images/sponsor/arca.png",
+      "url": null,
+      "name": "Pasticceria L'Arca Di Porrelli Arcangelo"
+    },
+    {
+      "logo": "images/sponsor/berardi.png",
+      "url": "https://www.berardiautomotive.it/",
+      "name": "Berardi Automotive"
+    },
+    {
+      "logo": "images/sponsor/divella.png",
+      "url": "https://www.divella.it/",
+      "name": "Divella"
+    },
+    {
+      "logo": "images/sponsor/grafica2P.png",
+      "url": null,
+      "name": "Grafica 2P"
+    },
+    {
+      "logo": "images/sponsor/ilsorriso.png",
+      "url": null,
+      "name": "Panificio Il Sorriso"
     }
   ]
 }
