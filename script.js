@@ -1287,30 +1287,36 @@ function renderSponsorShowcase(sponsors, options = {}) {
     const item = document.createElement('li');
     item.className = 'sponsor-strip__item';
 
-    const anchor = document.createElement('a');
-    anchor.className = 'sponsor-strip__link';
-    const safeUrl = sanitizeUrl(sponsor.url || '');
-    const isExternal = /^https?:\/\//i.test(safeUrl);
-    anchor.href = safeUrl;
-    anchor.target = isExternal ? '_blank' : '_self';
-    if (isExternal) {
-      anchor.rel = 'noopener noreferrer';
-    } else {
-      anchor.removeAttribute('rel');
-    }
+    const hasUrl = typeof sponsor.url === 'string' && sponsor.url.trim();
+    const container = document.createElement(hasUrl ? 'a' : 'div');
+    container.className = 'sponsor-strip__link';
 
-    const label = getSponsorAccessibleLabel(sponsor);
-    if (label) {
-      anchor.setAttribute('aria-label', label);
-    } else {
-      anchor.removeAttribute('aria-label');
-    }
+    if (hasUrl) {
+      const safeUrl = sanitizeUrl(sponsor.url || '');
+      const isExternal = /^https?:\/\//i.test(safeUrl);
+      container.href = safeUrl;
+      container.target = isExternal ? '_blank' : '_self';
+      if (isExternal) {
+        container.rel = 'noopener noreferrer';
+      } else {
+        container.removeAttribute('rel');
+      }
 
-    const displayName = getSponsorDisplayName(sponsor);
-    if (displayName) {
-      anchor.title = displayName;
+      const label = getSponsorAccessibleLabel(sponsor);
+      if (label) {
+        container.setAttribute('aria-label', label);
+      } else {
+        container.removeAttribute('aria-label');
+      }
+
+      const displayName = getSponsorDisplayName(sponsor);
+      if (displayName) {
+        container.title = displayName;
+      } else {
+        container.removeAttribute('title');
+      }
     } else {
-      anchor.removeAttribute('title');
+      container.classList.add('sponsor-strip__link--static');
     }
 
     const logoSrc =
@@ -1337,15 +1343,8 @@ function renderSponsorShowcase(sponsors, options = {}) {
     logoWrapper.appendChild(logo);
     figure.appendChild(logoWrapper);
 
-    if (displayName) {
-      const caption = document.createElement('figcaption');
-      caption.className = 'sponsor-strip__name';
-      caption.textContent = displayName;
-      figure.appendChild(caption);
-    }
-
-    anchor.appendChild(figure);
-    item.appendChild(anchor);
+    container.appendChild(figure);
+    item.appendChild(container);
     sponsorShowcaseList.appendChild(item);
   });
 

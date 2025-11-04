@@ -998,16 +998,6 @@ button {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(0.3rem, 1vw, 0.45rem);
-}
-
-.sponsor-strip__figure figcaption {
-  font-size: 0.78rem;
-  line-height: 1.2;
-  color: var(--ink-subtle);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
 }
 
 .sponsor-strip__logo {
@@ -1023,15 +1013,6 @@ button {
   max-width: 100%;
 }
 
-.sponsor-strip__name {
-  font-size: 0.78rem;
-  line-height: 1.2;
-  color: var(--ink-subtle);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
 .sponsor-strip__link:hover {
   background: rgba(16, 13, 14, 0.04);
 }
@@ -1040,6 +1021,16 @@ button {
   outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
   background: rgba(16, 13, 14, 0.04);
+}
+
+.sponsor-strip__link--static {
+  pointer-events: none;
+  cursor: default;
+}
+
+.sponsor-strip__link--static:hover,
+.sponsor-strip__link--static:focus-visible {
+  background: transparent;
 }
 
 @media (min-width: 40rem) {
