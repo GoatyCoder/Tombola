@@ -1192,20 +1192,46 @@ function pickRandomSponsor(previousKey = null) {
   return sponsorManager.pickRandom(previousKey);
 }
 
-function getSponsorAccessibleLabel(sponsor) {
-  if (!sponsor || typeof sponsor.url !== 'string' || !sponsor.url.trim()) {
-    return 'Apri il sito dello sponsor';
+function getSponsorDisplayName(sponsor) {
+  if (!sponsor) {
+    return '';
+  }
+
+  if (typeof sponsor.name === 'string' && sponsor.name.trim()) {
+    return sponsor.name.trim();
+  }
+
+  if (typeof sponsor.url !== 'string' || !sponsor.url.trim()) {
+    return '';
   }
 
   try {
-    const base = typeof window !== 'undefined' && window.location ? window.location.origin : undefined;
+    const hasWindow = typeof window !== 'undefined' && window.location;
+    const base = hasWindow ? window.location.origin : undefined;
     const url = new URL(sponsor.url, base || 'https://example.com');
     const host = url.hostname.replace(/^www\./i, '');
-    if (host) {
-      return `Apri il sito di ${host}`;
+
+    if (!host) {
+      return '';
     }
+
+    if (hasWindow) {
+      const currentHost = window.location.hostname.replace(/^www\./i, '');
+      if (host === currentHost) {
+        return '';
+      }
+    }
+
+    return host;
   } catch (error) {
-    // Ignore parsing issues and fall back to a generic label
+    return '';
+  }
+}
+
+function getSponsorAccessibleLabel(sponsor) {
+  const displayName = getSponsorDisplayName(sponsor);
+  if (displayName) {
+    return `Apri il sito di ${displayName}`;
   }
 
   return 'Apri il sito dello sponsor';
@@ -1262,7 +1288,13 @@ function renderSponsorShowcase(sponsors, options = {}) {
     const label = getSponsorAccessibleLabel(sponsor);
     if (label) {
       anchor.setAttribute('aria-label', label);
-      anchor.title = label;
+    } else {
+      anchor.removeAttribute('aria-label');
+    }
+
+    const displayName = getSponsorDisplayName(sponsor);
+    if (displayName) {
+      anchor.title = displayName;
     } else {
       anchor.removeAttribute('title');
     }
@@ -1277,7 +1309,22 @@ function renderSponsorShowcase(sponsors, options = {}) {
       logo.loading = 'lazy';
     }
 
-    anchor.appendChild(logo);
+    const content = document.createElement('span');
+    content.className = 'sponsor-strip__content';
+
+    const logoWrapper = document.createElement('span');
+    logoWrapper.className = 'sponsor-strip__logo';
+    logoWrapper.appendChild(logo);
+    content.appendChild(logoWrapper);
+
+    if (displayName) {
+      const caption = document.createElement('span');
+      caption.className = 'sponsor-strip__name';
+      caption.textContent = displayName;
+      content.appendChild(caption);
+    }
+
+    anchor.appendChild(content);
     item.appendChild(anchor);
     sponsorShowcaseList.appendChild(item);
   });
@@ -1428,7 +1475,12 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
   }
   anchor.removeAttribute('tabindex');
   anchor.setAttribute('aria-label', getSponsorAccessibleLabel(sponsor));
-  anchor.removeAttribute('title');
+  const displayName = getSponsorDisplayName(sponsor);
+  if (displayName) {
+    anchor.title = displayName;
+  } else {
+    anchor.removeAttribute('title');
+  }
 
   if ('loading' in logo) {
     logo.loading = preferLazy ? 'lazy' : 'eager';
