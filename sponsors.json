@@ -32,7 +32,7 @@
     },
     {
       "logo": "images/sponsor/grafica2P.png",
-      "url": null,
+      "url": "https://www.facebook.com/Grafica2p/",
       "name": "Grafica 2P",
       "onlyShowcase": false
     },
@@ -44,7 +44,7 @@
     },
     {
       "logo": "images/sponsor/ProLoco.png",
-      "url": null,
+      "url": "https://www.facebook.com/ProLocoNoicattaroNojapro",
       "name": "Pro Loco Noicàttaro",
       "onlyShowcase": true
     }
