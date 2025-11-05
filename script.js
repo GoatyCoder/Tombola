@@ -502,17 +502,18 @@ function normalizeSponsor(rawSponsor) {
   }
 
   const logo = typeof rawSponsor.logo === 'string' ? rawSponsor.logo.trim() : '';
-  const url = typeof rawSponsor.url === 'string' ? rawSponsor.url.trim() : '';
+  const url = typeof rawSponsor.url === 'string' ? rawSponsor.url.trim() : null;
   const name =
     typeof rawSponsor.name === 'string' && rawSponsor.name.trim()
       ? rawSponsor.name.trim()
       : '';
+  const onlyShowcase = Boolean(rawSponsor.onlyShowcase);
 
-  if (!logo || !url) {
+  if (!logo) {
     return null;
   }
 
-  return { logo, url, name };
+  return { logo, url, name, onlyShowcase };
 }
 
 function cloneSponsorData(sponsor) {
@@ -521,15 +522,16 @@ function cloneSponsorData(sponsor) {
   }
 
   const logo = typeof sponsor.logo === 'string' ? sponsor.logo.trim() : '';
-  const url = typeof sponsor.url === 'string' ? sponsor.url.trim() : '';
+  const url = typeof sponsor.url === 'string' ? sponsor.url.trim() : null;
   const name =
     typeof sponsor.name === 'string' && sponsor.name.trim() ? sponsor.name.trim() : '';
+  const onlyShowcase = Boolean(sponsor.onlyShowcase);
 
-  if (!logo || !url) {
+  if (!logo) {
     return null;
   }
 
-  const cloned = { logo, url };
+  const cloned = { logo, url, onlyShowcase };
   if (name) {
     cloned.name = name;
   }
@@ -770,21 +772,26 @@ class SponsorManager {
     return this.loadPromise;
   }
 
-  pickRandom(excludeKey = null) {
+pickRandom(excludeKey = null) {
     if (!this.hasSponsors()) {
       return null;
     }
 
-    const pool = this.sponsors.filter((sponsor) => {
-      if (!excludeKey) {
-        return true;
-      }
+    const eligibleSponsors = this.sponsors.filter((sponsor) => !sponsor.onlyShowcase);
 
-      const key = getSponsorKey(sponsor);
-      return key !== excludeKey;
-    });
+    if (eligibleSponsors.length === 0) {
+      return null;
+    }
 
-    const candidates = pool.length > 0 ? pool : this.sponsors;
+    let pool = eligibleSponsors;
+    if (excludeKey) {
+      pool = eligibleSponsors.filter((sponsor) => getSponsorKey(sponsor) !== excludeKey);
+    }
+
+    // If the pool is empty (e.g., only one sponsor available which is excluded),
+    // fall back to the full list of eligible sponsors.
+    const candidates = pool.length > 0 ? pool : eligibleSponsors;
+
     const index = Math.floor(Math.random() * candidates.length);
     const sponsor = candidates[index] || null;
     return sponsor ? cloneSponsorData(sponsor) : null;
@@ -1271,15 +1278,17 @@ function renderSponsorShowcase(sponsors, options = {}) {
     return;
   }
 
-  const randomized = sponsors.slice();
-  for (let index = randomized.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [randomized[index], randomized[swapIndex]] = [randomized[swapIndex], randomized[index]];
+  if (sponsors.length === 0) {
+    sponsorShowcaseList.innerHTML = '';
+    sponsorShowcase.hidden = true;
+    sponsorShowcase.setAttribute('aria-hidden', 'true');
+    state.sponsorShowcaseRendered = false;
+    return;
   }
 
   sponsorShowcaseList.innerHTML = '';
 
-  randomized.forEach((sponsor) => {
+  sponsors.forEach((sponsor) => {
     if (!sponsor) {
       return;
     }
@@ -1317,6 +1326,7 @@ function renderSponsorShowcase(sponsors, options = {}) {
       }
     } else {
       container.classList.add('sponsor-strip__link--static');
+      container.setAttribute('role', 'presentation');
     }
 
     const logoSrc =
