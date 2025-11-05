@@ -1,44 +1,52 @@
 {
   "sponsors": [
     {
-      "logo": "images/sponsor/LUTE.png",
-      "url": "#",
-      "name": "LUTE Noicàttaro"
-    },
-    {
-      "logo": "images/sponsor/ProLoco.png",
-      "url": "#",
-      "name": "Pro Loco Noicàttaro"
-    },
-    {
-      "logo": "images/sponsor/arca.png",
-      "url": "#",
-      "name": "Pasticceria L'Arca Di Porrelli Arcangelo"
+      "logo": "images/sponsor/divella.png",
+      "url": "https://www.divella.it/",
+      "name": "Divella",
+      "onlyShowcase": false
     },
     {
       "logo": "images/sponsor/berardi.png",
       "url": "https://www.berardiautomotive.it/",
-      "name": "Berardi Automotive"
+      "name": "Berardi Automotive",
+      "onlyShowcase": false
     },
     {
-      "logo": "images/sponsor/divella.png",
-      "url": "https://www.divella.it/",
-      "name": "Divella"
-    },
-    {
-      "logo": "images/sponsor/grafica2P.png",
-      "url": "#",
-      "name": "Grafica 2P"
-    },
-    {
-      "logo": "images/sponsor/ilsorriso.png",
-      "url": "#",
-      "name": "Panificio Il Sorriso"
+      "logo": "images/sponsor/arca.png",
+      "url": "https://www.facebook.com/pasticcerialarca",
+      "name": "Pasticceria L'Arca Di Porrelli Arcangelo",
+      "onlyShowcase": false
     },
     {
       "logo": "images/sponsor/ecasa.png",
       "url": "https://www.ecasa-immobiliare.it/",
-      "name": "È Casa Immobiliare"
+      "name": "È Casa Immobiliare",
+      "onlyShowcase": false
+    },
+    {
+      "logo": "images/sponsor/ilsorriso.png",
+      "url": "https://www.facebook.com/ilsorrisopanificio",
+      "name": "Panificio Il Sorriso",
+      "onlyShowcase": false
+    },
+    {
+      "logo": "images/sponsor/grafica2P.png",
+      "url": null,
+      "name": "Grafica 2P",
+      "onlyShowcase": false
+    },
+    {
+      "logo": "images/sponsor/LUTE.png",
+      "url": null,
+      "name": "LUTE Noicàttaro",
+      "onlyShowcase": true
+    },
+    {
+      "logo": "images/sponsor/ProLoco.png",
+      "url": null,
+      "name": "Pro Loco Noicàttaro",
+      "onlyShowcase": true
     }
   ]
 }
