@@ -502,17 +502,18 @@ function normalizeSponsor(rawSponsor) {
   }
 
   const logo = typeof rawSponsor.logo === 'string' ? rawSponsor.logo.trim() : '';
-  const url = typeof rawSponsor.url === 'string' ? rawSponsor.url.trim() : '';
+  const url = typeof rawSponsor.url === 'string' ? rawSponsor.url.trim() : null;
   const name =
     typeof rawSponsor.name === 'string' && rawSponsor.name.trim()
       ? rawSponsor.name.trim()
       : '';
+  const onlyShowcase = Boolean(rawSponsor.onlyShowcase);
 
-  if (!logo || !url) {
+  if (!logo) {
     return null;
   }
 
-  return { logo, url, name };
+  return { logo, url, name, onlyShowcase };
 }
 
 function cloneSponsorData(sponsor) {
@@ -521,15 +522,16 @@ function cloneSponsorData(sponsor) {
   }
 
   const logo = typeof sponsor.logo === 'string' ? sponsor.logo.trim() : '';
-  const url = typeof sponsor.url === 'string' ? sponsor.url.trim() : '';
+  const url = typeof sponsor.url === 'string' ? sponsor.url.trim() : null;
   const name =
     typeof sponsor.name === 'string' && sponsor.name.trim() ? sponsor.name.trim() : '';
+  const onlyShowcase = Boolean(sponsor.onlyShowcase);
 
-  if (!logo || !url) {
+  if (!logo) {
     return null;
   }
 
-  const cloned = { logo, url };
+  const cloned = { logo, url, onlyShowcase };
   if (name) {
     cloned.name = name;
   }
@@ -772,23 +774,33 @@ class SponsorManager {
 
   pickRandom(excludeKey = null) {
     if (!this.hasSponsors()) {
-      return null;
+    return null;
+  }
+
+  // Filtra solo gli sponsor che NON sono onlyShowcase
+  const pool = this.sponsors.filter((sponsor) => {
+    if (sponsor.onlyShowcase) {
+      return false;
     }
 
-    const pool = this.sponsors.filter((sponsor) => {
-      if (!excludeKey) {
-        return true;
-      }
+    if (!excludeKey) {
+      return true;
+    }
 
-      const key = getSponsorKey(sponsor);
-      return key !== excludeKey;
-    });
+    const key = getSponsorKey(sponsor);
+    return key !== excludeKey;
+  });
 
-    const candidates = pool.length > 0 ? pool : this.sponsors;
-    const index = Math.floor(Math.random() * candidates.length);
-    const sponsor = candidates[index] || null;
-    return sponsor ? cloneSponsorData(sponsor) : null;
+  const candidates = pool.length > 0 ? pool : this.sponsors.filter((s) => !s.onlyShowcase);
+  
+  if (candidates.length === 0) {
+    return null;
   }
+  
+  const index = Math.floor(Math.random() * candidates.length);
+  const sponsor = candidates[index] || null;
+  return sponsor ? cloneSponsorData(sponsor) : null;
+}
 
   async prepareNext() {
     if (this.preparationPromise) {
@@ -1271,15 +1283,21 @@ function renderSponsorShowcase(sponsors, options = {}) {
     return;
   }
 
-  const randomized = sponsors.slice();
-  for (let index = randomized.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [randomized[index], randomized[swapIndex]] = [randomized[swapIndex], randomized[index]];
+  // Tutti gli sponsor vengono mostrati nella showcase (nell'ordine originale)
+  const showcaseSponsors = sponsors;
+
+  if (showcaseSponsors.length === 0) {
+    sponsorShowcaseList.innerHTML = '';
+    sponsorShowcase.hidden = true;
+    sponsorShowcase.setAttribute('aria-hidden', 'true');
+    state.sponsorShowcaseRendered = false;
+    return;
   }
 
+  // Mantieni l'ordine originale (non randomizzare)
   sponsorShowcaseList.innerHTML = '';
 
-  randomized.forEach((sponsor) => {
+  showcaseSponsors.forEach((sponsor) => {
     if (!sponsor) {
       return;
     }
@@ -1287,7 +1305,8 @@ function renderSponsorShowcase(sponsors, options = {}) {
     const item = document.createElement('li');
     item.className = 'sponsor-strip__item';
 
-    const hasUrl = typeof sponsor.url === 'string' && sponsor.url.trim();
+    // Verifica se ha un URL valido
+    const hasUrl = typeof sponsor.url === 'string' && sponsor.url.trim() && sponsor.url !== 'null';
     const container = document.createElement(hasUrl ? 'a' : 'div');
     container.className = 'sponsor-strip__link';
 
@@ -1316,7 +1335,9 @@ function renderSponsorShowcase(sponsors, options = {}) {
         container.removeAttribute('title');
       }
     } else {
+      // Sponsor senza link
       container.classList.add('sponsor-strip__link--static');
+      container.setAttribute('role', 'presentation');
     }
 
     const logoSrc =
