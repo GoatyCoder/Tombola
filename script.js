@@ -772,35 +772,30 @@ class SponsorManager {
     return this.loadPromise;
   }
 
-  pickRandom(excludeKey = null) {
+pickRandom(excludeKey = null) {
     if (!this.hasSponsors()) {
-    return null;
-  }
-
-  // Filtra solo gli sponsor che NON sono onlyShowcase
-  const pool = this.sponsors.filter((sponsor) => {
-    if (sponsor.onlyShowcase) {
-      return false;
+      return null;
     }
 
-    if (!excludeKey) {
-      return true;
+    const eligibleSponsors = this.sponsors.filter((sponsor) => !sponsor.onlyShowcase);
+
+    if (eligibleSponsors.length === 0) {
+      return null;
     }
 
-    const key = getSponsorKey(sponsor);
-    return key !== excludeKey;
-  });
+    let pool = eligibleSponsors;
+    if (excludeKey) {
+      pool = eligibleSponsors.filter((sponsor) => getSponsorKey(sponsor) !== excludeKey);
+    }
 
-  const candidates = pool.length > 0 ? pool : this.sponsors.filter((s) => !s.onlyShowcase);
-  
-  if (candidates.length === 0) {
-    return null;
+    // If the pool is empty (e.g., only one sponsor available which is excluded),
+    // fall back to the full list of eligible sponsors.
+    const candidates = pool.length > 0 ? pool : eligibleSponsors;
+
+    const index = Math.floor(Math.random() * candidates.length);
+    const sponsor = candidates[index] || null;
+    return sponsor ? cloneSponsorData(sponsor) : null;
   }
-  
-  const index = Math.floor(Math.random() * candidates.length);
-  const sponsor = candidates[index] || null;
-  return sponsor ? cloneSponsorData(sponsor) : null;
-}
 
   async prepareNext() {
     if (this.preparationPromise) {
@@ -1283,10 +1278,7 @@ function renderSponsorShowcase(sponsors, options = {}) {
     return;
   }
 
-  // Tutti gli sponsor vengono mostrati nella showcase (nell'ordine originale)
-  const showcaseSponsors = sponsors;
-
-  if (showcaseSponsors.length === 0) {
+  if (sponsors.length === 0) {
     sponsorShowcaseList.innerHTML = '';
     sponsorShowcase.hidden = true;
     sponsorShowcase.setAttribute('aria-hidden', 'true');
@@ -1294,10 +1286,9 @@ function renderSponsorShowcase(sponsors, options = {}) {
     return;
   }
 
-  // Mantieni l'ordine originale (non randomizzare)
   sponsorShowcaseList.innerHTML = '';
 
-  showcaseSponsors.forEach((sponsor) => {
+  sponsors.forEach((sponsor) => {
     if (!sponsor) {
       return;
     }
@@ -1305,8 +1296,7 @@ function renderSponsorShowcase(sponsors, options = {}) {
     const item = document.createElement('li');
     item.className = 'sponsor-strip__item';
 
-    // Verifica se ha un URL valido
-    const hasUrl = typeof sponsor.url === 'string' && sponsor.url.trim() && sponsor.url !== 'null';
+    const hasUrl = typeof sponsor.url === 'string' && sponsor.url.trim();
     const container = document.createElement(hasUrl ? 'a' : 'div');
     container.className = 'sponsor-strip__link';
 
@@ -1335,7 +1325,6 @@ function renderSponsorShowcase(sponsors, options = {}) {
         container.removeAttribute('title');
       }
     } else {
-      // Sponsor senza link
       container.classList.add('sponsor-strip__link--static');
       container.setAttribute('role', 'presentation');
     }
