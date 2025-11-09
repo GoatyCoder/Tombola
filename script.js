@@ -2222,16 +2222,36 @@ function handleBoardCellClick(event) {
   handleSelection(entry, cell);
 }
 
+function getNumberImageSources(entry) {
+  const sources = [];
+
+  if (entry && Number.isInteger(entry.number)) {
+    sources.push(`images/illustrazioni/${entry.number}.png`);
+  }
+
+  if (entry && typeof entry.image === 'string' && entry.image.trim()) {
+    sources.push(entry.image.trim());
+  }
+
+  if (entry && Number.isInteger(entry.number)) {
+    sources.push(`images/${entry.number}.jpg`);
+  }
+
+  sources.push(TILE_IMAGE_FALLBACK);
+
+  return Array.from(
+    sources.reduce((acc, source) => {
+      if (typeof source === 'string' && source && !acc.has(source)) {
+        acc.add(source);
+      }
+      return acc;
+    }, new Set())
+  );
+}
+
 function getNumberImage(entry) {
-  if (entry && entry.image) {
-    return entry.image;
-  }
-
-  if (entry && entry.number) {
-    return `images/${entry.number}.jpg`;
-  }
-
-  return TILE_IMAGE_FALLBACK;
+  const [primary] = getNumberImageSources(entry);
+  return primary || TILE_IMAGE_FALLBACK;
 }
 
 function handleBoardCellImageError(event) {
@@ -2240,14 +2260,29 @@ function handleBoardCellImageError(event) {
     return;
   }
 
-  if (target.dataset.fallbackApplied === 'true') {
-    target.style.display = 'none';
-    target.removeEventListener('error', handleBoardCellImageError);
+  let sources = [];
+  try {
+    if (typeof target.dataset.imageSources === 'string') {
+      const parsed = JSON.parse(target.dataset.imageSources);
+      if (Array.isArray(parsed)) {
+        sources = parsed.filter((item) => typeof item === 'string' && item);
+      }
+    }
+  } catch (error) {
+    sources = [];
+  }
+
+  const currentIndex = Number.parseInt(target.dataset.imageSourceIndex || '0', 10);
+  const nextIndex = Number.isNaN(currentIndex) ? 1 : currentIndex + 1;
+
+  if (nextIndex < sources.length) {
+    target.dataset.imageSourceIndex = String(nextIndex);
+    target.src = sources[nextIndex];
     return;
   }
 
-  target.dataset.fallbackApplied = 'true';
-  target.src = TILE_IMAGE_FALLBACK;
+  target.style.display = 'none';
+  target.removeEventListener('error', handleBoardCellImageError);
 }
 
 function applyBoardCellImage(imageEl, entry) {
@@ -2255,7 +2290,9 @@ function applyBoardCellImage(imageEl, entry) {
     return TILE_IMAGE_FALLBACK;
   }
 
-  imageEl.dataset.fallbackApplied = 'false';
+  const sources = getNumberImageSources(entry);
+  imageEl.dataset.imageSources = JSON.stringify(sources);
+  imageEl.dataset.imageSourceIndex = '0';
   imageEl.removeEventListener('error', handleBoardCellImageError);
   imageEl.addEventListener('error', handleBoardCellImageError);
   imageEl.style.removeProperty('display');
