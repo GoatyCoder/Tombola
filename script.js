@@ -2223,7 +2223,14 @@ function handleBoardCellClick(event) {
   handleSelection(entry, cell);
 }
 
-function getNumberImage(entry) {
+function getNumberImage(entry, options = {}) {
+  const { variant = 'default' } =
+    options && typeof options === 'object' ? options : {};
+
+  if (variant === 'illustration' && entry && entry.number) {
+    return `images/illustrazioni/${entry.number}.png`;
+  }
+
   if (entry && entry.image) {
     return entry.image;
   }
@@ -2251,7 +2258,7 @@ function handleBoardCellImageError(event) {
   target.src = TILE_IMAGE_FALLBACK;
 }
 
-function applyBoardCellImage(imageEl, entry) {
+function applyBoardCellImage(imageEl, entry, options = {}) {
   if (!(imageEl instanceof HTMLImageElement)) {
     return TILE_IMAGE_FALLBACK;
   }
@@ -2260,7 +2267,7 @@ function applyBoardCellImage(imageEl, entry) {
   imageEl.removeEventListener('error', handleBoardCellImageError);
   imageEl.addEventListener('error', handleBoardCellImageError);
   imageEl.style.removeProperty('display');
-  const source = getNumberImage(entry);
+  const source = getNumberImage(entry, options);
   imageEl.src = source;
   return source;
 }
@@ -2885,7 +2892,9 @@ function openModal(entry, options = {}) {
 
   let imageSource = TILE_IMAGE_FALLBACK;
   if (elements.modalImage) {
-    imageSource = applyBoardCellImage(elements.modalImage, entry);
+    imageSource = applyBoardCellImage(elements.modalImage, entry, {
+      variant: 'illustration',
+    });
     elements.modalImage.alt = imageSource !== TILE_IMAGE_FALLBACK
       ? entry.italian
         ? `Illustrazione del numero ${entry.number}: ${entry.italian}`
