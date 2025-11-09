@@ -84,6 +84,7 @@ const elements = {
   drawProgressValue: document.querySelector('#draw-progress-value'),
   drawProgressBar: document.querySelector('#draw-progress-bar'),
   drawProgressFill: document.querySelector('#draw-progress-bar .progress__fill'),
+  drawLastMetric: document.querySelector('.status-card__metric--last'),
   drawLastNumber: document.querySelector('#draw-last-number'),
   drawLastDetail: document.querySelector('#draw-last-detail'),
 };
@@ -3077,6 +3078,7 @@ function updateDrawStatus(latestEntry) {
     drawProgressValue,
     drawProgressBar,
     drawProgressFill,
+    drawLastMetric,
     drawLastNumber,
     drawLastDetail,
     drawButton,
@@ -3154,6 +3156,25 @@ function updateDrawStatus(latestEntry) {
       detailText = 'Prosegui con le estrazioni';
     }
     drawLastDetail.textContent = detailText;
+  }
+
+  if (drawLastMetric) {
+    if (normalizedEntry) {
+      const number = Math.trunc(Number(normalizedEntry.number));
+      const isValidNumber = Number.isFinite(number) && number > 0;
+      if (isValidNumber) {
+        const imagePath = `images/illustrazioni/${number}.png`;
+        const imageDeclaration = `url('${imagePath}')`;
+        drawLastMetric.style.setProperty('--last-number-image', imageDeclaration);
+        drawLastMetric.dataset.hasImage = 'true';
+      } else {
+        drawLastMetric.style.removeProperty('--last-number-image');
+        delete drawLastMetric.dataset.hasImage;
+      }
+    } else {
+      drawLastMetric.style.removeProperty('--last-number-image');
+      delete drawLastMetric.dataset.hasImage;
+    }
   }
 
   let message = state.storageErrorMessage || 'Caricamento del tabellone…';

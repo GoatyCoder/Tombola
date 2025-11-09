@@ -230,6 +230,50 @@ button {
 
 .status-card__metric--last {
   gap: 0.4rem;
+  position: relative;
+  padding: clamp(0.75rem, 2.2vw, 1.1rem) clamp(1.4rem, 3.4vw, 1.9rem)
+    clamp(0.85rem, 2.4vw, 1.25rem) clamp(1.2rem, 3vw, 1.6rem);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.status-card__metric--last::before,
+.status-card__metric--last::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+
+.status-card__metric--last::after {
+  background-image: var(--last-number-image, none);
+  background-repeat: no-repeat;
+  background-position: right center;
+  background-size: auto 100%;
+  z-index: 0;
+}
+
+.status-card__metric--last::before {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.94) 0%,
+    rgba(255, 255, 255, 0.86) 32%,
+    rgba(255, 255, 255, 0.45) 60%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  z-index: 1;
+}
+
+.status-card__metric--last > * {
+  position: relative;
+  z-index: 2;
+}
+
+.status-card__metric--last[data-has-image='true']::before,
+.status-card__metric--last[data-has-image='true']::after {
+  opacity: 1;
 }
 
 .status-card__metric--last .status-card__label {
