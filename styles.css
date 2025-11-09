@@ -229,11 +229,62 @@ button {
 }
 
 .status-card__metric--last {
-  gap: 0.4rem;
+  position: relative;
+  overflow: hidden;
+  padding-right: clamp(8rem, 20vw, 12rem);
+  min-height: clamp(6rem, 15vw, 8rem);
 }
 
-.status-card__metric--last .status-card__label {
-  color: rgba(143, 31, 51, 0.78);
+.status-card__metric--last::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: clamp(7rem, 18vw, 11rem);
+  background-image: var(--last-number-image, none);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transition: opacity var(--duration-md) var(--easing-standard);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.status-card__metric--last::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: clamp(7rem, 18vw, 11rem);
+  bottom: 0;
+  width: clamp(4rem, 10vw, 6rem);
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(255, 255, 255, 0.95) 20%,
+    rgba(255, 255, 255, 0.7) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  opacity: 0;
+  transition: opacity var(--duration-md) var(--easing-standard);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.status-card__metric--last[data-has-image]::after {
+  opacity: 1;
+}
+
+.status-card__metric--last[data-has-image]::before {
+  opacity: 1;
+}
+
+.status-card__metric--last .status-card__label,
+.status-card__metric--last .status-card__value,
+.status-card__metric--last .status-card__detail {
+  position: relative;
+  z-index: 2;
 }
 
 .status-card__metric--progress {
@@ -1365,11 +1416,31 @@ button {
 
 /* Responsive adjustments */
 @media (max-width: 35rem) {
-  .status-card__actions {
-    width: 100%;
-    justify-content: space-between;
-    gap: 0.45rem;
+  .status-card__metric--last {
+    padding-right: clamp(6rem, 18vw, 8rem);
+    min-height: clamp(5rem, 12vw, 6.5rem);
   }
+  
+  .status-card__metric--last::before {
+    width: clamp(5.5rem, 16vw, 7.5rem);
+  }
+  
+  .status-card__metric--last::after {
+    right: clamp(5.5rem, 16vw, 7.5rem);
+    width: clamp(3rem, 8vw, 4.5rem);
+  }
+}
+
+/* Variante con bordo arrotondato per l'immagine (opzionale) */
+.status-card__metric--last::before {
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  mask-image: linear-gradient(
+    to left,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) 85%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
 
   .status-card__actions .button--dashboard-icon {
     flex: 0 0 auto;
