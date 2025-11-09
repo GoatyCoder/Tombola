@@ -3155,6 +3155,8 @@ function updateDrawStatus(latestEntry) {
     }
     drawLastDetail.textContent = detailText;
   }
+  
+  updateLastNumberImage(normalizedEntry);
 
   let message = state.storageErrorMessage || 'Caricamento del tabellone…';
 
@@ -3244,6 +3246,26 @@ function updateDrawStatus(latestEntry) {
   if (resetButton) {
     resetButton.disabled = drawnCount === 0 || isDataLoading || isDataError;
   }
+}
+
+function updateLastNumberImage(entry) {
+  const lastMetricElement = document.querySelector('.status-card__metric--last');
+  
+  if (!lastMetricElement) {
+    return;
+  }
+  
+  if (!entry) {
+    lastMetricElement.style.setProperty('--last-number-image', 'none');
+    lastMetricElement.removeAttribute('data-has-image');
+    return;
+  }
+  
+  const imageNumber = entry.number;
+  const imagePath = `images/illustrazioni/${imageNumber}.png`;
+  
+  lastMetricElement.style.setProperty('--last-number-image', `url('${imagePath}')`);
+  lastMetricElement.setAttribute('data-has-image', '');
 }
 
 function setupEventListeners() {
