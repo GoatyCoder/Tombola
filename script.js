@@ -1,3 +1,22 @@
+/* ============================================
+   TOMBOLA NOJANA - SCRIPT (Optimized)
+   ============================================ */
+
+// ============================================
+// 1. CONSTANTS
+// ============================================
+const STORAGE_KEYS = {
+  AUDIO: 'tombola-audio-enabled',
+  DRAW_STATE: 'TOMBOLA_DRAW_STATE',
+};
+
+const DATA_PATHS = {
+  NUMBERS: 'data.json',
+  SPONSORS: 'sponsors.json',
+};
+
+const FALLBACK_IMAGE = 'images/empty.jpg';
+
 const LoadingStates = Object.freeze({
   IDLE: 'idle',
   LOADING: 'loading',
@@ -13,6 +32,64 @@ const TombolaEvents = Object.freeze({
   SPONSOR_ASSIGNED: 'tombola:sponsorAssigned',
 });
 
+const CSS_CLASSES = {
+  CELL_DRAWN: 'board-cell--drawn',
+  CELL_ACTIVE: 'board-cell--active',
+  CELL_INCOMING: 'board-cell--incoming',
+  CELL_JUST_DRAWN: 'board-cell--just-drawn',
+  MODAL_OPEN: 'modal-open',
+  MODAL_VISIBLE: 'modal--visible',
+  HISTORY_OPEN: 'history--open',
+  PORTAL_VISIBLE: 'draw-portal--visible',
+  PORTAL_CLOSING: 'draw-portal--closing',
+  PORTAL_FLIGHT: 'draw-portal--flight',
+  PORTAL_CHARGING: 'draw-portal--charging',
+  BALL_LOADING: 'draw-portal__ball--loading',
+  BALL_REVEALED: 'draw-portal__ball--revealed',
+};
+
+const EMBEDDED_SPONSORS = Object.freeze([
+  {
+    logo: 'images/sponsor-panificio-stella.svg',
+    url: 'https://www.panificiostella.it/',
+    name: 'Panificio Stella',
+  },
+  {
+    logo: 'images/sponsor-agrumi-del-sud.svg',
+    url: 'https://www.agrumidelsud.it/',
+    name: 'Agrumi del Sud',
+  },
+  {
+    logo: 'images/sponsor-cantina-nojana.svg',
+    url: 'https://www.cantinanojana.it/',
+    name: 'Cantina Nojana',
+  },
+]);
+
+const DRAW_TIMELINE = Object.freeze({
+  intro: 280,
+  prepareHold: 1480,
+  revealAccent: 320,
+  celebrationHold: 1180,
+  flightDelay: 240,
+  flightDuration: 920,
+  overlayHideDelay: 280,
+  reducedMotionHold: 980,
+  reducedMotionFlight: 420,
+  modalRevealDelay: 520,
+});
+
+const ANIMATION_DELAYS = {
+  SHORT: 220,
+  MEDIUM: 320,
+  LONG: 520,
+  SCROLL_IDLE_TIMEOUT: 900,
+  SCROLL_IDLE_THRESHOLD: 160,
+};
+
+// ============================================
+// 2. STATE
+// ============================================
 const state = {
   numbers: [],
   selected: null,
@@ -35,6 +112,9 @@ const state = {
   activeFocusTrapElement: null,
 };
 
+// ============================================
+// 3. DOM ELEMENTS
+// ============================================
 const elements = {
   board: document.querySelector('#board'),
   template: document.querySelector('#board-cell-template'),
@@ -48,19 +128,14 @@ const elements = {
   modalDialectPlay: document.querySelector('#modal-dialect-play'),
   modalItalianPlay: document.querySelector('#modal-italian-play'),
   modalNext: document.querySelector('#modal-next'),
-  modalNextLabel: document.querySelector('[data-modal-next-label]'),
   modalSponsorBlock: document.querySelector('#modal-sponsor-block'),
-  modalSponsorHeading: document.querySelector('#modal-sponsor-heading'),
   modalSponsor: document.querySelector('#modal-sponsor'),
   modalSponsorLogo: document.querySelector('#modal-sponsor-logo'),
   drawButton: document.querySelector('#draw-button'),
-  drawButtonLabel: document.querySelector('[data-draw-label]'),
   resetButton: document.querySelector('#reset-button'),
   resetDialog: document.querySelector('#reset-dialog'),
   resetDialogConfirm: document.querySelector('[data-reset-confirm]'),
-  resetDialogCancelButtons: Array.from(
-    document.querySelectorAll('[data-reset-cancel]')
-  ),
+  resetDialogCancelButtons: Array.from(document.querySelectorAll('[data-reset-cancel]')),
   drawStatus: document.querySelector('#draw-status'),
   drawOverlay: document.querySelector('#draw-portal'),
   drawOverlayNumber: document.querySelector('#draw-animation-number'),
@@ -77,7 +152,6 @@ const elements = {
   historyEmpty: document.querySelector('#draw-history-empty'),
   historyPanel: document.querySelector('#history-panel'),
   historyToggle: document.querySelector('#history-toggle'),
-  historyToggleLabel: document.querySelector('[data-history-label]'),
   historyScrim: document.querySelector('#history-scrim'),
   audioToggle: document.querySelector('#audio-toggle'),
   floatingDrawButton: document.querySelector('#floating-draw-button'),
@@ -89,147 +163,156 @@ const elements = {
   drawLastDetail: document.querySelector('#draw-last-detail'),
 };
 
-const AUDIO_STORAGE_KEY = 'tombola-audio-enabled';
-const DRAW_STATE_STORAGE_KEY = 'TOMBOLA_DRAW_STATE';
-const EMPTY_DRAW_STATE = Object.freeze({ drawnNumbers: [], drawHistory: [] });
-const SPONSOR_DATA_PATH = 'sponsors.json';
-const TILE_IMAGE_FALLBACK = 'images/empty.jpg';
-const EMBEDDED_SPONSORS = Object.freeze([
-  {
-    logo: 'images/sponsor-panificio-stella.svg',
-    url: 'https://www.panificiostella.it/',
-    name: 'Panificio Stella',
-  },
-  {
-    logo: 'images/sponsor-agrumi-del-sud.svg',
-    url: 'https://www.agrumidelsud.it/',
-    name: 'Agrumi del Sud',
-  },
-  {
-    logo: 'images/sponsor-cantina-nojana.svg',
-    url: 'https://www.cantinanojana.it/',
-    name: 'Cantina Nojana',
-  },
-]);
-const DRAW_TIMELINE = Object.freeze({
-  intro: 280,
-  prepareHold: 1480,
-  revealAccent: 320,
-  celebrationHold: 1180,
-  flightDelay: 240,
-  flightDuration: 920,
-  overlayHideDelay: 280,
-  reducedMotionHold: 980,
-  reducedMotionFlight: 420,
-  modalRevealDelay: 520,
-});
+// ============================================
+// 4. UTILITY FUNCTIONS
+// ============================================
 
+/** Sleep utility */
+function sleep(duration) {
+  return new Promise((resolve) => setTimeout(resolve, duration));
+}
+
+/** Sanitize URL */
 function sanitizeUrl(url) {
-  if (typeof url !== 'string') {
-    return '#';
-  }
+  if (typeof url !== 'string' || !url.trim()) return '#';
 
   const trimmed = url.trim();
-  if (!trimmed) {
-    return '#';
-  }
-
   const isRelative = !/^([a-z][a-z0-9+.-]*:)?\/\//i.test(trimmed);
 
   try {
-    const base =
-      typeof window !== 'undefined' && window.location
-        ? window.location.origin
-        : 'https://example.com';
+    const base = window?.location?.origin || 'https://example.com';
     const parsed = new URL(trimmed, base);
 
-    if (!['http:', 'https:'].includes(parsed.protocol)) {
-      return '#';
-    }
-
-    if (isRelative) {
-      return trimmed;
-    }
-
-    return parsed.href;
-  } catch (error) {
+    if (!['http:', 'https:'].includes(parsed.protocol)) return '#';
+    return isRelative ? trimmed : parsed.href;
+  } catch {
     return '#';
   }
 }
 
+/** Dispatch custom event */
 function dispatchTombolaEvent(name, detail = {}) {
-  if (!name || typeof name !== 'string') {
-    return;
-  }
-
-  if (
-    typeof window === 'undefined' ||
-    typeof window.dispatchEvent !== 'function' ||
-    typeof CustomEvent !== 'function'
-  ) {
-    return;
-  }
+  if (!name || typeof window === 'undefined') return;
 
   try {
     window.dispatchEvent(new CustomEvent(name, { detail }));
   } catch (error) {
-    console.warn('Impossibile inviare evento personalizzato', error);
+    console.warn('Event dispatch failed', error);
   }
 }
 
+/** Validate loading state */
 function isValidLoadingState(value) {
   return Object.values(LoadingStates).includes(value);
 }
 
-function setDataLoadingState(nextState) {
-  if (!isValidLoadingState(nextState) || state.dataLoadingState === nextState) {
-    return;
-  }
+/** Create token element */
+function createTokenElement(number, options = {}) {
+  const { tag = 'span', className = '', ariaHidden = true } = options;
 
-  state.dataLoadingState = nextState;
-  updateLoadingUI();
-  updateDrawStatus();
+  const wrapper = document.createElement(tag);
+  wrapper.className = ['token', className].filter(Boolean).join(' ');
+  if (ariaHidden) wrapper.setAttribute('aria-hidden', 'true');
+
+  const numberEl = document.createElement('span');
+  numberEl.className = 'token__number';
+  numberEl.textContent = number;
+  wrapper.appendChild(numberEl);
+
+  return { wrapper, numberElement: numberEl };
 }
 
-function setSponsorLoadingState(nextState) {
-  if (!isValidLoadingState(nextState) || state.sponsorLoadingState === nextState) {
-    return;
+/** Blur button on next frame */
+function blurButtonOnNextFrame(button) {
+  if (!button?.blur) return;
+  requestAnimationFrame(() => button.blur());
+}
+
+/** Wait for scroll idle */
+function waitForScrollIdle(options = {}) {
+  const { timeout = ANIMATION_DELAYS.SCROLL_IDLE_TIMEOUT, idleThreshold = ANIMATION_DELAYS.SCROLL_IDLE_THRESHOLD } = options;
+  
+  if (typeof requestAnimationFrame !== 'function') {
+    return Promise.resolve();
   }
 
-  state.sponsorLoadingState = nextState;
-  updateLoadingUI();
+  return new Promise((resolve) => {
+    let lastX = window.scrollX;
+    let lastY = window.scrollY;
+    let lastChange = performance.now();
+    const deadline = lastChange + timeout;
+
+    const check = (timestamp) => {
+      const currentTime = timestamp || performance.now();
+      const currentX = window.scrollX;
+      const currentY = window.scrollY;
+
+      if (currentX !== lastX || currentY !== lastY) {
+        lastX = currentX;
+        lastY = currentY;
+        lastChange = currentTime;
+      }
+
+      if (currentTime - lastChange >= idleThreshold || currentTime >= deadline) {
+        resolve();
+        return;
+      }
+
+      requestAnimationFrame(check);
+    };
+
+    requestAnimationFrame(check);
+  });
 }
+
+// ============================================
+// 5. CLEANUP & RESOURCE MANAGEMENT
+// ============================================
 
 function registerCleanup(callback) {
-  if (typeof callback !== 'function') {
-    return;
+  if (typeof callback === 'function') {
+    state.cleanupTasks.add(callback);
   }
+}
 
-  state.cleanupTasks.add(callback);
+function runCleanupTasks() {
+  state.cleanupTasks.forEach((cleanup) => {
+    try {
+      cleanup();
+    } catch (error) {
+      console.warn('Cleanup error', error);
+    }
+  });
+  state.cleanupTasks.clear();
 }
 
 function releaseActiveFocusTrap(targetElement) {
-  if (
-    typeof state.activeFocusTrapCleanup !== 'function' ||
-    (targetElement && state.activeFocusTrapElement && targetElement !== state.activeFocusTrapElement)
-  ) {
-    return;
-  }
+  if (!state.activeFocusTrapCleanup) return;
+  if (targetElement && state.activeFocusTrapElement !== targetElement) return;
 
   try {
     state.activeFocusTrapCleanup();
   } catch (error) {
-    console.warn('Errore durante il ripristino del focus trap', error);
+    console.warn('Focus trap cleanup error', error);
   } finally {
     state.activeFocusTrapCleanup = null;
     state.activeFocusTrapElement = null;
   }
 }
 
+registerCleanup(() => releaseActiveFocusTrap());
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', runCleanupTasks);
+  window.addEventListener('beforeunload', runCleanupTasks);
+}
+
+// ============================================
+// 6. FOCUS MANAGEMENT
+// ============================================
+
 function getFocusableElements(container) {
-  if (!(container instanceof HTMLElement)) {
-    return [];
-  }
+  if (!(container instanceof HTMLElement)) return [];
 
   const selectors = [
     'a[href]',
@@ -246,87 +329,58 @@ function getFocusableElements(container) {
     '[contenteditable="true"]',
   ];
 
-  return Array.from(container.querySelectorAll(selectors.join(','))).filter((element) => {
-    if (!(element instanceof HTMLElement)) {
-      return false;
-    }
-
-    const isDisabled = element.hasAttribute('disabled');
-    if (isDisabled) {
-      return false;
-    }
-
-    const tabIndex = element.getAttribute('tabindex');
-    if (tabIndex !== null && Number.parseInt(tabIndex, 10) < 0) {
-      return false;
-    }
-
-    const rects = element.getClientRects();
-    return rects.length > 0 || element === container;
+  return Array.from(container.querySelectorAll(selectors.join(','))).filter((el) => {
+    if (!(el instanceof HTMLElement)) return false;
+    if (el.hasAttribute('disabled')) return false;
+    
+    const tabIndex = el.getAttribute('tabindex');
+    if (tabIndex !== null && parseInt(tabIndex, 10) < 0) return false;
+    
+    return el.getClientRects().length > 0 || el === container;
   });
 }
 
 function isolateModalBackground(modalElement) {
-  if (!(modalElement instanceof HTMLElement) || typeof document === 'undefined') {
-    return () => {};
-  }
+  if (!(modalElement instanceof HTMLElement)) return () => {};
 
   const siblings = Array.from(document.body.children).filter(
-    (element) => element instanceof HTMLElement && element !== modalElement && !modalElement.contains(element)
+    (el) => el instanceof HTMLElement && el !== modalElement && !modalElement.contains(el)
   );
 
-  const previousStates = siblings.map((element) => {
-    const supportsInert = 'inert' in element;
-    const previousInert = supportsInert ? element.inert : element.hasAttribute('inert');
-    const hadInertAttribute = element.hasAttribute('inert');
-    const previousAriaHidden = element.getAttribute('aria-hidden');
+  const previousStates = siblings.map((el) => {
+    const supportsInert = 'inert' in el;
+    const previousInert = supportsInert ? el.inert : el.hasAttribute('inert');
+    const hadInertAttribute = el.hasAttribute('inert');
+    const previousAriaHidden = el.getAttribute('aria-hidden');
 
     if (supportsInert) {
-      element.inert = true;
-      if (!hadInertAttribute) {
-        element.setAttribute('data-modal-added-inert', '');
-      }
+      el.inert = true;
+      if (!hadInertAttribute) el.setAttribute('data-modal-added-inert', '');
     } else {
-      element.setAttribute('aria-hidden', 'true');
-      element.setAttribute('data-modal-hidden', '');
-      if (!hadInertAttribute) {
-        element.setAttribute('inert', '');
-      }
+      el.setAttribute('aria-hidden', 'true');
+      el.setAttribute('data-modal-hidden', '');
+      if (!hadInertAttribute) el.setAttribute('inert', '');
     }
 
-    return {
-      element,
-      supportsInert,
-      previousInert,
-      hadInertAttribute,
-      previousAriaHidden,
-    };
+    return { el, supportsInert, previousInert, hadInertAttribute, previousAriaHidden };
   });
 
   return () => {
-    previousStates.forEach(({
-      element,
-      supportsInert,
-      previousInert,
-      hadInertAttribute,
-      previousAriaHidden,
-    }) => {
+    previousStates.forEach(({ el, supportsInert, previousInert, hadInertAttribute, previousAriaHidden }) => {
       if (supportsInert) {
-        element.inert = Boolean(previousInert);
-        if (!previousInert && element.hasAttribute('data-modal-added-inert')) {
-          element.removeAttribute('data-modal-added-inert');
-          element.removeAttribute('inert');
+        el.inert = Boolean(previousInert);
+        if (!previousInert && el.hasAttribute('data-modal-added-inert')) {
+          el.removeAttribute('data-modal-added-inert');
+          el.removeAttribute('inert');
         }
       } else {
-        if (!hadInertAttribute) {
-          element.removeAttribute('inert');
-        }
-        if (element.hasAttribute('data-modal-hidden')) {
-          element.removeAttribute('data-modal-hidden');
+        if (!hadInertAttribute) el.removeAttribute('inert');
+        if (el.hasAttribute('data-modal-hidden')) {
+          el.removeAttribute('data-modal-hidden');
           if (previousAriaHidden === null) {
-            element.removeAttribute('aria-hidden');
+            el.removeAttribute('aria-hidden');
           } else {
-            element.setAttribute('aria-hidden', previousAriaHidden);
+            el.setAttribute('aria-hidden', previousAriaHidden);
           }
         }
       }
@@ -335,9 +389,7 @@ function isolateModalBackground(modalElement) {
 }
 
 function activateModalFocusTrap(modalElement) {
-  if (!(modalElement instanceof HTMLElement)) {
-    return null;
-  }
+  if (!(modalElement instanceof HTMLElement)) return null;
 
   releaseActiveFocusTrap();
 
@@ -348,16 +400,12 @@ function activateModalFocusTrap(modalElement) {
       const focusable = getFocusableElements(modalElement);
       const fallback = focusable[0] || modalElement;
       event.stopPropagation();
-      if (typeof fallback.focus === 'function') {
-        fallback.focus();
-      }
+      fallback?.focus();
     }
   };
 
   const handleKeydown = (event) => {
-    if (event.key !== 'Tab') {
-      return;
-    }
+    if (event.key !== 'Tab') return;
 
     const focusable = getFocusableElements(modalElement);
 
@@ -368,21 +416,20 @@ function activateModalFocusTrap(modalElement) {
       return;
     }
 
-    const firstElement = focusable[0];
-    const lastElement = focusable[focusable.length - 1];
-    const activeElement = document.activeElement;
+    const firstEl = focusable[0];
+    const lastEl = focusable[focusable.length - 1];
+    const activeEl = document.activeElement;
 
     if (event.shiftKey) {
-      if (!modalElement.contains(activeElement) || activeElement === firstElement) {
-        lastElement.focus();
+      if (!modalElement.contains(activeEl) || activeEl === firstEl) {
+        lastEl.focus();
         event.preventDefault();
       }
-      return;
-    }
-
-    if (!modalElement.contains(activeElement) || activeElement === lastElement) {
-      firstElement.focus();
-      event.preventDefault();
+    } else {
+      if (!modalElement.contains(activeEl) || activeEl === lastEl) {
+        firstEl.focus();
+        event.preventDefault();
+      }
     }
   };
 
@@ -401,20 +448,23 @@ function activateModalFocusTrap(modalElement) {
   return cleanup;
 }
 
-function runCleanupTasks() {
-  if (!(state.cleanupTasks instanceof Set) || state.cleanupTasks.size === 0) {
-    return;
-  }
+// ============================================
+// 7. LOADING STATE MANAGEMENT
+// ============================================
 
-  Array.from(state.cleanupTasks).forEach((cleanup) => {
-    try {
-      cleanup();
-    } catch (error) {
-      console.warn('Errore durante la pulizia delle risorse', error);
-    } finally {
-      state.cleanupTasks.delete(cleanup);
-    }
-  });
+function setDataLoadingState(nextState) {
+  if (!isValidLoadingState(nextState) || state.dataLoadingState === nextState) return;
+
+  state.dataLoadingState = nextState;
+  updateLoadingUI();
+  updateDrawStatus();
+}
+
+function setSponsorLoadingState(nextState) {
+  if (!isValidLoadingState(nextState) || state.sponsorLoadingState === nextState) return;
+
+  state.sponsorLoadingState = nextState;
+  updateLoadingUI();
 }
 
 function updateLoadingUI() {
@@ -423,6 +473,7 @@ function updateLoadingUI() {
   const isSponsorLoading = state.sponsorLoadingState === LoadingStates.LOADING;
   const isSponsorError = state.sponsorLoadingState === LoadingStates.ERROR;
 
+  // Board loading
   if (elements.board) {
     elements.board.classList.toggle('board-grid--loading', isDataLoading);
     if (isDataLoading) {
@@ -432,11 +483,10 @@ function updateLoadingUI() {
     }
   }
 
+  // Sponsor blocks loading
   const sponsorBlocks = [elements.drawSponsorBlock, elements.modalSponsorBlock];
   sponsorBlocks.forEach((block) => {
-    if (!block) {
-      return;
-    }
+    if (!block) return;
 
     if (!block.dataset.placeholderLabel) {
       block.dataset.placeholderLabel = 'Sponsor in arrivo…';
@@ -445,118 +495,84 @@ function updateLoadingUI() {
       block.dataset.errorLabel = 'Nessuno sponsor disponibile';
     }
 
+    block.classList.toggle('sponsor-block--loading', isSponsorLoading);
+    block.classList.toggle('sponsor-block--error', isSponsorError && !isSponsorLoading);
+
     if (isSponsorLoading) {
       block.setAttribute('aria-busy', 'true');
     } else {
       block.removeAttribute('aria-busy');
     }
-
-    block.classList.toggle('sponsor-block--loading', isSponsorLoading);
-    block.classList.toggle('sponsor-block--error', isSponsorError && !isSponsorLoading);
   });
 
-  const sponsorHeadings = [elements.drawSponsorHeading, elements.modalSponsorHeading];
-  sponsorHeadings.forEach((heading) => {
-    if (!heading) {
-      return;
+  // Draw status role
+  if (elements.drawStatus) {
+    if (isDataError) {
+      elements.drawStatus.setAttribute('role', 'alert');
+    } else {
+      elements.drawStatus.removeAttribute('role');
     }
-
-    if (!heading.dataset.initialText) {
-      heading.dataset.initialText = heading.textContent || '';
-    }
-
-    let nextText = heading.dataset.initialText;
-    if (isSponsorLoading) {
-      nextText = 'Caricamento sponsor…';
-    } else if (isSponsorError) {
-      nextText = 'Sponsor non disponibile';
-    }
-
-    heading.textContent = nextText;
-  });
-
-  if (elements.drawStatus && isDataError) {
-    elements.drawStatus.setAttribute('role', 'alert');
-  } else if (elements.drawStatus) {
-    elements.drawStatus.removeAttribute('role');
   }
 }
 
-if (typeof window !== 'undefined') {
-  window.addEventListener('pagehide', runCleanupTasks);
-  window.addEventListener('beforeunload', runCleanupTasks);
-}
-
-registerCleanup(() => releaseActiveFocusTrap());
+// ============================================
+// 8. SPONSOR UTILITIES
+// ============================================
 
 function getSponsorKey(sponsor) {
-  if (!sponsor || typeof sponsor !== 'object') {
-    return null;
-  }
-
-  return sponsor.url || sponsor.logo || null;
+  return sponsor?.url || sponsor?.logo || null;
 }
 
-function normalizeSponsor(rawSponsor) {
-  if (!rawSponsor || typeof rawSponsor !== 'object') {
-    return null;
-  }
+function normalizeSponsor(raw) {
+  if (!raw || typeof raw !== 'object') return null;
 
-  const logo = typeof rawSponsor.logo === 'string' ? rawSponsor.logo.trim() : '';
-  const url = typeof rawSponsor.url === 'string' ? rawSponsor.url.trim() : null;
-  const name =
-    typeof rawSponsor.name === 'string' && rawSponsor.name.trim()
-      ? rawSponsor.name.trim()
-      : '';
-  const onlyShowcase = Boolean(rawSponsor.onlyShowcase);
+  const logo = typeof raw.logo === 'string' ? raw.logo.trim() : '';
+  const url = typeof raw.url === 'string' ? raw.url.trim() : null;
+  const name = typeof raw.name === 'string' && raw.name.trim() ? raw.name.trim() : '';
+  const onlyShowcase = Boolean(raw.onlyShowcase);
 
-  if (!logo) {
-    return null;
-  }
+  if (!logo) return null;
 
   return { logo, url, name, onlyShowcase };
 }
 
 function cloneSponsorData(sponsor) {
-  if (!sponsor || typeof sponsor !== 'object') {
-    return null;
-  }
-
-  const logo = typeof sponsor.logo === 'string' ? sponsor.logo.trim() : '';
-  const url = typeof sponsor.url === 'string' ? sponsor.url.trim() : null;
-  const name =
-    typeof sponsor.name === 'string' && sponsor.name.trim() ? sponsor.name.trim() : '';
-  const onlyShowcase = Boolean(sponsor.onlyShowcase);
-
-  if (!logo) {
-    return null;
-  }
-
-  const cloned = { logo, url, onlyShowcase };
-  if (name) {
-    cloned.name = name;
-  }
-
-  return cloned;
+  return normalizeSponsor(sponsor);
 }
 
 function getEmbeddedSponsors() {
   return EMBEDDED_SPONSORS.map(cloneSponsorData).filter(Boolean);
 }
 
+function getSponsorDisplayName(sponsor) {
+  if (!sponsor) return '';
+  if (sponsor.name?.trim()) return sponsor.name.trim();
+  if (!sponsor.url?.trim()) return '';
+
+  try {
+    const url = new URL(sponsor.url, window?.location?.origin);
+    const host = url.hostname.replace(/^www\./i, '');
+    const currentHost = window?.location?.hostname.replace(/^www\./i, '');
+    return host === currentHost ? '' : host;
+  } catch {
+    return '';
+  }
+}
+
+function getSponsorAccessibleLabel(sponsor) {
+  const displayName = getSponsorDisplayName(sponsor);
+  return displayName ? `Apri il sito di ${displayName}` : 'Apri il sito dello sponsor';
+}
+
+// ============================================
+// 9. SPONSOR MANAGER CLASS
+// ============================================
+
 class SponsorManager {
   constructor(options = {}) {
-    const {
-      dataPath = SPONSOR_DATA_PATH,
-      getFallbackSponsors,
-      onSponsorsChanged,
-    } = options;
-
-    this.dataPath = dataPath;
-    this.fallbackProvider =
-      typeof getFallbackSponsors === 'function' ? getFallbackSponsors : () => [];
-    this.onSponsorsChanged =
-      typeof onSponsorsChanged === 'function' ? onSponsorsChanged : null;
+    this.dataPath = options.dataPath || DATA_PATHS.SPONSORS;
+    this.fallbackProvider = options.getFallbackSponsors || (() => []);
+    this.onSponsorsChanged = options.onSponsorsChanged || null;
 
     this.assignments = new Map();
     this.sponsors = [];
@@ -566,76 +582,12 @@ class SponsorManager {
     this.lastSponsorKey = null;
   }
 
-  _cloneList(list) {
-    if (!Array.isArray(list)) {
-      return [];
-    }
-
-    return list.map((item) => cloneSponsorData(item)).filter(Boolean);
-  }
-
-  _normalizeList(list) {
-    if (!Array.isArray(list)) {
-      return [];
-    }
-
-    return list.map(normalizeSponsor).filter(Boolean);
-  }
-
-  _notifySponsorsChanged(origin = 'unknown') {
-    const snapshot = this.getAllSponsors();
-    if (this.onSponsorsChanged) {
-      this.onSponsorsChanged(snapshot);
-    }
-
-    dispatchTombolaEvent(TombolaEvents.SPONSOR_LOADED, {
-      sponsors: snapshot,
-      origin,
-    });
-  }
-
-  _rememberLastKeyFromSponsor(value) {
-    if (!value) {
-      this.lastSponsorKey = null;
-      return;
-    }
-
-    if (typeof value === 'string') {
-      this.lastSponsorKey = value || null;
-      return;
-    }
-
-    this.lastSponsorKey = getSponsorKey(value) || null;
-  }
-
-  _getFallbackList() {
-    try {
-      const fallback = this.fallbackProvider();
-      return this._cloneList(fallback);
-    } catch (error) {
-      console.warn('Impossibile ottenere gli sponsor di fallback', error);
-      return [];
-    }
-  }
-
   hasSponsors() {
     return Array.isArray(this.sponsors) && this.sponsors.length > 0;
   }
 
   getAllSponsors() {
-    return this._cloneList(this.sponsors);
-  }
-
-  getLastKey() {
-    return this.lastSponsorKey;
-  }
-
-  rememberSponsorKey(sponsor) {
-    this._rememberLastKeyFromSponsor(sponsor);
-  }
-
-  getPendingLoad() {
-    return this.loadPromise;
+    return this.sponsors.map(cloneSponsorData).filter(Boolean);
   }
 
   resetAssignments() {
@@ -646,42 +598,27 @@ class SponsorManager {
     return Number.isInteger(number) && this.assignments.has(number);
   }
 
-  getAssignment(number, options = {}) {
-    if (!Number.isInteger(number)) {
-      return null;
-    }
-
+  getAssignment(number) {
+    if (!Number.isInteger(number)) return null;
     const stored = this.assignments.get(number);
-    if (!stored) {
-      return null;
-    }
-
-    return options.raw ? stored : cloneSponsorData(stored);
+    return stored ? cloneSponsorData(stored) : null;
   }
 
   assignToNumber(number, sponsor) {
-    if (!Number.isInteger(number)) {
-      return null;
-    }
-
+    if (!Number.isInteger(number)) return null;
     const normalized = cloneSponsorData(sponsor);
-    if (!normalized) {
-      return null;
-    }
+    if (!normalized) return null;
 
     this.assignments.set(number, normalized);
-    const cloned = cloneSponsorData(normalized);
     dispatchTombolaEvent(TombolaEvents.SPONSOR_ASSIGNED, {
       number,
-      sponsor: cloned,
+      sponsor: cloneSponsorData(normalized),
     });
-    return cloned;
+    return cloneSponsorData(normalized);
   }
 
   restoreAssignment(number, sponsor) {
-    if (!Number.isInteger(number)) {
-      return;
-    }
+    if (!Number.isInteger(number)) return;
 
     if (sponsor) {
       const normalized = cloneSponsorData(sponsor);
@@ -696,72 +633,54 @@ class SponsorManager {
     }
 
     this.assignments.delete(number);
-    dispatchTombolaEvent(TombolaEvents.SPONSOR_ASSIGNED, {
-      number,
-      sponsor: null,
-    });
+    dispatchTombolaEvent(TombolaEvents.SPONSOR_ASSIGNED, { number, sponsor: null });
   }
 
   clearCurrentSponsor() {
     this.currentSponsor = null;
-    this._rememberLastKeyFromSponsor(null);
+    this.lastSponsorKey = null;
   }
 
-  getCurrentSponsor(options = {}) {
-    if (!this.currentSponsor) {
-      return null;
-    }
-
-    return options.raw ? this.currentSponsor : cloneSponsorData(this.currentSponsor);
+  getCurrentSponsor() {
+    return this.currentSponsor ? cloneSponsorData(this.currentSponsor) : null;
   }
 
   setCurrentSponsor(sponsor) {
     const normalized = cloneSponsorData(sponsor);
     this.currentSponsor = normalized || null;
-    this._rememberLastKeyFromSponsor(this.currentSponsor);
-    const snapshot = this.getCurrentSponsor();
+    this.lastSponsorKey = getSponsorKey(this.currentSponsor);
+    
     dispatchTombolaEvent(TombolaEvents.SPONSOR_SELECTED, {
-      sponsor: snapshot,
+      sponsor: this.getCurrentSponsor(),
     });
-    return snapshot;
+    return this.getCurrentSponsor();
   }
 
   async load() {
-    if (this.hasSponsors()) {
-      return Promise.resolve(this.getAllSponsors());
-    }
-
-    if (this.loadPromise) {
-      return this.loadPromise;
-    }
+    if (this.hasSponsors()) return Promise.resolve(this.getAllSponsors());
+    if (this.loadPromise) return this.loadPromise;
 
     const task = (async () => {
       try {
         const response = await fetch(this.dataPath);
-        if (!response.ok) {
-          throw new Error('Impossibile caricare gli sponsor');
-        }
+        if (!response.ok) throw new Error('Fetch failed');
 
         const data = await response.json();
-        const rawList = Array.isArray(data?.sponsors)
-          ? data.sponsors
-          : Array.isArray(data)
-            ? data
-            : [];
-        const normalized = this._normalizeList(rawList);
+        const rawList = Array.isArray(data?.sponsors) ? data.sponsors : Array.isArray(data) ? data : [];
+        const normalized = rawList.map(normalizeSponsor).filter(Boolean);
 
         if (normalized.length > 0) {
-          this.sponsors = this._cloneList(normalized);
-          this._rememberLastKeyFromSponsor(null);
+          this.sponsors = normalized.map(cloneSponsorData);
+          this.lastSponsorKey = null;
           this._notifySponsorsChanged('remote');
           return this.getAllSponsors();
         }
       } catch (error) {
-        console.warn('Impossibile caricare gli sponsor', error);
+        console.warn('Sponsor load error', error);
       }
 
       this.sponsors = this._getFallbackList();
-      this._rememberLastKeyFromSponsor(null);
+      this.lastSponsorKey = null;
       this._notifySponsorsChanged('fallback');
       return this.getAllSponsors();
     })();
@@ -773,39 +692,28 @@ class SponsorManager {
     return this.loadPromise;
   }
 
-pickRandom(excludeKey = null) {
-    if (!this.hasSponsors()) {
-      return null;
-    }
+  pickRandom(excludeKey = null) {
+    if (!this.hasSponsors()) return null;
 
-    const eligibleSponsors = this.sponsors.filter((sponsor) => !sponsor.onlyShowcase);
-
-    if (eligibleSponsors.length === 0) {
-      return null;
-    }
+    const eligibleSponsors = this.sponsors.filter((s) => !s.onlyShowcase);
+    if (eligibleSponsors.length === 0) return null;
 
     let pool = eligibleSponsors;
     if (excludeKey) {
-      pool = eligibleSponsors.filter((sponsor) => getSponsorKey(sponsor) !== excludeKey);
+      const filtered = eligibleSponsors.filter((s) => getSponsorKey(s) !== excludeKey);
+      if (filtered.length > 0) pool = filtered;
     }
 
-    // If the pool is empty (e.g., only one sponsor available which is excluded),
-    // fall back to the full list of eligible sponsors.
-    const candidates = pool.length > 0 ? pool : eligibleSponsors;
-
-    const index = Math.floor(Math.random() * candidates.length);
-    const sponsor = candidates[index] || null;
-    return sponsor ? cloneSponsorData(sponsor) : null;
+    const index = Math.floor(Math.random() * pool.length);
+    return cloneSponsorData(pool[index]);
   }
 
   async prepareNext() {
-    if (this.preparationPromise) {
-      return this.preparationPromise;
-    }
+    if (this.preparationPromise) return this.preparationPromise;
 
     const preparation = this.load()
-      .then((sponsors) => {
-        if (!Array.isArray(sponsors) || sponsors.length === 0) {
+      .then(() => {
+        if (!this.hasSponsors()) {
           this.clearCurrentSponsor();
           return null;
         }
@@ -814,7 +722,7 @@ pickRandom(excludeKey = null) {
         return this.setCurrentSponsor(next);
       })
       .catch((error) => {
-        console.warn('Impossibile preparare il prossimo sponsor', error);
+        console.warn('Sponsor preparation error', error);
         this.clearCurrentSponsor();
         return null;
       })
@@ -825,131 +733,104 @@ pickRandom(excludeKey = null) {
     this.preparationPromise = preparation;
     return preparation;
   }
+
+  _getFallbackList() {
+    try {
+      return this.fallbackProvider().map(cloneSponsorData).filter(Boolean);
+    } catch {
+      return [];
+    }
+  }
+
+  _notifySponsorsChanged(origin = 'unknown') {
+    const snapshot = this.getAllSponsors();
+    if (this.onSponsorsChanged) this.onSponsorsChanged(snapshot);
+    dispatchTombolaEvent(TombolaEvents.SPONSOR_LOADED, { sponsors: snapshot, origin });
+  }
 }
 
 const sponsorManager = new SponsorManager({
-  dataPath: SPONSOR_DATA_PATH,
+  dataPath: DATA_PATHS.SPONSORS,
   getFallbackSponsors: getEmbeddedSponsors,
   onSponsorsChanged: (sponsors) => {
     renderSponsorShowcase(sponsors, { force: true });
   },
 });
 
-/**
- * Gestisce le animazioni del portale di estrazione, rispettando le preferenze
- * di movimento dell'utente e fornendo un punto centrale per eventuali cleanup.
- */
+// ============================================
+// 10. ANIMATION MANAGER CLASS
+// ============================================
+
 class AnimationManager {
   constructor(options = {}) {
-    const { elements: uiElements, timeline = DRAW_TIMELINE } = options;
-
-    this.elements = uiElements || {};
-    this.timeline = { ...timeline };
+    this.elements = options.elements || {};
+    this.timeline = { ...DRAW_TIMELINE, ...options.timeline };
     this.prefersReducedMotion = false;
     this.motionMatcher = null;
-    this.motionChangeHandler = null;
     this.cleanupCallbacks = new Set();
 
-    this.initializeMotionPreferences();
+    this._initializeMotionPreferences();
   }
 
-  initializeMotionPreferences() {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-      return;
-    }
+  _initializeMotionPreferences() {
+    if (typeof matchMedia !== 'function') return;
 
-    const matcher = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const matcher = matchMedia('(prefers-reduced-motion: reduce)');
     this.motionMatcher = matcher;
     this.prefersReducedMotion = Boolean(matcher.matches);
 
     const handleChange = (event) => {
-      if (event && typeof event.matches === 'boolean') {
-        this.prefersReducedMotion = event.matches;
-      } else if (this.motionMatcher) {
-        this.prefersReducedMotion = Boolean(this.motionMatcher.matches);
-      }
+      this.prefersReducedMotion = event?.matches ?? matcher.matches;
     };
 
-    this.motionChangeHandler = handleChange;
-
-    if (typeof matcher.addEventListener === 'function') {
+    if (matcher.addEventListener) {
       matcher.addEventListener('change', handleChange);
       this.cleanupCallbacks.add(() => matcher.removeEventListener('change', handleChange));
-    } else if (typeof matcher.addListener === 'function') {
+    } else if (matcher.addListener) {
       matcher.addListener(handleChange);
-      this.cleanupCallbacks.add(() => {
-        if (typeof matcher.removeListener === 'function') {
-          matcher.removeListener(handleChange);
-        }
-      });
+      this.cleanupCallbacks.add(() => matcher.removeListener?.(handleChange));
     }
   }
 
   prefersReducedMotionEnabled() {
-    if (typeof this.prefersReducedMotion === 'boolean') {
-      return this.prefersReducedMotion;
-    }
-
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-      return false;
-    }
-
-    try {
-      return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    } catch (error) {
-      return false;
-    }
+    return Boolean(this.prefersReducedMotion);
   }
 
   setOverlayBallLoading(isLoading) {
     const { drawOverlayBall, drawOverlay } = this.elements;
-
-    if (!drawOverlayBall) {
-      return;
-    }
-
-    const loadingClass = 'draw-portal__ball--loading';
-    const revealClass = 'draw-portal__ball--revealed';
+    if (!drawOverlayBall) return;
 
     if (isLoading) {
-      drawOverlayBall.classList.add(loadingClass);
-      drawOverlayBall.classList.remove(revealClass);
+      drawOverlayBall.classList.add(CSS_CLASSES.BALL_LOADING);
+      drawOverlayBall.classList.remove(CSS_CLASSES.BALL_REVEALED);
       drawOverlayBall.setAttribute('aria-busy', 'true');
-      if (drawOverlay) {
-        drawOverlay.classList.add('draw-portal--charging');
-      }
+      drawOverlay?.classList.add(CSS_CLASSES.PORTAL_CHARGING);
     } else {
-      drawOverlayBall.classList.remove(loadingClass);
+      drawOverlayBall.classList.remove(CSS_CLASSES.BALL_LOADING);
       drawOverlayBall.removeAttribute('aria-busy');
-      if (drawOverlay) {
-        drawOverlay.classList.remove('draw-portal--charging');
-      }
+      drawOverlay?.classList.remove(CSS_CLASSES.PORTAL_CHARGING);
     }
   }
 
   async animateBallFlight(entry, fromRect, targetCell, options = {}) {
-    if (!targetCell || !fromRect) {
-      return;
-    }
+    if (!targetCell || !fromRect) return;
 
-    const {
-      prefersReducedMotion = false,
-      duration = this.timeline.flightDuration,
-    } = options;
+    const { prefersReducedMotion = false, duration = this.timeline.flightDuration } = options;
 
-    targetCell.classList.add('board-cell--incoming');
+    targetCell.classList.add(CSS_CLASSES.CELL_INCOMING);
 
     const finalize = () => {
-      targetCell.classList.remove('board-cell--incoming');
+      targetCell.classList.remove(CSS_CLASSES.CELL_INCOMING);
     };
 
+    // Scroll into view
     try {
       targetCell.scrollIntoView({
         behavior: prefersReducedMotion ? 'auto' : 'smooth',
         block: 'center',
         inline: 'center',
       });
-    } catch (error) {
+    } catch {
       targetCell.scrollIntoView();
     }
 
@@ -959,7 +840,7 @@ class AnimationManager {
     });
 
     if (prefersReducedMotion) {
-      await sleep(220);
+      await sleep(ANIMATION_DELAYS.SHORT);
       finalize();
       return;
     }
@@ -1016,7 +897,7 @@ class AnimationManager {
 
         animation.addEventListener('finish', cleanup, { once: true });
         animation.addEventListener('cancel', cleanup, { once: true });
-      } catch (error) {
+      } catch {
         cleanup();
       }
     });
@@ -1024,25 +905,18 @@ class AnimationManager {
 
   async showDrawAnimation(entry, options = {}) {
     const { onFlightComplete = null } = options;
-    const {
-      drawOverlay,
-      drawOverlayNumber,
-      drawOverlayBall,
-      drawOverlayAnnouncement,
-    } = this.elements;
+    const { drawOverlay, drawOverlayNumber, drawOverlayBall, drawOverlayAnnouncement } = this.elements;
     const targetCell = state.cellsByNumber.get(entry.number);
 
     let flightNotified = false;
     const notifyFlightComplete = () => {
-      if (flightNotified) {
-        return;
-      }
+      if (flightNotified) return;
       flightNotified = true;
       if (typeof onFlightComplete === 'function') {
         try {
           onFlightComplete();
         } catch (error) {
-          console.warn("Errore durante l'aggiornamento della casella estratta", error);
+          console.warn('Flight complete handler error', error);
         }
       }
     };
@@ -1050,12 +924,8 @@ class AnimationManager {
     if (!drawOverlay || !drawOverlayNumber || !drawOverlayBall) {
       if (targetCell) {
         try {
-          targetCell.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-            inline: 'center',
-          });
-        } catch (error) {
+          targetCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+        } catch {
           targetCell.scrollIntoView();
         }
       }
@@ -1064,47 +934,39 @@ class AnimationManager {
 
     const prefersReducedMotion = this.prefersReducedMotionEnabled();
     const setAnnouncement = (text) => {
-      if (drawOverlayAnnouncement) {
-        drawOverlayAnnouncement.textContent = text;
-      }
+      if (drawOverlayAnnouncement) drawOverlayAnnouncement.textContent = text;
     };
 
     const revealNumber = () => {
       this.setOverlayBallLoading(false);
       drawOverlayNumber.textContent = entry.number;
-      drawOverlayBall.classList.add('draw-portal__ball--revealed');
+      drawOverlayBall.classList.add(CSS_CLASSES.BALL_REVEALED);
       setAnnouncement(`Numero ${entry.number}`);
     };
 
     const hideOverlay = (immediate = false) => {
       drawOverlay.classList.remove(
-        'draw-portal--visible',
-        'draw-portal--closing',
-        'draw-portal--flight'
+        CSS_CLASSES.PORTAL_VISIBLE,
+        CSS_CLASSES.PORTAL_CLOSING,
+        CSS_CLASSES.PORTAL_FLIGHT
       );
       const finalize = () => {
         drawOverlay.setAttribute('aria-hidden', 'true');
         drawOverlay.hidden = true;
       };
-      if (immediate) {
-        finalize();
-      } else {
-        window.setTimeout(finalize, 20);
-      }
+      immediate ? finalize() : setTimeout(finalize, 20);
     };
 
+    // Setup
     this.setOverlayBallLoading(true);
-    drawOverlayBall.classList.remove('draw-portal__ball--revealed');
+    drawOverlayBall.classList.remove(CSS_CLASSES.BALL_REVEALED);
     drawOverlayNumber.textContent = '';
     setAnnouncement('');
 
     drawOverlay.hidden = false;
     drawOverlay.setAttribute('aria-hidden', 'false');
-    drawOverlay.classList.remove('draw-portal--closing');
-    drawOverlay.classList.remove('draw-portal--flight');
-    drawOverlay.classList.add('draw-portal--visible');
-
-    let didAnimate = true;
+    drawOverlay.classList.remove(CSS_CLASSES.PORTAL_CLOSING, CSS_CLASSES.PORTAL_FLIGHT);
+    drawOverlay.classList.add(CSS_CLASSES.PORTAL_VISIBLE);
 
     try {
       if (prefersReducedMotion) {
@@ -1112,7 +974,7 @@ class AnimationManager {
         await sleep(this.timeline.reducedMotionHold);
         revealNumber();
 
-        drawOverlay.classList.add('draw-portal--flight');
+        drawOverlay.classList.add(CSS_CLASSES.PORTAL_FLIGHT);
         if (targetCell) {
           await this.animateBallFlight(entry, fromRect, targetCell, {
             prefersReducedMotion: true,
@@ -1123,22 +985,20 @@ class AnimationManager {
         }
 
         notifyFlightComplete();
-
-        drawOverlay.classList.add('draw-portal--closing');
+        drawOverlay.classList.add(CSS_CLASSES.PORTAL_CLOSING);
         await sleep(this.timeline.overlayHideDelay);
       } else {
         await sleep(this.timeline.intro);
         await sleep(this.timeline.prepareHold);
         await sleep(this.timeline.revealAccent);
         revealNumber();
-
         await sleep(this.timeline.celebrationHold);
 
         const fromRect = drawOverlayBall.getBoundingClientRect();
-        drawOverlay.classList.add('draw-portal--closing');
-
+        drawOverlay.classList.add(CSS_CLASSES.PORTAL_CLOSING);
         await sleep(this.timeline.flightDelay);
-        drawOverlay.classList.add('draw-portal--flight');
+        
+        drawOverlay.classList.add(CSS_CLASSES.PORTAL_FLIGHT);
         if (targetCell) {
           await this.animateBallFlight(entry, fromRect, targetCell, {
             duration: this.timeline.flightDuration,
@@ -1149,19 +1009,18 @@ class AnimationManager {
         }
 
         notifyFlightComplete();
-
         await sleep(this.timeline.overlayHideDelay);
       }
     } finally {
       this.setOverlayBallLoading(false);
       hideOverlay(true);
-      drawOverlay.classList.remove('draw-portal--flight');
-      drawOverlayBall.classList.remove('draw-portal__ball--revealed');
+      drawOverlay.classList.remove(CSS_CLASSES.PORTAL_FLIGHT);
+      drawOverlayBall.classList.remove(CSS_CLASSES.BALL_REVEALED);
       drawOverlayNumber.textContent = '';
       setAnnouncement('');
     }
 
-    return didAnimate;
+    return true;
   }
 
   getModalRevealDelay() {
@@ -1170,345 +1029,259 @@ class AnimationManager {
   }
 
   destroy() {
-    if (this.cleanupCallbacks.size === 0) {
-      return;
-    }
-
-    Array.from(this.cleanupCallbacks).forEach((callback) => {
+    this.cleanupCallbacks.forEach((callback) => {
       try {
         callback();
       } catch (error) {
-        console.warn('Errore durante la pulizia delle animazioni', error);
-      } finally {
-        this.cleanupCallbacks.delete(callback);
+        console.warn('Animation cleanup error', error);
       }
     });
+    this.cleanupCallbacks.clear();
   }
 }
 
 const animationManager = new AnimationManager({ elements, timeline: DRAW_TIMELINE });
 registerCleanup(() => animationManager.destroy());
 
-function loadSponsors() {
-  setSponsorLoadingState(LoadingStates.LOADING);
-  return sponsorManager
-    .load()
-    .then((sponsors) => {
-      if (!Array.isArray(sponsors) || sponsors.length === 0) {
-        setSponsorLoadingState(LoadingStates.ERROR);
-        applySponsorToOverlay(null);
-      } else {
-        setSponsorLoadingState(LoadingStates.SUCCESS);
-      }
-      return sponsors;
-    })
-    .catch((error) => {
-      console.warn('Impossibile caricare gli sponsor', error);
-      setSponsorLoadingState(LoadingStates.ERROR);
-      applySponsorToOverlay(null);
-      throw error;
-    });
-}
+// ============================================
+// 11. STORAGE FUNCTIONS
+// ============================================
 
-function pickRandomSponsor(previousKey = null) {
-  return sponsorManager.pickRandom(previousKey);
-}
-
-function getSponsorDisplayName(sponsor) {
-  if (!sponsor) {
-    return '';
-  }
-
-  if (typeof sponsor.name === 'string' && sponsor.name.trim()) {
-    return sponsor.name.trim();
-  }
-
-  if (typeof sponsor.url !== 'string' || !sponsor.url.trim()) {
-    return '';
-  }
+function persistDrawState() {
+  if (typeof localStorage === 'undefined') return true;
 
   try {
-    const hasWindow = typeof window !== 'undefined' && window.location;
-    const base = hasWindow ? window.location.origin : undefined;
-    const url = new URL(sponsor.url, base || 'https://example.com');
-    const host = url.hostname.replace(/^www\./i, '');
-
-    if (!host) {
-      return '';
-    }
-
-    if (hasWindow) {
-      const currentHost = window.location.hostname.replace(/^www\./i, '');
-      if (host === currentHost) {
-        return '';
-      }
-    }
-
-    return host;
-  } catch (error) {
-    return '';
-  }
-}
-
-function getSponsorAccessibleLabel(sponsor) {
-  const displayName = getSponsorDisplayName(sponsor);
-  if (displayName) {
-    return `Apri il sito di ${displayName}`;
-  }
-
-  return 'Apri il sito dello sponsor';
-}
-
-function renderSponsorShowcase(sponsors, options = {}) {
-  const { force = false } = options;
-  const { sponsorShowcase, sponsorShowcaseList } = elements;
-
-  if (!sponsorShowcase || !sponsorShowcaseList) {
-    return;
-  }
-
-  if (!Array.isArray(sponsors) || sponsors.length === 0) {
-    sponsorShowcaseList.innerHTML = '';
-    sponsorShowcase.hidden = true;
-    sponsorShowcase.setAttribute('aria-hidden', 'true');
-    state.sponsorShowcaseRendered = false;
-    return;
-  }
-
-  if (state.sponsorShowcaseRendered && !force) {
-    return;
-  }
-
-  if (sponsors.length === 0) {
-    sponsorShowcaseList.innerHTML = '';
-    sponsorShowcase.hidden = true;
-    sponsorShowcase.setAttribute('aria-hidden', 'true');
-    state.sponsorShowcaseRendered = false;
-    return;
-  }
-
-  sponsorShowcaseList.innerHTML = '';
-
-  sponsors.forEach((sponsor) => {
-    if (!sponsor) {
-      return;
-    }
-
-    const item = document.createElement('li');
-    item.className = 'sponsor-strip__item';
-
-    const hasUrl = typeof sponsor.url === 'string' && sponsor.url.trim();
-    const container = document.createElement(hasUrl ? 'a' : 'div');
-    container.className = 'sponsor-strip__link';
-
-    if (hasUrl) {
-      const safeUrl = sanitizeUrl(sponsor.url || '');
-      const isExternal = /^https?:\/\//i.test(safeUrl);
-      container.href = safeUrl;
-      container.target = isExternal ? '_blank' : '_self';
-      if (isExternal) {
-        container.rel = 'noopener noreferrer';
-      } else {
-        container.removeAttribute('rel');
-      }
-
-      const label = getSponsorAccessibleLabel(sponsor);
-      if (label) {
-        container.setAttribute('aria-label', label);
-      } else {
-        container.removeAttribute('aria-label');
-      }
-
-      const displayName = getSponsorDisplayName(sponsor);
-      if (displayName) {
-        container.title = displayName;
-      } else {
-        container.removeAttribute('title');
-      }
-    } else {
-      container.classList.add('sponsor-strip__link--static');
-      container.setAttribute('role', 'presentation');
-    }
-
-    const logoSrc =
-      typeof sponsor.logo === 'string' && sponsor.logo.trim() ? sponsor.logo.trim() : '';
-    if (!logoSrc) {
-      return;
-    }
-
-    const logo = document.createElement('img');
-    logo.alt = '';
-    logo.src = logoSrc;
-    if ('decoding' in logo) {
-      logo.decoding = 'async';
-    }
-    if ('loading' in logo) {
-      logo.loading = 'lazy';
-    }
-
-    const figure = document.createElement('figure');
-    figure.className = 'sponsor-strip__figure';
-
-    const logoWrapper = document.createElement('span');
-    logoWrapper.className = 'sponsor-strip__logo';
-    logoWrapper.appendChild(logo);
-    figure.appendChild(logoWrapper);
-
-    container.appendChild(figure);
-    item.appendChild(container);
-    sponsorShowcaseList.appendChild(item);
-  });
-
-  sponsorShowcase.hidden = false;
-  sponsorShowcase.removeAttribute('aria-hidden');
-  state.sponsorShowcaseRendered = true;
-}
-
-function sleep(duration) {
-  return new Promise((resolve) => {
-    window.setTimeout(resolve, duration);
-  });
-}
-
-function waitForScrollIdle(options = {}) {
-  if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') {
-    return Promise.resolve();
-  }
-
-  const { timeout = 900, idleThreshold = 140 } = options;
-  const nowFn =
-    typeof performance !== 'undefined' && typeof performance.now === 'function'
-      ? () => performance.now()
-      : () => Date.now();
-
-  return new Promise((resolve) => {
-    let lastX = window.scrollX;
-    let lastY = window.scrollY;
-    let lastChange = nowFn();
-    const deadline = lastChange + timeout;
-
-    const check = (timestamp) => {
-      const currentTime = typeof timestamp === 'number' ? timestamp : nowFn();
-      const currentX = window.scrollX;
-      const currentY = window.scrollY;
-
-      if (currentX !== lastX || currentY !== lastY) {
-        lastX = currentX;
-        lastY = currentY;
-        lastChange = currentTime;
-      }
-
-      if (currentTime - lastChange >= idleThreshold || currentTime >= deadline) {
-        resolve();
-        return;
-      }
-
-      window.requestAnimationFrame(check);
+    const payload = {
+      drawnNumbers: Array.from(state.drawnNumbers),
+      drawHistory: state.drawHistory.map((item) => ({ ...item })),
     };
-
-    window.requestAnimationFrame(check);
-  });
+    localStorage.setItem(STORAGE_KEYS.DRAW_STATE, JSON.stringify(payload));
+    state.storageErrorMessage = '';
+    return true;
+  } catch (error) {
+    console.warn('Storage persist error', error);
+    state.storageErrorMessage = 'Impossibile salvare lo stato della partita.';
+    return false;
+  }
 }
 
-function createTokenElement(number, options = {}) {
-  const {
-    tag = 'span',
-    className = '',
-    numberClassName = '',
-    ariaHidden = true,
-  } = options;
+function clearPersistedDrawState() {
+  if (typeof localStorage === 'undefined') return;
 
-  const wrapper = document.createElement(tag);
-  const wrapperClasses = [className, 'token'].filter(Boolean).join(' ');
-  if (wrapperClasses) {
-    wrapper.className = wrapperClasses;
+  try {
+    localStorage.removeItem(STORAGE_KEYS.DRAW_STATE);
+    state.storageErrorMessage = '';
+  } catch (error) {
+    console.warn('Storage clear error', error);
+    state.storageErrorMessage = 'Impossibile cancellare lo stato salvato.';
   }
-
-  if (ariaHidden) {
-    wrapper.setAttribute('aria-hidden', 'true');
-  }
-
-  const numberElement = document.createElement('span');
-  numberElement.className = ['token__number', numberClassName].filter(Boolean).join(' ');
-  numberElement.textContent = number;
-  wrapper.appendChild(numberElement);
-
-  return { wrapper, numberElement };
 }
 
-function updateSponsorBlock(blockElements, sponsor, options = {}) {
-  if (!blockElements) {
+function restoreDrawStateFromStorage() {
+  if (typeof localStorage === 'undefined') return null;
+
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.DRAW_STATE);
+    if (!stored) {
+      state.storageErrorMessage = '';
+      return null;
+    }
+
+    const parsed = JSON.parse(stored);
+    const history = Array.isArray(parsed.drawHistory) ? parsed.drawHistory : [];
+    const storedNumbers = Array.isArray(parsed.drawnNumbers)
+      ? parsed.drawnNumbers.map(Number).filter(Number.isInteger)
+      : [];
+
+    const limitSet = storedNumbers.length ? new Set(storedNumbers) : null;
+    const numbersMap = new Map(state.numbers.map((entry) => [entry.number, entry]));
+    const seen = new Set();
+    let latestEntry = null;
+
+    state.drawnNumbers = new Set();
+    sponsorManager.resetAssignments();
+
+    const normalizedHistory = [];
+
+    history.forEach((item) => {
+      const number = Number(item.number);
+      if (!Number.isInteger(number) || seen.has(number)) return;
+      if (limitSet && !limitSet.has(number)) return;
+
+      const entry = numbersMap.get(number);
+      if (!entry) return;
+
+      seen.add(number);
+      const sponsorData = cloneSponsorData(item.sponsor);
+      normalizedHistory.push({
+        number,
+        italian: entry.italian || '',
+        dialect: entry.dialect || '',
+        sponsor: sponsorData || null,
+      });
+    });
+
+    if (limitSet) {
+      storedNumbers.forEach((value) => {
+        const number = Number(value);
+        if (!Number.isInteger(number) || seen.has(number)) return;
+
+        const entry = numbersMap.get(number);
+        if (!entry) return;
+
+        seen.add(number);
+        normalizedHistory.push({
+          number,
+          italian: entry.italian || '',
+          dialect: entry.dialect || '',
+          sponsor: null,
+        });
+      });
+    }
+
+    normalizedHistory.forEach((record) => {
+      const entry = numbersMap.get(record.number);
+      if (!entry) return;
+
+      markNumberDrawn(entry, {
+        animate: false,
+        sponsor: record.sponsor,
+        recordHistory: false,
+      });
+      latestEntry = entry;
+    });
+
+    state.drawHistory = normalizedHistory;
+    updateDrawHistory();
+
+    if (normalizedHistory.length > 0) persistDrawState();
+
+    state.storageErrorMessage = '';
+    return latestEntry;
+  } catch (error) {
+    console.warn('Storage restore error', error);
+    state.storageErrorMessage = 'Impossibile ripristinare lo stato precedente.';
+    return null;
+  }
+}
+
+// ============================================
+// 12. AUDIO FUNCTIONS
+// ============================================
+
+function initializeAudioPreference() {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const stored = localStorage.getItem(STORAGE_KEYS.AUDIO);
+      if (stored !== null) {
+        state.audioEnabled = stored === 'true';
+      }
+    }
+  } catch (error) {
+    console.warn('Audio preference read error', error);
+  }
+
+  updateAudioToggle();
+}
+
+function setAudioEnabled(enabled) {
+  state.audioEnabled = Boolean(enabled);
+
+  if (!enabled && state.currentUtterance && typeof speechSynthesis !== 'undefined') {
+    speechSynthesis.cancel();
+    state.currentUtterance = null;
+  }
+
+  updateAudioToggle();
+
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.AUDIO, enabled ? 'true' : 'false');
+    }
+  } catch (error) {
+    console.warn('Audio preference save error', error);
+  }
+}
+
+function updateAudioToggle() {
+  if (!elements.audioToggle) return;
+
+  const enabled = Boolean(state.audioEnabled);
+  elements.audioToggle.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+  const label = enabled ? 'Disattiva annuncio audio' : 'Attiva annuncio audio';
+  elements.audioToggle.setAttribute('aria-label', label);
+  elements.audioToggle.title = label;
+}
+
+function speakText(text, options = {}) {
+  if (typeof speechSynthesis === 'undefined' || typeof SpeechSynthesisUtterance !== 'function') return;
+
+  const content = typeof text === 'string' ? text.trim() : '';
+  if (!content) return;
+
+  const { lang = 'it-IT', rate = 0.92, pitch = 1.0, prefix = '', respectToggle = true } = options;
+
+  if (respectToggle && !state.audioEnabled) {
+    if (state.currentUtterance) {
+      speechSynthesis.cancel();
+      state.currentUtterance = null;
+    }
     return;
   }
 
-  const { block, anchor, logo, heading } = blockElements;
-  const { showPlaceholder = false, preferLazy = false } = options;
-  const placeholderClass = 'sponsor-block--placeholder';
+  if (state.currentUtterance) speechSynthesis.cancel();
 
-  if (!block || !anchor || !logo) {
-    return;
-  }
+  const prefixText = typeof prefix === 'string' ? prefix.trim() : '';
+  const utterance = new SpeechSynthesisUtterance(prefixText ? `${prefixText} ${content}` : content);
+  utterance.lang = lang;
+  utterance.rate = rate;
+  utterance.pitch = pitch;
 
-  if (!sponsor) {
-    const shouldShowPlaceholder = Boolean(showPlaceholder);
+  state.currentUtterance = utterance;
 
-    block.hidden = !shouldShowPlaceholder;
-    if (shouldShowPlaceholder) {
-      block.removeAttribute('hidden');
-    } else {
-      block.setAttribute('hidden', '');
-    }
-    block.setAttribute('aria-hidden', shouldShowPlaceholder ? 'false' : 'true');
-    block.classList.toggle(placeholderClass, shouldShowPlaceholder);
+  const cleanup = () => {
+    if (state.currentUtterance === utterance) state.currentUtterance = null;
+  };
 
-    anchor.href = '#';
-    anchor.target = '_self';
-    anchor.rel = 'noopener noreferrer';
-    anchor.removeAttribute('aria-label');
-    anchor.setAttribute('tabindex', '-1');
-    if (shouldShowPlaceholder) {
-      anchor.setAttribute('aria-hidden', 'true');
-    } else {
-      anchor.removeAttribute('aria-hidden');
-    }
-    anchor.classList.toggle('sponsor-link--placeholder', shouldShowPlaceholder);
+  utterance.addEventListener('end', cleanup, { once: true });
+  utterance.addEventListener('error', cleanup, { once: true });
 
-    if (heading) {
-      heading.hidden = !shouldShowPlaceholder;
-    }
+  speechSynthesis.speak(utterance);
+}
 
-    if ('loading' in logo) {
-      logo.loading = preferLazy ? 'lazy' : 'eager';
-    }
-    logo.hidden = true;
-    logo.setAttribute('hidden', '');
-    logo.removeAttribute('src');
-    logo.alt = '';
-    return;
-  }
+function speakEntry(entry) {
+  if (!entry) return;
 
-  block.hidden = false;
-  block.removeAttribute('hidden');
-  block.setAttribute('aria-hidden', 'false');
-  block.classList.remove(placeholderClass);
+  const segments = [`Numero ${entry.number}`];
+  if (entry.dialect) segments.push(entry.dialect);
+  if (entry.italian) segments.push(entry.italian);
 
-  anchor.classList.remove('sponsor-link--placeholder');
-  anchor.removeAttribute('aria-hidden');
-  
-  const hasUrl = typeof sponsor.url === 'string' && sponsor.url.trim();
-  
+  const announcement = segments
+    .filter(Boolean)
+    .map((s) => s.trim().replace(/[.!?]\s*$/, ''))
+    .join('. ');
+
+  speakText(announcement, { lang: 'it-IT', rate: 0.92 });
+}
+
+// ============================================
+// 13. SPONSOR UI FUNCTIONS
+// ============================================
+
+function setupSponsorLink(anchor, sponsor) {
+  if (!anchor) return;
+
+  const hasUrl = typeof sponsor?.url === 'string' && sponsor.url.trim();
+
   if (hasUrl) {
     const safeUrl = sanitizeUrl(sponsor.url);
     const isExternal = /^https?:\/\//i.test(safeUrl);
     anchor.href = safeUrl;
     anchor.target = isExternal ? '_blank' : '_self';
-    if (isExternal) {
-      anchor.rel = 'noopener noreferrer';
-    } else {
-      anchor.removeAttribute('rel');
-    }
+    anchor.rel = isExternal ? 'noopener noreferrer' : '';
     anchor.removeAttribute('tabindex');
     anchor.setAttribute('aria-label', getSponsorAccessibleLabel(sponsor));
+    
     const displayName = getSponsorDisplayName(sponsor);
     if (displayName) {
       anchor.title = displayName;
@@ -1525,91 +1298,91 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
     anchor.removeAttribute('title');
     anchor.setAttribute('tabindex', '-1');
   }
-
-  if ('loading' in logo) {
-    logo.loading = preferLazy ? 'lazy' : 'eager';
-  }
-  logo.hidden = false;
-  logo.removeAttribute('hidden');
-  const logoSrc =
-    typeof sponsor.logo === 'string' && sponsor.logo.trim() ? sponsor.logo.trim() : '';
-  if (logoSrc && logo.src !== logoSrc) {
-    logo.src = logoSrc;
-  }
-  logo.alt = '';
-
-  if (heading) {
-    heading.hidden = false;
-  }
 }
 
-function blurButtonOnNextFrame(button) {
-  if (!button || typeof button.blur !== 'function') {
+function updateSponsorBlock(blockElements, sponsor, options = {}) {
+  if (!blockElements) return;
+
+  const { block, anchor, logo, heading } = blockElements;
+  const { showPlaceholder = false, preferLazy = false } = options;
+
+  if (!block || !anchor || !logo) return;
+
+  const placeholderClass = 'sponsor-block--placeholder';
+
+  if (!sponsor) {
+    block.hidden = !showPlaceholder;
+    block.setAttribute('aria-hidden', showPlaceholder ? 'false' : 'true');
+    block.classList.toggle(placeholderClass, showPlaceholder);
+
+    anchor.href = '#';
+    anchor.target = '_self';
+    anchor.removeAttribute('aria-label');
+    anchor.setAttribute('tabindex', '-1');
+    anchor.classList.toggle('sponsor-link--placeholder', showPlaceholder);
+    if (showPlaceholder) anchor.setAttribute('aria-hidden', 'true');
+
+    if (heading) heading.hidden = !showPlaceholder;
+
+    logo.hidden = true;
+    logo.removeAttribute('src');
+    logo.alt = '';
+    if ('loading' in logo) logo.loading = preferLazy ? 'lazy' : 'eager';
     return;
   }
 
-  if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
-    window.requestAnimationFrame(() => {
-      button.blur();
-    });
-    return;
-  }
+  block.hidden = false;
+  block.removeAttribute('hidden');
+  block.setAttribute('aria-hidden', 'false');
+  block.classList.remove(placeholderClass);
 
-  button.blur();
+  anchor.classList.remove('sponsor-link--placeholder');
+  anchor.removeAttribute('aria-hidden');
+  setupSponsorLink(anchor, sponsor);
+
+  if ('loading' in logo) logo.loading = preferLazy ? 'lazy' : 'eager';
+  logo.hidden = false;
+  logo.removeAttribute('hidden');
+  const logoSrc = sponsor.logo?.trim() || '';
+  if (logoSrc && logo.src !== logoSrc) logo.src = logoSrc;
+  logo.alt = '';
+
+  if (heading) heading.hidden = false;
 }
 
 function applySponsorToOverlay(sponsor) {
-  const { drawSponsor, drawSponsorLogo, drawSponsorBlock, drawSponsorHeading, drawOverlay } = elements;
-  const shouldShowPlaceholder =
-    !sponsor && state.sponsorLoadingState === LoadingStates.ERROR;
-
   updateSponsorBlock(
     {
-      block: drawSponsorBlock,
-      anchor: drawSponsor,
-      logo: drawSponsorLogo,
-      heading: drawSponsorHeading,
+      block: elements.drawSponsorBlock,
+      anchor: elements.drawSponsor,
+      logo: elements.drawSponsorLogo,
+      heading: elements.drawSponsorHeading,
     },
     sponsor,
-    { preferLazy: false, showPlaceholder: shouldShowPlaceholder }
+    { 
+      preferLazy: false, 
+      showPlaceholder: !sponsor && state.sponsorLoadingState === LoadingStates.ERROR 
+    }
   );
 
-  if (drawOverlay) {
-    drawOverlay.classList.toggle('draw-portal--has-sponsor', Boolean(sponsor));
+  if (elements.drawOverlay) {
+    elements.drawOverlay.classList.toggle('draw-portal--has-sponsor', Boolean(sponsor));
   }
 }
 
-function applySponsorToModal(sponsor, options = {}) {
-  const { modalSponsorBlock, modalSponsor, modalSponsorLogo, modalSponsorHeading } = elements;
-  const shouldShowPlaceholder =
-    !sponsor && state.sponsorLoadingState === LoadingStates.ERROR;
-
+function applySponsorToModal(sponsor) {
   updateSponsorBlock(
     {
-      block: modalSponsorBlock,
-      anchor: modalSponsor,
-      logo: modalSponsorLogo,
-      heading: modalSponsorHeading,
+      block: elements.modalSponsorBlock,
+      anchor: elements.modalSponsor,
+      logo: elements.modalSponsorLogo,
     },
     sponsor,
-    { preferLazy: false, showPlaceholder: shouldShowPlaceholder, ...options }
+    { 
+      preferLazy: false, 
+      showPlaceholder: !sponsor && state.sponsorLoadingState === LoadingStates.ERROR 
+    }
   );
-}
-
-function persistSponsorForNumber(number, sponsor) {
-  if (!Number.isInteger(number)) {
-    return null;
-  }
-
-  return sponsorManager.assignToNumber(number, sponsor);
-}
-
-function getStoredSponsorForNumber(number) {
-  if (!Number.isInteger(number)) {
-    return null;
-  }
-
-  return sponsorManager.getAssignment(number);
 }
 
 function ensureModalSponsor(entry, options = {}) {
@@ -1619,9 +1392,8 @@ function ensureModalSponsor(entry, options = {}) {
   }
 
   const { fromDraw = false } = options;
-  const number = entry.number;
-
-  const storedSponsor = getStoredSponsorForNumber(number);
+  const storedSponsor = sponsorManager.getAssignment(entry.number);
+  
   if (storedSponsor) {
     applySponsorToModal(storedSponsor);
     return;
@@ -1630,17 +1402,15 @@ function ensureModalSponsor(entry, options = {}) {
   const currentSponsor = sponsorManager.getCurrentSponsor();
 
   if (fromDraw && currentSponsor) {
-    const remembered = persistSponsorForNumber(number, currentSponsor);
+    const remembered = sponsorManager.assignToNumber(entry.number, currentSponsor);
     applySponsorToModal(remembered);
     return;
   }
 
   const selectRandomSponsor = () => {
-    const previousKey = sponsorManager.getLastKey();
-    const randomSponsor = pickRandomSponsor(previousKey);
-    if (randomSponsor) {
-      sponsorManager.rememberSponsorKey(randomSponsor);
-    }
+    const previousKey = sponsorManager.lastSponsorKey;
+    const randomSponsor = sponsorManager.pickRandom(previousKey);
+    if (randomSponsor) sponsorManager.lastSponsorKey = getSponsorKey(randomSponsor);
     return randomSponsor || null;
   };
 
@@ -1652,28 +1422,20 @@ function ensureModalSponsor(entry, options = {}) {
 
   applySponsorToModal(null);
 
-  const pending =
-    sponsorManager.getPendingLoad() ||
-    (sponsorManager.hasSponsors()
-      ? Promise.resolve(sponsorManager.getAllSponsors())
-      : loadSponsors());
-
-  if (!pending || typeof pending.then !== 'function') {
-    return;
-  }
+  const pending = sponsorManager.loadPromise || 
+    (sponsorManager.hasSponsors() ? Promise.resolve(sponsorManager.getAllSponsors()) : loadSponsors());
 
   pending
     .then(() => {
-      const updatedStored = getStoredSponsorForNumber(number);
+      const updatedStored = sponsorManager.getAssignment(entry.number);
       if (updatedStored) {
         applySponsorToModal(updatedStored);
         return;
       }
 
       const latestCurrent = sponsorManager.getCurrentSponsor();
-
       if (fromDraw && latestCurrent) {
-        const remembered = persistSponsorForNumber(number, latestCurrent);
+        const remembered = sponsorManager.assignToNumber(entry.number, latestCurrent);
         if (remembered) {
           applySponsorToModal(remembered);
           return;
@@ -1681,38 +1443,14 @@ function ensureModalSponsor(entry, options = {}) {
       }
 
       const refreshed = selectRandomSponsor();
-      if (refreshed) {
-        applySponsorToModal(refreshed);
-        return;
-      }
-
-      applySponsorToModal(null);
+      applySponsorToModal(refreshed);
     })
     .catch(() => {
-      const fallbackStored = getStoredSponsorForNumber(number);
-      if (fallbackStored) {
-        applySponsorToModal(fallbackStored);
-        return;
-      }
-
-      const latestCurrent = sponsorManager.getCurrentSponsor();
-
-      if (fromDraw && latestCurrent) {
-        const remembered = persistSponsorForNumber(number, latestCurrent);
-        if (remembered) {
-          applySponsorToModal(remembered);
-          return;
-        }
-      }
-
-      applySponsorToModal(null);
+      const fallbackStored = sponsorManager.getAssignment(entry.number);
+      applySponsorToModal(fallbackStored);
     });
 }
 
-/**
- * Prepara lo sponsor che verrà mostrato nella prossima estrazione.
- * @returns {Promise<object|null>}
- */
 async function prepareSponsorForNextDraw() {
   setSponsorLoadingState(LoadingStates.LOADING);
   return sponsorManager
@@ -1724,7 +1462,7 @@ async function prepareSponsorForNextDraw() {
       return sponsor;
     })
     .catch((error) => {
-      console.warn('Errore durante la preparazione dello sponsor', error);
+      console.warn('Sponsor preparation error', error);
       sponsorManager.clearCurrentSponsor();
       setSponsorLoadingState(LoadingStates.ERROR);
       applySponsorToOverlay(null);
@@ -1732,81 +1470,233 @@ async function prepareSponsorForNextDraw() {
     });
 }
 
-function updateHistoryToggleText() {
-  const { historyToggle, historyToggleLabel } = elements;
+function loadSponsors() {
+  setSponsorLoadingState(LoadingStates.LOADING);
+  return sponsorManager
+    .load()
+    .then((sponsors) => {
+      if (!Array.isArray(sponsors) || sponsors.length === 0) {
+        setSponsorLoadingState(LoadingStates.ERROR);
+        applySponsorToOverlay(null);
+      } else {
+        setSponsorLoadingState(LoadingStates.SUCCESS);
+      }
+      return sponsors;
+    })
+    .catch((error) => {
+      console.warn('Sponsors load error', error);
+      setSponsorLoadingState(LoadingStates.ERROR);
+      applySponsorToOverlay(null);
+      throw error;
+    });
+}
 
-  if (!historyToggle || !historyToggleLabel) {
+function renderSponsorShowcase(sponsors, options = {}) {
+  const { force = false } = options;
+
+  if (!elements.sponsorShowcase || !elements.sponsorShowcaseList) return;
+
+  if (!Array.isArray(sponsors) || sponsors.length === 0) {
+    elements.sponsorShowcaseList.innerHTML = '';
+    elements.sponsorShowcase.hidden = true;
+    state.sponsorShowcaseRendered = false;
     return;
   }
 
-  const { dataset } = historyToggle;
-  const openLabel =
-    dataset.labelMobileOpen || dataset.labelDesktopOpen || 'Chiudi cronologia';
-  const closedLabel = dataset.labelMobileClosed || dataset.labelDesktop || 'Cronologia';
-  const nextLabel = state.historyOpen ? openLabel : closedLabel;
+  if (state.sponsorShowcaseRendered && !force) return;
 
-  historyToggleLabel.textContent = nextLabel;
-  historyToggle.setAttribute('aria-label', nextLabel);
-  historyToggle.title = nextLabel;
+  elements.sponsorShowcaseList.innerHTML = '';
+
+  sponsors.forEach((sponsor) => {
+    if (!sponsor?.logo?.trim()) return;
+
+    const item = document.createElement('li');
+    item.className = 'sponsor-strip__item';
+
+    const hasUrl = Boolean(sponsor.url?.trim());
+    const container = document.createElement(hasUrl ? 'a' : 'div');
+    container.className = 'sponsor-strip__link';
+
+    if (hasUrl) {
+      setupSponsorLink(container, sponsor);
+    } else {
+      container.classList.add('sponsor-strip__link--static');
+      container.setAttribute('role', 'presentation');
+    }
+
+    const logo = document.createElement('img');
+    logo.alt = '';
+    logo.src = sponsor.logo.trim();
+    if ('decoding' in logo) logo.decoding = 'async';
+    if ('loading' in logo) logo.loading = 'lazy';
+
+    const figure = document.createElement('figure');
+    figure.className = 'sponsor-strip__figure';
+
+    const logoWrapper = document.createElement('span');
+    logoWrapper.className = 'sponsor-strip__logo';
+    logoWrapper.appendChild(logo);
+    figure.appendChild(logoWrapper);
+
+    container.appendChild(figure);
+    item.appendChild(container);
+    elements.sponsorShowcaseList.appendChild(item);
+  });
+
+  elements.sponsorShowcase.hidden = false;
+  elements.sponsorShowcase.removeAttribute('aria-hidden');
+  state.sponsorShowcaseRendered = true;
+}
+
+// ============================================
+// 14. BOARD RENDERING
+// ============================================
+
+function getNumberImage(entry) {
+  if (entry?.image) return entry.image;
+  if (entry?.number) return `images/${entry.number}.jpg`;
+  return FALLBACK_IMAGE;
+}
+
+function handleBoardCellImageError(event) {
+  const target = event.currentTarget;
+  if (!(target instanceof HTMLImageElement)) return;
+
+  if (target.dataset.fallbackApplied === 'true') {
+    target.style.display = 'none';
+    target.removeEventListener('error', handleBoardCellImageError);
+    return;
+  }
+
+  target.dataset.fallbackApplied = 'true';
+  target.src = FALLBACK_IMAGE;
+}
+
+function applyBoardCellImage(imageEl, entry) {
+  if (!(imageEl instanceof HTMLImageElement)) return FALLBACK_IMAGE;
+
+  imageEl.dataset.fallbackApplied = 'false';
+  imageEl.removeEventListener('error', handleBoardCellImageError);
+  imageEl.addEventListener('error', handleBoardCellImageError);
+  imageEl.style.removeProperty('display');
+  const source = getNumberImage(entry);
+  imageEl.src = source;
+  return source;
+}
+
+function renderBoard() {
+  if (!elements.board || !elements.template) return;
+
+  elements.board.innerHTML = '';
+  state.cellsByNumber = new Map();
+  state.selected = null;
+  state.entriesByNumber = new Map();
+
+  const fragment = document.createDocumentFragment();
+
+  state.numbers.forEach((entry) => {
+    state.entriesByNumber.set(entry.number, entry);
+    const cell = elements.template.content.firstElementChild.cloneNode(true);
+    cell.dataset.number = entry.number;
+
+    const srLabel = cell.querySelector('.sr-only');
+    if (srLabel) {
+      const labelParts = [`Numero ${entry.number}`];
+      if (entry.italian?.trim()) labelParts.push(entry.italian.trim());
+      else if (entry.dialect?.trim()) labelParts.push(entry.dialect.trim());
+      srLabel.textContent = labelParts.join(' – ');
+    }
+
+    const artworkEl = cell.querySelector('.board-cell__media');
+    if (artworkEl instanceof HTMLImageElement) {
+      applyBoardCellImage(artworkEl, entry);
+    }
+
+    const tokenNumberEl = cell.querySelector('.board-cell__token-number');
+    if (tokenNumberEl) tokenNumberEl.textContent = entry.number;
+
+    const isDrawn = state.drawnNumbers.has(entry.number);
+    cell.classList.toggle(CSS_CLASSES.CELL_DRAWN, isDrawn);
+    cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
+
+    state.cellsByNumber.set(entry.number, cell);
+    fragment.appendChild(cell);
+  });
+
+  elements.board.appendChild(fragment);
+}
+
+function handleBoardCellClick(event) {
+  const cell = event.target.closest('.board-cell');
+  if (!cell || !elements.board?.contains(cell)) return;
+
+  const number = Number(cell.dataset.number);
+  if (!Number.isInteger(number)) return;
+
+  const entry = state.entriesByNumber.get(number);
+  if (entry) handleSelection(entry, cell);
+}
+
+// ============================================
+// 15. HISTORY PANEL
+// ============================================
+
+function updateHistoryToggleText() {
+  if (!elements.historyToggle) return;
+
+  const label = state.historyOpen ? 'Chiudi cronologia' : 'Cronologia';
+  elements.historyToggle.setAttribute('aria-label', label);
+  elements.historyToggle.title = label;
 }
 
 function syncHistoryPanelToLayout(options = {}) {
   const { immediate = false } = options;
-  const { historyPanel, historyToggle, historyScrim } = elements;
 
-  if (!historyPanel) {
+  if (!elements.historyPanel) {
     state.historyOpen = false;
     updateHistoryToggleText();
     return;
   }
 
-  historyPanel.setAttribute('aria-hidden', state.historyOpen ? 'false' : 'true');
-  historyPanel.classList.toggle('history--open', state.historyOpen);
-  if (historyToggle) {
-    historyToggle.setAttribute('aria-expanded', state.historyOpen ? 'true' : 'false');
+  elements.historyPanel.hidden = !state.historyOpen;
+  elements.historyPanel.classList.toggle(CSS_CLASSES.HISTORY_OPEN, state.historyOpen);
+  
+  if (elements.historyToggle) {
+    elements.historyToggle.setAttribute('aria-expanded', state.historyOpen ? 'true' : 'false');
   }
+  
   updateHistoryToggleText();
 
-  if (!historyScrim) {
-    return;
-  }
+  if (!elements.historyScrim) return;
 
   if (state.historyOpen) {
-    historyScrim.hidden = false;
-    historyScrim.setAttribute('aria-hidden', 'false');
-    if (typeof requestAnimationFrame === 'function') {
-      requestAnimationFrame(() => {
-        historyScrim.classList.add('history-scrim--visible');
-      });
-    } else {
-      historyScrim.classList.add('history-scrim--visible');
-    }
+    elements.historyScrim.hidden = false;
+    requestAnimationFrame(() => {
+      elements.historyScrim.classList.add('history-scrim--visible');
+    });
   } else {
-    historyScrim.classList.remove('history-scrim--visible');
+    elements.historyScrim.classList.remove('history-scrim--visible');
     const finalizeHide = () => {
       if (!state.historyOpen) {
-        historyScrim.hidden = true;
-        historyScrim.setAttribute('aria-hidden', 'true');
+        elements.historyScrim.hidden = true;
       }
-      historyScrim.removeEventListener('transitionend', finalizeHide);
+      elements.historyScrim.removeEventListener('transitionend', finalizeHide);
     };
 
     if (immediate) {
       finalizeHide();
     } else {
-      historyScrim.addEventListener('transitionend', finalizeHide);
-      window.setTimeout(finalizeHide, 520);
+      elements.historyScrim.addEventListener('transitionend', finalizeHide);
+      setTimeout(finalizeHide, 520);
     }
   }
 }
 
 function openHistoryPanel() {
-  if (state.historyOpen) {
-    return;
-  }
+  if (state.historyOpen) return;
   state.historyOpen = true;
   syncHistoryPanelToLayout();
-  window.setTimeout(() => {
+  setTimeout(() => {
     if (state.historyOpen && elements.historyPanel) {
       elements.historyPanel.focus({ preventScroll: true });
     }
@@ -1824,516 +1714,122 @@ function closeHistoryPanel(options = {}) {
 }
 
 function toggleHistoryPanel() {
-  if (state.historyOpen) {
-    closeHistoryPanel();
+  state.historyOpen ? closeHistoryPanel() : openHistoryPanel();
+}
+
+function updateDrawHistory() {
+  if (!elements.historyList) return;
+
+  const draws = state.drawHistory;
+  elements.historyList.innerHTML = '';
+
+  if (draws.length === 0) {
+    elements.historyList.hidden = true;
+    if (elements.historyEmpty) {
+      elements.historyEmpty.hidden = false;
+    }
+    return;
+  }
+
+  if (elements.historyEmpty) {
+    elements.historyEmpty.hidden = true;
+  }
+
+  elements.historyList.hidden = false;
+
+  for (let index = draws.length - 1; index >= 0; index -= 1) {
+    const item = draws[index];
+    const order = index + 1;
+    const isLatest = index === draws.length - 1;
+
+    const listItem = document.createElement('li');
+    listItem.className = 'history-item';
+    if (isLatest) {
+      listItem.classList.add('history-item--latest');
+      listItem.setAttribute('aria-current', 'true');
+    }
+
+    const orderBadge = document.createElement('span');
+    orderBadge.className = 'history-item__order';
+    orderBadge.textContent = `#${order}`;
+    orderBadge.setAttribute('aria-hidden', 'true');
+    listItem.appendChild(orderBadge);
+
+    const { wrapper: token } = createTokenElement(item.number, {
+      className: 'history-item__token',
+    });
+    listItem.appendChild(token);
+
+    const details = document.createElement('div');
+    details.className = 'history-item__details';
+
+    const title = document.createElement('p');
+    title.className = 'history-item__title';
+    title.textContent = `Numero ${item.number}`;
+
+    if (isLatest) {
+      const latestLabel = document.createElement('p');
+      latestLabel.className = 'history-item__latest-label';
+      latestLabel.textContent = 'Ultimo numero';
+      details.appendChild(latestLabel);
+      title.classList.add('history-item__title--latest');
+    }
+
+    details.appendChild(title);
+
+    const meta = document.createElement('div');
+    meta.className = 'history-item__meta';
+
+    const italianLine = document.createElement('span');
+    italianLine.className = 'history-item__lang history-item__lang--italian';
+    const italianValue = item.italian?.trim() || '';
+    italianLine.textContent = `Italiano: ${italianValue || '—'}`;
+    if (!italianValue) italianLine.classList.add('history-item__lang--empty');
+    meta.appendChild(italianLine);
+
+    const dialectLine = document.createElement('span');
+    dialectLine.className = 'history-item__lang history-item__lang--dialect';
+    const dialectValue = item.dialect?.trim() || '';
+    dialectLine.textContent = `Nojano: ${dialectValue || '—'}`;
+    if (!dialectValue) dialectLine.classList.add('history-item__lang--empty');
+    meta.appendChild(dialectLine);
+
+    details.appendChild(meta);
+    listItem.appendChild(details);
+    elements.historyList.appendChild(listItem);
+  }
+
+  const prefersReducedMotion = animationManager?.prefersReducedMotionEnabled() || 
+    matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+
+  if (typeof elements.historyList.scrollTo === 'function') {
+    elements.historyList.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
   } else {
-    openHistoryPanel();
+    elements.historyList.scrollTop = 0;
   }
 }
 
-function updateAudioToggle() {
-  const { audioToggle } = elements;
-  if (!audioToggle) {
-    return;
-  }
+// ============================================
+// 16. GAME LOGIC
+// ============================================
 
-  const enabled = Boolean(state.audioEnabled);
-  audioToggle.setAttribute('aria-pressed', enabled ? 'true' : 'false');
-  const actionLabel = enabled ? 'Disattiva annuncio audio' : 'Attiva annuncio audio';
-  audioToggle.setAttribute('aria-label', actionLabel);
-  audioToggle.title = actionLabel;
-  audioToggle.setAttribute('data-tooltip', actionLabel);
-  const srText = audioToggle.querySelector('[data-audio-label]');
-  if (srText) {
-    srText.textContent = enabled ? 'Audio attivo' : 'Audio disattivato';
-  }
-}
-
-function setAudioEnabled(enabled) {
-  const nextValue = Boolean(enabled);
-  state.audioEnabled = nextValue;
-
-  if (
-    !nextValue &&
-    state.currentUtterance &&
-    typeof window !== 'undefined' &&
-    'speechSynthesis' in window
-  ) {
-    window.speechSynthesis.cancel();
-    state.currentUtterance = null;
-  }
-
-  updateAudioToggle();
-
-  try {
-    if (typeof window !== 'undefined' && 'localStorage' in window) {
-      window.localStorage.setItem(AUDIO_STORAGE_KEY, nextValue ? 'true' : 'false');
-    }
-  } catch (error) {
-    console.warn('Impossibile salvare la preferenza audio', error);
-  }
-}
-
-function initializeAudioPreference() {
-  if (typeof window === 'undefined') {
-    state.audioEnabled = true;
-    updateAudioToggle();
-    return;
-  }
-
-  try {
-    if ('localStorage' in window) {
-      const stored = window.localStorage.getItem(AUDIO_STORAGE_KEY);
-      if (stored !== null) {
-        state.audioEnabled = stored === 'true';
-      }
-    }
-  } catch (error) {
-    console.warn('Impossibile leggere la preferenza audio', error);
-    state.audioEnabled = true;
-  }
-
-  updateAudioToggle();
-}
-
-function persistDrawState() {
-  if (typeof window === 'undefined' || !('localStorage' in window)) {
-    return true;
-  }
-
-  try {
-    const payload = {
-      drawnNumbers: Array.from(state.drawnNumbers),
-      drawHistory: state.drawHistory.map((item) => ({ ...item })),
-    };
-    window.localStorage.setItem(DRAW_STATE_STORAGE_KEY, JSON.stringify(payload));
-    state.storageErrorMessage = '';
-    return true;
-  } catch (error) {
-    console.warn('Impossibile salvare lo stato della partita', error);
-    state.storageErrorMessage = 'Impossibile salvare lo stato della partita.';
-    return false;
-  }
-}
-
-function clearPersistedDrawState() {
-  if (typeof window === 'undefined' || !('localStorage' in window)) {
-    return;
-  }
-
-  try {
-    window.localStorage.removeItem(DRAW_STATE_STORAGE_KEY);
-    state.storageErrorMessage = '';
-  } catch (error) {
-    console.warn('Impossibile cancellare lo stato salvato', error);
-    state.storageErrorMessage = 'Impossibile cancellare lo stato salvato.';
-  }
-}
-
-function restoreDrawStateFromStorage() {
-  if (typeof window === 'undefined' || !('localStorage' in window)) {
-    return null;
-  }
-
-  try {
-    const stored = window.localStorage.getItem(DRAW_STATE_STORAGE_KEY);
-    if (!stored) {
-      state.storageErrorMessage = '';
-      return null;
-    }
-
-    const parsed = JSON.parse(stored);
-    const source = parsed && typeof parsed === 'object' ? parsed : EMPTY_DRAW_STATE;
-    const history = Array.isArray(source.drawHistory) ? source.drawHistory : [];
-    const storedNumbers = Array.isArray(source.drawnNumbers)
-      ? source.drawnNumbers
-          .map((value) => Number(value))
-          .filter((value) => Number.isInteger(value))
-      : [];
-    const limitSet = storedNumbers.length ? new Set(storedNumbers) : null;
-    const numbersMap = new Map(state.numbers.map((entry) => [entry.number, entry]));
-    const seen = new Set();
-    let latestEntry = null;
-
-    state.drawnNumbers = new Set();
-    sponsorManager.resetAssignments();
-
-    const normalizedHistory = [];
-
-    history.forEach((item) => {
-      if (
-        !item ||
-        (typeof item.number !== 'number' && typeof item.number !== 'string')
-      ) {
-        return;
-      }
-
-      const number = Number(item.number);
-      if (!Number.isInteger(number)) {
-        return;
-      }
-      if (seen.has(number)) {
-        return;
-      }
-
-      if (limitSet && !limitSet.has(number)) {
-        return;
-      }
-
-      const entry = numbersMap.get(number);
-      if (!entry) {
-        return;
-      }
-
-      seen.add(number);
-      const sponsorData = cloneSponsorData(item.sponsor);
-      normalizedHistory.push({
-        number,
-        italian: entry.italian || '',
-        dialect: entry.dialect || '',
-        sponsor: sponsorData || null,
-      });
-    });
-
-    if (limitSet) {
-      storedNumbers.forEach((value) => {
-        const number = Number(value);
-        if (!Number.isInteger(number)) {
-          return;
-        }
-
-        if (seen.has(number)) {
-          return;
-        }
-
-        const entry = numbersMap.get(number);
-        if (!entry) {
-          return;
-        }
-
-        seen.add(number);
-        normalizedHistory.push({
-          number,
-          italian: entry.italian || '',
-          dialect: entry.dialect || '',
-          sponsor: null,
-        });
-      });
-    }
-
-    normalizedHistory.forEach((record) => {
-      const entry = numbersMap.get(record.number);
-      if (!entry) {
-        return;
-      }
-
-      markNumberDrawn(entry, {
-        animate: false,
-        sponsor: record.sponsor,
-        recordHistory: false,
-      });
-      latestEntry = entry;
-    });
-
-    state.drawHistory = normalizedHistory;
-    updateDrawHistory();
-
-    if (normalizedHistory.length > 0) {
-      persistDrawState();
-    }
-
-    state.storageErrorMessage = '';
-    return latestEntry;
-  } catch (error) {
-    console.warn('Impossibile ripristinare lo stato della partita', error);
-    state.storageErrorMessage = 'Impossibile ripristinare lo stato precedente.';
-    return null;
-  }
-}
-
-async function loadNumbers() {
-  setDataLoadingState(LoadingStates.LOADING);
-  try {
-    const response = await fetch('data.json');
-    if (!response.ok) {
-      throw new Error('Impossibile caricare i dati');
-    }
-    const data = await response.json();
-    const incomingNumbers = Array.isArray(data?.numbers) ? data.numbers : null;
-    if (!incomingNumbers) {
-      throw new Error('Formato dati non valido');
-    }
-
-    const seenNumbers = new Set();
-    const sanitizedNumbers = [];
-
-    incomingNumbers.forEach((item) => {
-      if (!item || typeof item !== 'object') {
-        return;
-      }
-
-      const numericValue = Number(item.number);
-      if (!Number.isFinite(numericValue) || seenNumbers.has(numericValue)) {
-        return;
-      }
-
-      seenNumbers.add(numericValue);
-      sanitizedNumbers.push({
-        ...item,
-        number: numericValue,
-        italian: typeof item.italian === 'string' ? item.italian : '',
-        dialect: typeof item.dialect === 'string' ? item.dialect : '',
-      });
-    });
-
-    if (!sanitizedNumbers.length) {
-      throw new Error('Nessun numero valido trovato');
-    }
-
-    sanitizedNumbers.sort((a, b) => a.number - b.number);
-
-    state.numbers = sanitizedNumbers;
-    state.drawnNumbers = new Set();
-    state.drawHistory = [];
-    sponsorManager.resetAssignments();
-    state.entriesByNumber = new Map();
-    state.storageErrorMessage = '';
-    renderBoard();
-    updateDrawHistory();
-
-    const latestEntry = restoreDrawStateFromStorage();
-    updateDrawStatus(latestEntry || undefined);
-    setDataLoadingState(LoadingStates.SUCCESS);
-  } catch (error) {
-    console.error(error);
-    state.numbers = [];
-    state.drawnNumbers = new Set();
-    state.drawHistory = [];
-    state.entriesByNumber = new Map();
-    state.cellsByNumber = new Map();
-    state.selected = null;
-    sponsorManager.resetAssignments();
-    state.storageErrorMessage = 'Impossibile caricare i numeri della tombola.';
-    elements.board.innerHTML =
-      '<p class="board-error">Errore nel caricamento dei dati della tombola.</p>';
-    if (elements.drawStatus) {
-      elements.drawStatus.textContent = 'Errore nel caricamento dei numeri.';
-    }
-    if (elements.drawButton) {
-      elements.drawButton.disabled = true;
-    }
-    if (elements.floatingDrawButton) {
-      elements.floatingDrawButton.disabled = true;
-      const floatingSr = elements.floatingDrawButton.querySelector('[data-floating-draw-sr]');
-      const disabledMessage = 'Estrazione non disponibile';
-      elements.floatingDrawButton.setAttribute('aria-label', disabledMessage);
-      elements.floatingDrawButton.title = disabledMessage;
-      elements.floatingDrawButton.setAttribute('data-tooltip', disabledMessage);
-      if (floatingSr) {
-        floatingSr.textContent = disabledMessage;
-      }
-    }
-    setDataLoadingState(LoadingStates.ERROR);
-    updateDrawHistory();
-  }
-}
-
-function renderBoard() {
-  const { board, template } = elements;
-  if (!board || !template) {
-    return;
-  }
-
-  board.innerHTML = '';
-  state.cellsByNumber = new Map();
-  state.selected = null;
-
-  if (!(state.entriesByNumber instanceof Map)) {
-    state.entriesByNumber = new Map();
-  } else {
-    state.entriesByNumber.clear();
-  }
-
-  const fragment = document.createDocumentFragment();
-
-  state.numbers.forEach((entry) => {
-    state.entriesByNumber.set(entry.number, entry);
-    const cell = template.content.firstElementChild.cloneNode(true);
-    cell.dataset.number = entry.number;
-
-    const srOnlyLabel = cell.querySelector('[data-board-cell-sr]');
-    if (srOnlyLabel) {
-      const labelParts = [`Numero ${entry.number}`];
-      if (typeof entry.italian === 'string' && entry.italian.trim()) {
-        labelParts.push(entry.italian.trim());
-      } else if (typeof entry.dialect === 'string' && entry.dialect.trim()) {
-        labelParts.push(entry.dialect.trim());
-      }
-      srOnlyLabel.textContent = labelParts.join(' – ');
-    }
-
-    const artworkEl = cell.querySelector('.board-cell__media');
-    if (artworkEl instanceof HTMLImageElement) {
-      applyBoardCellImage(artworkEl, entry);
-    }
-
-    const tokenNumberEl = cell.querySelector('[data-board-token-number]');
-    if (tokenNumberEl) {
-      tokenNumberEl.textContent = entry.number;
-    }
-
-    const ariaLabelParts = [`Numero ${entry.number}`];
-    if (entry.italian) {
-      ariaLabelParts.push(entry.italian);
-    }
-    cell.setAttribute('aria-label', ariaLabelParts.join(' – '));
-
-    const isDrawn = state.drawnNumbers.has(entry.number);
-    cell.classList.toggle('board-cell--drawn', isDrawn);
-    cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
-
-    state.cellsByNumber.set(entry.number, cell);
-    fragment.appendChild(cell);
-  });
-
-  board.appendChild(fragment);
-}
-
-function handleBoardCellClick(event) {
-  const { board } = elements;
-  if (!board) {
-    return;
-  }
-
-  const cell = event.target.closest('.board-cell');
-  if (!cell || !board.contains(cell)) {
-    return;
-  }
-
-  const number = Number(cell.dataset.number);
-  if (!Number.isInteger(number)) {
-    return;
-  }
-
-  const entry = getEntryByNumber(number);
-  if (!entry) {
-    return;
-  }
-
-  handleSelection(entry, cell);
-}
-
-function getNumberImage(entry) {
-  if (entry && entry.image) {
-    return entry.image;
-  }
-
-  if (entry && entry.number) {
-    return `images/${entry.number}.jpg`;
-  }
-
-  return TILE_IMAGE_FALLBACK;
-}
-
-function handleBoardCellImageError(event) {
-  const target = event.currentTarget;
-  if (!(target instanceof HTMLImageElement)) {
-    return;
-  }
-
-  if (target.dataset.fallbackApplied === 'true') {
-    target.style.display = 'none';
-    target.removeEventListener('error', handleBoardCellImageError);
-    return;
-  }
-
-  target.dataset.fallbackApplied = 'true';
-  target.src = TILE_IMAGE_FALLBACK;
-}
-
-function applyBoardCellImage(imageEl, entry) {
-  if (!(imageEl instanceof HTMLImageElement)) {
-    return TILE_IMAGE_FALLBACK;
-  }
-
-  imageEl.dataset.fallbackApplied = 'false';
-  imageEl.removeEventListener('error', handleBoardCellImageError);
-  imageEl.addEventListener('error', handleBoardCellImageError);
-  imageEl.style.removeProperty('display');
-  const source = getNumberImage(entry);
-  imageEl.src = source;
-  return source;
-}
-
-function getEntryByNumber(number) {
-  if (!Number.isInteger(number)) {
-    return null;
-  }
-
-  if (state.entriesByNumber instanceof Map && state.entriesByNumber.has(number)) {
-    return state.entriesByNumber.get(number) || null;
-  }
-
-  return state.numbers.find((item) => item.number === number) || null;
-}
-
-
-/**
- * Gestisce la selezione e l'apertura del dettaglio di un numero del tabellone.
- * @param {{ number: number, italian?: string, dialect?: string }} entry
- * @param {HTMLElement} [cell]
- * @param {{ fromDraw?: boolean }} [options]
- */
-function handleSelection(entry, cell, options = {}) {
-  if (!entry) {
-    return;
-  }
-
-  const targetCell = cell || state.cellsByNumber.get(entry.number);
-  if (!targetCell) {
-    return;
-  }
-
-  const { fromDraw = false } = options;
-
-  if (state.selected) {
-    state.selected.classList.remove('board-cell--active');
-  }
-  state.selected = targetCell;
-  targetCell.classList.add('board-cell--active');
-
-  openModal(entry, { fromDraw });
-  speakEntry(entry);
-}
-
-/**
- * Marca un numero come estratto aggiornando stato, cronologia e sponsor.
- * @param {{ number: number, italian?: string, dialect?: string }} entry
- * @param {{ animate?: boolean, sponsor?: object|null, recordHistory?: boolean }} [options]
- */
 function markNumberDrawn(entry, options = {}) {
-  if (!entry) {
-    return;
-  }
+  if (!entry) return;
 
   const { animate = false, sponsor: sponsorOverride = null, recordHistory = true } = options;
   const number = entry.number;
 
-  if (state.drawnNumbers.has(number)) {
-    return;
-  }
+  if (state.drawnNumbers.has(number)) return;
 
   const previousDrawnNumbers = new Set(state.drawnNumbers);
   const previousHistoryLength = state.drawHistory.length;
   const hadStoredSponsor = sponsorManager.hasAssignment(number);
-  const previousSponsor = hadStoredSponsor
-    ? sponsorManager.getAssignment(number, { raw: true })
-    : null;
+  const previousSponsor = hadStoredSponsor ? sponsorManager.getAssignment(number) : null;
 
   state.drawnNumbers.add(number);
 
   const activeSponsor = sponsorOverride || sponsorManager.getCurrentSponsor();
-  const sponsorData = persistSponsorForNumber(number, activeSponsor);
+  const sponsorData = sponsorManager.assignToNumber(number, activeSponsor);
   const sponsorPayload = sponsorData ? cloneSponsorData(sponsorData) : null;
   let shouldNotify = true;
 
@@ -2361,87 +1857,54 @@ function markNumberDrawn(entry, options = {}) {
     updateDrawHistory();
   }
 
-  if (state.storageErrorMessage) {
-    updateDrawStatus();
-  }
+  if (state.storageErrorMessage) updateDrawStatus();
 
   const cell = state.cellsByNumber.get(number);
   if (cell) {
     const isDrawn = state.drawnNumbers.has(number);
-    cell.classList.toggle('board-cell--drawn', isDrawn);
+    cell.classList.toggle(CSS_CLASSES.CELL_DRAWN, isDrawn);
     cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
+    
     if (isDrawn && animate) {
-      cell.classList.add('board-cell--just-drawn');
-      let fallbackTimeout = null;
-      const finalize = () => {
-        cell.classList.remove('board-cell--just-drawn');
-        cell.removeEventListener('animationend', handleAnimationEnd);
-        if (fallbackTimeout !== null) {
-          window.clearTimeout(fallbackTimeout);
-          fallbackTimeout = null;
-        }
-      };
+      cell.classList.add(CSS_CLASSES.CELL_JUST_DRAWN);
       const handleAnimationEnd = (event) => {
-        if (event?.animationName && event.animationName !== 'boardCellCelebrate') {
-          return;
-        }
-        finalize();
+        if (event?.animationName && event.animationName !== 'boardCellCelebrate') return;
+        cell.classList.remove(CSS_CLASSES.CELL_JUST_DRAWN);
+        cell.removeEventListener('animationend', handleAnimationEnd);
       };
       cell.addEventListener('animationend', handleAnimationEnd);
-      fallbackTimeout = window.setTimeout(finalize, 900);
-    } else {
-      cell.classList.remove('board-cell--just-drawn');
+      setTimeout(() => cell.classList.remove(CSS_CLASSES.CELL_JUST_DRAWN), 900);
     }
   }
 
   if (shouldNotify && recordHistory) {
     dispatchTombolaEvent(TombolaEvents.NUMBER_DRAWN, {
-      entry: {
-        number,
-        italian: entry.italian || '',
-        dialect: entry.dialect || '',
-      },
+      entry: { number, italian: entry.italian || '', dialect: entry.dialect || '' },
       sponsor: sponsorPayload,
       animate,
     });
   }
 }
 
-/**
- * Gestisce il ciclo completo di una nuova estrazione, incluse animazioni,
- * aggiornamenti dello stato e apertura del dettaglio del numero.
- */
 async function handleDraw() {
-  if (state.isAnimatingDraw) {
-    return;
-  }
+  if (state.isAnimatingDraw) return;
+  if (state.historyOpen) closeHistoryPanel();
 
-  if (state.historyOpen) {
-    closeHistoryPanel();
-  }
-
-  const remaining = state.numbers.filter(
-    (entry) => !state.drawnNumbers.has(entry.number)
-  );
-
+  const remaining = state.numbers.filter((entry) => !state.drawnNumbers.has(entry.number));
   if (!remaining.length) {
     updateDrawStatus();
     return;
   }
 
   const modalWasOpen = elements.modal && !elements.modal.hasAttribute('hidden');
-  if (modalWasOpen) {
-    closeModal({ returnFocus: false });
-  }
+  if (modalWasOpen) closeModal({ returnFocus: false });
 
-  const randomIndex = Math.floor(Math.random() * remaining.length);
-  const entry = remaining[randomIndex];
+  const entry = remaining[Math.floor(Math.random() * remaining.length)];
 
   state.isAnimatingDraw = true;
   let restoreDrawButton = false;
   let restoreFloatingDrawButton = false;
   let markRecorded = false;
-  let preparationError = null;
   let shouldDelayModal = false;
 
   try {
@@ -2457,9 +1920,8 @@ async function handleDraw() {
     }
 
     try {
-      const manager = animationManager;
-      if (manager && typeof manager.showDrawAnimation === 'function') {
-        const didAnimate = await manager.showDrawAnimation(entry, {
+      if (animationManager?.showDrawAnimation) {
+        const didAnimate = await animationManager.showDrawAnimation(entry, {
           onFlightComplete: () => {
             if (!markRecorded) {
               markNumberDrawn(entry, { animate: true });
@@ -2467,210 +1929,48 @@ async function handleDraw() {
             }
           },
         });
-        shouldDelayModal = didAnimate && manager.getModalRevealDelay() > 0;
+        shouldDelayModal = didAnimate && animationManager.getModalRevealDelay() > 0;
       }
-    } catch (animationError) {
-      console.warn('Errore durante l\'animazione di estrazione', animationError);
+    } catch (error) {
+      console.warn('Animation error', error);
     }
 
     if (!markRecorded) {
       markNumberDrawn(entry, { animate: true });
       markRecorded = true;
     }
-  } catch (error) {
-    preparationError = error;
   } finally {
     state.isAnimatingDraw = false;
-    if (elements.drawButton && restoreDrawButton) {
-      elements.drawButton.disabled = false;
-    }
-    if (elements.floatingDrawButton && restoreFloatingDrawButton) {
-      elements.floatingDrawButton.disabled = false;
-    }
+    if (elements.drawButton && restoreDrawButton) elements.drawButton.disabled = false;
+    if (elements.floatingDrawButton && restoreFloatingDrawButton) elements.floatingDrawButton.disabled = false;
   }
 
-  if (!markRecorded) {
-    markNumberDrawn(entry, { animate: true });
-    markRecorded = true;
-  }
-
-  if (preparationError) {
-    console.warn('Impossibile preparare l\'estrazione', preparationError);
-  }
-
-  const modalRevealDelay = animationManager
-    ? animationManager.getModalRevealDelay()
-    : Number(DRAW_TIMELINE.modalRevealDelay) || 0;
-
-  if (shouldDelayModal && modalRevealDelay > 0) {
-    await sleep(modalRevealDelay);
+  if (shouldDelayModal) {
+    await sleep(animationManager.getModalRevealDelay());
   }
 
   handleSelection(entry, state.cellsByNumber.get(entry.number), { fromDraw: true });
   updateDrawStatus(entry);
 }
 
-function updateDrawHistory() {
-  const { historyList, historyEmpty } = elements;
-
-  if (!historyList) {
-    return;
-  }
-
-  if (historyEmpty && !historyEmpty.dataset.initialText) {
-    historyEmpty.dataset.initialText = historyEmpty.textContent;
-  }
-
-  const draws = state.drawHistory;
-  historyList.innerHTML = '';
-
-  if (draws.length === 0) {
-    historyList.hidden = true;
-    if (historyEmpty) {
-      historyEmpty.textContent = historyEmpty.dataset.initialText || historyEmpty.textContent;
-      historyEmpty.hidden = false;
-    }
-    return;
-  }
-
-  if (historyEmpty) {
-    historyEmpty.textContent = historyEmpty.dataset.initialText || historyEmpty.textContent;
-    historyEmpty.hidden = true;
-  }
-
-  historyList.hidden = false;
-
-  for (let index = draws.length - 1; index >= 0; index -= 1) {
-    const item = draws[index];
-    const order = index + 1;
-    const isLatest = index === draws.length - 1;
-
-    const listItem = document.createElement('li');
-    listItem.className = 'history-item';
-    if (isLatest) {
-      listItem.classList.add('history-item--latest');
-      listItem.setAttribute('aria-current', 'true');
-    }
-
-    const orderBadge = document.createElement('span');
-    orderBadge.className = 'history-item__order';
-    orderBadge.textContent = `#${order}`;
-    orderBadge.setAttribute('aria-hidden', 'true');
-    listItem.appendChild(orderBadge);
-
-    const { wrapper: token } = createTokenElement(item.number, {
-      className: 'history-item__token',
-      numberClassName: 'history-item__token-number',
-    });
-
-    listItem.appendChild(token);
-
-    const details = document.createElement('div');
-    details.className = 'history-item__details';
-
-    const title = document.createElement('p');
-    title.className = 'history-item__title';
-    title.textContent = `Numero ${item.number}`;
-
-    if (isLatest) {
-      const latestLabel = document.createElement('p');
-      latestLabel.className = 'history-item__latest-label';
-      latestLabel.textContent = 'Ultimo numero';
-      details.appendChild(latestLabel);
-      title.classList.add('history-item__title--latest');
-    }
-
-    details.appendChild(title);
-
-    const meta = document.createElement('div');
-    meta.className = 'history-item__meta';
-
-    const italianLine = document.createElement('span');
-    italianLine.className = 'history-item__lang history-item__lang--italian';
-    const italianValue = typeof item.italian === 'string' ? item.italian.trim() : '';
-    const hasItalian = Boolean(italianValue);
-    italianLine.textContent = `Italiano: ${hasItalian ? italianValue : '—'}`;
-    if (!hasItalian) {
-      italianLine.classList.add('history-item__lang--empty');
-    }
-    meta.appendChild(italianLine);
-
-    const dialectLine = document.createElement('span');
-    dialectLine.className = 'history-item__lang history-item__lang--dialect';
-    const dialectValue = typeof item.dialect === 'string' ? item.dialect.trim() : '';
-    const hasDialect = Boolean(dialectValue);
-    dialectLine.textContent = `Nojano: ${hasDialect ? dialectValue : '—'}`;
-    if (!hasDialect) {
-      dialectLine.classList.add('history-item__lang--empty');
-    }
-    meta.appendChild(dialectLine);
-
-    details.appendChild(meta);
-
-    listItem.appendChild(details);
-    historyList.appendChild(listItem);
-  }
-
-  let prefersReducedMotion = false;
-  if (
-    animationManager &&
-    typeof animationManager.prefersReducedMotionEnabled === 'function'
-  ) {
-    prefersReducedMotion = Boolean(animationManager.prefersReducedMotionEnabled());
-  } else if (
-    typeof window !== 'undefined' &&
-    typeof window.matchMedia === 'function'
-  ) {
-    prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  }
-
-  if (typeof historyList.scrollTo === 'function') {
-    historyList.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
-  } else {
-    historyList.scrollTop = 0;
-  }
-}
-
-/**
- * Ripristina completamente lo stato della partita e ripulisce gli elementi UI.
- */
 function performGameReset() {
-  if (!state.numbers.length) {
-    return;
-  }
+  if (!state.numbers.length) return;
 
   const drawnBeforeReset = state.drawnNumbers.size;
 
-  if (!elements.modal.hasAttribute('hidden')) {
-    closeModal({ returnFocus: false });
-  }
+  if (!elements.modal.hasAttribute('hidden')) closeModal({ returnFocus: false });
 
   if (elements.drawOverlay && !elements.drawOverlay.hasAttribute('hidden')) {
-    elements.drawOverlay.classList.remove('draw-portal--visible', 'draw-portal--closing');
-    elements.drawOverlay.setAttribute('hidden', '');
-    elements.drawOverlay.setAttribute('aria-hidden', 'true');
+    elements.drawOverlay.classList.remove(CSS_CLASSES.PORTAL_VISIBLE, CSS_CLASSES.PORTAL_CLOSING);
+    elements.drawOverlay.hidden = true;
   }
-  if (elements.drawOverlayBall) {
-    elements.drawOverlayBall.classList.remove(
-      'draw-portal__ball--loading',
-      'draw-portal__ball--revealed'
-    );
-    elements.drawOverlayBall.removeAttribute('aria-busy');
-  }
-  if (elements.drawOverlayNumber) {
-    elements.drawOverlayNumber.textContent = '';
-  }
-  if (elements.drawOverlayAnnouncement) {
-    elements.drawOverlayAnnouncement.textContent = '';
-  }
-
+  
   state.isAnimatingDraw = false;
-
   sponsorManager.clearCurrentSponsor();
   applySponsorToOverlay(null);
 
-  if (state.currentUtterance && 'speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
+  if (state.currentUtterance && typeof speechSynthesis !== 'undefined') {
+    speechSynthesis.cancel();
   }
   state.currentUtterance = null;
 
@@ -2679,26 +1979,21 @@ function performGameReset() {
   sponsorManager.resetAssignments();
   updateDrawHistory();
   clearPersistedDrawState();
-  if (state.storageErrorMessage) {
-    updateDrawStatus();
-  }
+  if (state.storageErrorMessage) updateDrawStatus();
 
   state.cellsByNumber.forEach((cell) => {
-    cell.classList.remove('board-cell--drawn', 'board-cell--active');
+    cell.classList.remove(CSS_CLASSES.CELL_DRAWN, CSS_CLASSES.CELL_ACTIVE);
     cell.setAttribute('aria-pressed', 'false');
   });
 
   state.selected = null;
-
   updateDrawStatus();
+  
   if (elements.drawStatus && !state.storageErrorMessage) {
-    elements.drawStatus.textContent =
-      'Tabellone azzerato. Pronto a estrarre il primo numero!';
+    elements.drawStatus.textContent = 'Tabellone azzerato. Pronto a estrarre il primo numero!';
   }
 
-  if (elements.drawButton) {
-    elements.drawButton.focus();
-  }
+  elements.drawButton?.focus();
 
   dispatchTombolaEvent(TombolaEvents.GAME_RESET, {
     drawnCount: drawnBeforeReset,
@@ -2706,133 +2001,42 @@ function performGameReset() {
   });
 }
 
-function openResetDialog() {
-  if (!elements.resetDialog) {
-    return false;
-  }
-
-  if (!elements.resetDialog.hasAttribute('hidden')) {
-    return true;
-  }
-
-  const activeElement = document.activeElement;
-  state.resetDialogTrigger =
-    activeElement instanceof HTMLElement ? activeElement : elements.resetButton;
-
-  state.resetDialogOpen = true;
-  elements.resetDialog.removeAttribute('hidden');
-  elements.resetDialog.setAttribute('aria-hidden', 'false');
-  elements.resetDialog.classList.add('modal--visible');
-  document.body.classList.add('modal-open');
-
-  activateModalFocusTrap(elements.resetDialog);
-
-  const focusTarget =
-    elements.resetDialogConfirm ||
-    (Array.isArray(elements.resetDialogCancelButtons)
-      ? elements.resetDialogCancelButtons[0]
-      : null) ||
-    elements.resetButton;
-
-  requestAnimationFrame(() => {
-    if (focusTarget && typeof focusTarget.focus === 'function') {
-      focusTarget.focus();
-    }
-  });
-
-  return true;
-}
-
-function closeResetDialog(options = {}) {
-  const config = options instanceof Event ? {} : options;
-  const { returnFocus = true } = config;
-
-  state.resetDialogOpen = false;
-
-  const shouldRestoreModalTrap =
-    Boolean(elements.modal) && !elements.modal.hasAttribute('hidden');
-
-  releaseActiveFocusTrap(elements.resetDialog);
-
-  if (!elements.resetDialog) {
-    if (shouldRestoreModalTrap) {
-      activateModalFocusTrap(elements.modal);
-    }
-    if (returnFocus && state.resetDialogTrigger instanceof HTMLElement) {
-      state.resetDialogTrigger.focus();
-    }
-    state.resetDialogTrigger = null;
-    if (!elements.modal || elements.modal.hasAttribute('hidden')) {
-      document.body.classList.remove('modal-open');
-    }
-    return;
-  }
-
-  elements.resetDialog.classList.remove('modal--visible');
-  elements.resetDialog.setAttribute('hidden', '');
-  elements.resetDialog.setAttribute('aria-hidden', 'true');
-
-  if (!elements.modal || elements.modal.hasAttribute('hidden')) {
-    document.body.classList.remove('modal-open');
-  }
-
-  if (shouldRestoreModalTrap) {
-    activateModalFocusTrap(elements.modal);
-  }
-
-  if (shouldRestoreModalTrap) {
-    requestAnimationFrame(() => {
-      const focusable = getFocusableElements(elements.modal);
-      const fallback =
-        (focusable.length > 0 && focusable[0]) ||
-        elements.modalClose ||
-        elements.modal;
-      if (fallback && typeof fallback.focus === 'function') {
-        try {
-          fallback.focus({ preventScroll: true });
-        } catch (error) {
-          fallback.focus();
-        }
-      }
-    });
-  } else if (returnFocus) {
-    const focusTarget =
-      (state.resetDialogTrigger && document.body.contains(state.resetDialogTrigger)
-        ? state.resetDialogTrigger
-        : elements.resetButton) || elements.drawButton;
-    if (focusTarget && typeof focusTarget.focus === 'function') {
-      focusTarget.focus();
-    }
-  }
-
-  state.resetDialogTrigger = null;
-}
-
-/**
- * Avvia il flusso di azzeramento della partita, mostrando conferme quando serve.
- */
 function resetGame() {
-  if (!state.numbers.length) {
-    return;
-  }
+  if (!state.numbers.length) return;
 
   closeHistoryPanel({ immediate: true });
 
   if (state.drawnNumbers.size > 0) {
     const handled = openResetDialog();
-    if (handled) {
-      return;
-    }
+    if (handled) return;
 
-    const shouldReset = window.confirm(
-      'Vuoi ricominciare la partita? Tutti i numeri estratti verranno azzerati.'
-    );
-    if (!shouldReset) {
-      return;
-    }
+    const shouldReset = confirm('Vuoi ricominciare la partita? Tutti i numeri estratti verranno azzerati.');
+    if (!shouldReset) return;
   }
 
   performGameReset();
+}
+
+// ============================================
+// 17. MODALS
+// ============================================
+
+function handleSelection(entry, cell, options = {}) {
+  if (!entry) return;
+
+  const targetCell = cell || state.cellsByNumber.get(entry.number);
+  if (!targetCell) return;
+
+  const { fromDraw = false } = options;
+
+  if (state.selected) {
+    state.selected.classList.remove(CSS_CLASSES.CELL_ACTIVE);
+  }
+  state.selected = targetCell;
+  targetCell.classList.add(CSS_CLASSES.CELL_ACTIVE);
+
+  openModal(entry, { fromDraw });
+  speakEntry(entry);
 }
 
 function openModal(entry, options = {}) {
@@ -2840,71 +2044,47 @@ function openModal(entry, options = {}) {
 
   const paddedNumber = String(entry.number).padStart(2, '0');
   elements.modalNumber.textContent = `Numero ${paddedNumber}`;
-  elements.modalNumber.setAttribute('aria-label', `Numero ${entry.number}`);
 
-  const rawItalian = typeof entry.italian === 'string' ? entry.italian.trim() : '';
-  const rawDialect = typeof entry.dialect === 'string' ? entry.dialect.trim() : '';
-  const hasItalian = Boolean(rawItalian);
-  const hasDialect = Boolean(rawDialect);
-  const italianText = hasItalian ? rawItalian : '—';
-  const dialectText = hasDialect ? rawDialect : '—';
+  const hasItalian = Boolean(entry.italian?.trim());
+  const hasDialect = Boolean(entry.dialect?.trim());
 
   if (elements.modalItalian) {
-    elements.modalItalian.textContent = italianText;
-    elements.modalItalian.classList.toggle(
-      'number-dialog__phrase--empty',
-      !hasItalian
-    );
+    elements.modalItalian.textContent = hasItalian ? entry.italian.trim() : '—';
+    elements.modalItalian.classList.toggle('number-dialog__phrase--empty', !hasItalian);
   }
 
   if (elements.modalDialect) {
-    elements.modalDialect.textContent = dialectText;
-    elements.modalDialect.classList.toggle(
-      'number-dialog__phrase--empty',
-      !hasDialect
-    );
+    elements.modalDialect.textContent = hasDialect ? entry.dialect.trim() : '—';
+    elements.modalDialect.classList.toggle('number-dialog__phrase--empty', !hasDialect);
   }
 
   if (elements.modalItalianPlay) {
     elements.modalItalianPlay.disabled = !hasItalian;
-    if (hasItalian) {
-      elements.modalItalianPlay.removeAttribute('aria-disabled');
-    } else {
-      elements.modalItalianPlay.setAttribute('aria-disabled', 'true');
-    }
   }
 
   if (elements.modalDialectPlay) {
     elements.modalDialectPlay.disabled = !hasDialect;
-    if (hasDialect) {
-      elements.modalDialectPlay.removeAttribute('aria-disabled');
-    } else {
-      elements.modalDialectPlay.setAttribute('aria-disabled', 'true');
-    }
   }
 
-  let imageSource = TILE_IMAGE_FALLBACK;
   if (elements.modalImage) {
-    imageSource = applyBoardCellImage(elements.modalImage, entry);
-    elements.modalImage.alt = imageSource !== TILE_IMAGE_FALLBACK
-      ? entry.italian
-        ? `Illustrazione del numero ${entry.number}: ${entry.italian}`
-        : `Illustrazione del numero ${entry.number}`
+    const imageSource = applyBoardCellImage(elements.modalImage, entry);
+    elements.modalImage.alt = imageSource !== FALLBACK_IMAGE
+      ? entry.italian ? `Illustrazione del numero ${entry.number}: ${entry.italian}` : `Illustrazione del numero ${entry.number}`
       : `Segnaposto per il numero ${entry.number}`;
   }
 
   if (elements.modalImageFrame) {
     elements.modalImageFrame.classList.toggle(
       'number-dialog__image-frame--placeholder',
-      imageSource === TILE_IMAGE_FALLBACK
+      getNumberImage(entry) === FALLBACK_IMAGE
     );
   }
 
   ensureModalSponsor(entry, { fromDraw });
 
   elements.modal.removeAttribute('hidden');
-  elements.modal.classList.add('modal--visible');
-  document.body.classList.add('modal-open');
+  elements.modal.classList.add(CSS_CLASSES.MODAL_VISIBLE);
+  document.body.classList.add(CSS_CLASSES.MODAL_OPEN);
 
   activateModalFocusTrap(elements.modal);
 
@@ -2917,15 +2097,11 @@ function openModal(entry, options = {}) {
     const shouldShow = (fromDraw || state.isAnimatingDraw) && remaining > 0;
 
     const nextLabel = remaining === 1 ? 'Estrai ultimo numero' : 'Estrai successivo';
-
     elements.modalNext.hidden = !shouldShow;
     elements.modalNext.disabled = !shouldShow;
 
     if (shouldShow) {
       elements.modalNext.setAttribute('aria-label', nextLabel);
-      if (elements.modalNextLabel) {
-        elements.modalNextLabel.textContent = nextLabel;
-      }
       focusTarget = elements.modalNext;
     }
   }
@@ -2934,157 +2110,98 @@ function openModal(entry, options = {}) {
 }
 
 function closeModal(options = {}) {
-  const config = options instanceof Event ? {} : options;
-  const { returnFocus = true } = config;
+  const { returnFocus = true } = options instanceof Event ? {} : options;
+  
   releaseActiveFocusTrap(elements.modal);
-  elements.modal.classList.remove('modal--visible');
+  elements.modal.classList.remove(CSS_CLASSES.MODAL_VISIBLE);
   elements.modal.setAttribute('hidden', '');
-  document.body.classList.remove('modal-open');
+  document.body.classList.remove(CSS_CLASSES.MODAL_OPEN);
+  
   if (elements.modalNext) {
     elements.modalNext.hidden = true;
     elements.modalNext.disabled = true;
   }
+  
   applySponsorToModal(null);
-  if (elements.modalImageFrame) {
-    elements.modalImageFrame.classList.remove('number-dialog__image-frame--placeholder');
+
+  if (returnFocus && state.selected && document.body.contains(state.selected)) {
+    state.selected.focus();
+  } else {
+    state.selected = null;
   }
-  if (returnFocus && state.selected) {
-    if (document.body.contains(state.selected)) {
-      state.selected.focus();
-    } else {
-      state.selected = null;
+}
+
+function openResetDialog() {
+  if (!elements.resetDialog || !elements.resetDialog.hasAttribute('hidden')) {
+    return true;
+  }
+
+  state.resetDialogTrigger = document.activeElement instanceof HTMLElement 
+    ? document.activeElement 
+    : elements.resetButton;
+
+  state.resetDialogOpen = true;
+  elements.resetDialog.removeAttribute('hidden');
+  elements.resetDialog.classList.add(CSS_CLASSES.MODAL_VISIBLE);
+  document.body.classList.add(CSS_CLASSES.MODAL_OPEN);
+
+  activateModalFocusTrap(elements.resetDialog);
+
+  const focusTarget = elements.resetDialogConfirm || elements.resetDialogCancelButtons[0] || elements.resetButton;
+  requestAnimationFrame(() => focusTarget?.focus());
+
+  return true;
+}
+
+function closeResetDialog(options = {}) {
+  const { returnFocus = true } = options instanceof Event ? {} : options;
+
+  state.resetDialogOpen = false;
+  const shouldRestoreModalTrap = Boolean(elements.modal) && !elements.modal.hasAttribute('hidden');
+
+  releaseActiveFocusTrap(elements.resetDialog);
+
+  if (!elements.resetDialog) {
+    if (shouldRestoreModalTrap) activateModalFocusTrap(elements.modal);
+    if (returnFocus && state.resetDialogTrigger instanceof HTMLElement) {
+      state.resetDialogTrigger.focus();
     }
-  }
-}
-
-function speakText(text, options = {}) {
-  if (
-    typeof window === 'undefined' ||
-    !('speechSynthesis' in window) ||
-    typeof SpeechSynthesisUtterance !== 'function'
-  ) {
-    return;
-  }
-
-  const content = typeof text === 'string' ? text.trim() : '';
-
-  if (!content) {
-    return;
-  }
-
-  const {
-    lang = 'it-IT',
-    rate = 0.92,
-    pitch = 1.0,
-    prefix = '',
-    respectToggle = true,
-  } = options;
-
-  if (respectToggle && !state.audioEnabled) {
-    if (state.currentUtterance) {
-      window.speechSynthesis.cancel();
-      state.currentUtterance = null;
+    state.resetDialogTrigger = null;
+    if (!elements.modal || elements.modal.hasAttribute('hidden')) {
+      document.body.classList.remove(CSS_CLASSES.MODAL_OPEN);
     }
     return;
   }
 
-  if (state.currentUtterance) {
-    window.speechSynthesis.cancel();
+  elements.resetDialog.classList.remove(CSS_CLASSES.MODAL_VISIBLE);
+  elements.resetDialog.setAttribute('hidden', '');
+
+  if (!elements.modal || elements.modal.hasAttribute('hidden')) {
+    document.body.classList.remove(CSS_CLASSES.MODAL_OPEN);
   }
 
-  const prefixText = typeof prefix === 'string' ? prefix.trim() : '';
-  const utterance = new SpeechSynthesisUtterance(
-    prefixText ? `${prefixText} ${content}` : content
-  );
-  utterance.lang = lang;
-  utterance.rate = rate;
-  utterance.pitch = pitch;
+  if (shouldRestoreModalTrap) {
+    activateModalFocusTrap(elements.modal);
+    requestAnimationFrame(() => {
+      const focusable = getFocusableElements(elements.modal);
+      const fallback = focusable[0] || elements.modalClose || elements.modal;
+      fallback?.focus({ preventScroll: true });
+    });
+  } else if (returnFocus) {
+    const focusTarget = (state.resetDialogTrigger && document.body.contains(state.resetDialogTrigger))
+      ? state.resetDialogTrigger
+      : elements.resetButton || elements.drawButton;
+    focusTarget?.focus();
+  }
 
-  state.currentUtterance = utterance;
-  utterance.addEventListener(
-    'end',
-    () => {
-      if (state.currentUtterance === utterance) {
-        state.currentUtterance = null;
-      }
-    },
-    { once: true }
-  );
-  utterance.addEventListener(
-    'error',
-    () => {
-      if (state.currentUtterance === utterance) {
-        state.currentUtterance = null;
-      }
-    },
-    { once: true }
-  );
-
-  window.speechSynthesis.speak(utterance);
+  state.resetDialogTrigger = null;
 }
 
-function speakEntry(entry) {
-  if (!entry) {
-    return;
-  }
-
-  const segments = [];
-  segments.push(`Numero ${entry.number}`);
-
-  if (entry.dialect) {
-    segments.push(entry.dialect);
-  }
-
-  if (entry.italian) {
-    segments.push(entry.italian);
-  }
-
-  const announcement = segments
-    .map((segment) => segment.trim())
-    .filter(Boolean)
-    .map((segment) => segment.replace(/[.!?]\s*$/, ''))
-    .join('. ');
-
-  speakText(announcement, { lang: 'it-IT', rate: 0.92 });
-}
-
-function speakDialectText(entry) {
-  if (!entry || !entry.dialect) {
-    return;
-  }
-
-  speakText(entry.dialect, {
-    lang: 'it-IT',
-    rate: 0.92,
-    respectToggle: false,
-  });
-}
-
-function speakItalianText(entry) {
-  if (!entry || !entry.italian) {
-    return;
-  }
-
-  speakText(entry.italian, {
-    lang: 'it-IT',
-    rate: 0.96,
-    respectToggle: false,
-  });
-}
+// ============================================
+// 18. STATUS UPDATE
+// ============================================
 
 function updateDrawStatus(latestEntry) {
-  const {
-    drawStatus,
-    drawProgressValue,
-    drawProgressBar,
-    drawProgressFill,
-    drawLastMetric,
-    drawLastNumber,
-    drawLastDetail,
-    drawButton,
-    resetButton,
-  } = elements;
-
   const total = state.numbers.length;
   const drawnCount = state.drawnNumbers.size;
   const isDataLoading = state.dataLoadingState === LoadingStates.LOADING;
@@ -3092,15 +2209,12 @@ function updateDrawStatus(latestEntry) {
 
   let normalizedEntry = null;
 
-  if (latestEntry && typeof latestEntry.number === 'number') {
+  if (latestEntry?.number) {
     normalizedEntry = latestEntry;
   } else if (state.drawHistory.length > 0) {
     const lastHistory = state.drawHistory[state.drawHistory.length - 1];
-    if (lastHistory && typeof lastHistory.number === 'number') {
-      const reference =
-        state.entriesByNumber instanceof Map
-          ? state.entriesByNumber.get(lastHistory.number)
-          : null;
+    if (lastHistory?.number) {
+      const reference = state.entriesByNumber.get(lastHistory.number);
       normalizedEntry = {
         number: lastHistory.number,
         italian: lastHistory.italian || reference?.italian || '',
@@ -3109,45 +2223,33 @@ function updateDrawStatus(latestEntry) {
     }
   }
 
-  if (drawProgressValue) {
-    if (total > 0) {
-      drawProgressValue.textContent = `${drawnCount}/${total}`;
-    } else {
-      drawProgressValue.textContent = '0/0';
-    }
+  if (elements.drawProgressValue) {
+    elements.drawProgressValue.textContent = total > 0 ? `${drawnCount}/${total}` : '0/0';
   }
 
-  if (drawProgressBar) {
+  if (elements.drawProgressBar) {
     const ratio = total > 0 ? drawnCount / total : 0;
-    const clampedRatio = Math.min(1, Math.max(0, ratio));
-    const percentage = Math.round(clampedRatio * 100);
-    drawProgressBar.setAttribute('aria-valuemax', `${total}`);
-    drawProgressBar.setAttribute('aria-valuenow', `${drawnCount}`);
-    drawProgressBar.setAttribute(
-      'aria-valuetext',
-      total > 0 ? `${drawnCount} su ${total}` : '0 su 0'
-    );
-    if (drawProgressFill) {
-      drawProgressFill.style.width = `${percentage}%`;
+    const percentage = Math.round(Math.min(1, Math.max(0, ratio)) * 100);
+    elements.drawProgressBar.setAttribute('aria-valuemax', `${total}`);
+    elements.drawProgressBar.setAttribute('aria-valuenow', `${drawnCount}`);
+    elements.drawProgressBar.setAttribute('aria-valuetext', total > 0 ? `${drawnCount} su ${total}` : '0 su 0');
+    if (elements.drawProgressFill) {
+      elements.drawProgressFill.style.width = `${percentage}%`;
     }
   }
 
-  if (drawLastNumber) {
-    drawLastNumber.textContent = normalizedEntry
-      ? `${normalizedEntry.number}`
-      : '—';
+  if (elements.drawLastNumber) {
+    elements.drawLastNumber.textContent = normalizedEntry ? `${normalizedEntry.number}` : '—';
   }
 
-  if (drawLastDetail) {
+  if (elements.drawLastDetail) {
     let detailText = '';
     if (state.storageErrorMessage) {
       detailText = 'Verifica la connessione e riprova.';
     } else if (total === 0) {
       detailText = 'Caricamento del tabellone in corso';
     } else if (normalizedEntry) {
-      const detailFallback =
-        normalizedEntry.dialect || normalizedEntry.italian || '—';
-      detailText = detailFallback;
+      detailText = normalizedEntry.dialect || normalizedEntry.italian || '—';
     } else if (drawnCount === 0) {
       detailText = 'In attesa della prima estrazione';
     } else if (drawnCount === total) {
@@ -3155,26 +2257,22 @@ function updateDrawStatus(latestEntry) {
     } else {
       detailText = 'Prosegui con le estrazioni';
     }
-    drawLastDetail.textContent = detailText;
+    elements.drawLastDetail.textContent = detailText;
   }
 
-  if (drawLastMetric) {
-    if (normalizedEntry) {
-      const number = Math.trunc(Number(normalizedEntry.number));
-      const isValidNumber = Number.isFinite(number) && number > 0;
-      if (isValidNumber) {
-        const imagePath = `images/illustrazioni/${number}.png`;
-        const imageDeclaration = `url('${imagePath}')`;
-        drawLastMetric.style.setProperty('--last-number-image', imageDeclaration);
-        drawLastMetric.dataset.hasImage = 'true';
-      } else {
-        drawLastMetric.style.removeProperty('--last-number-image');
-        delete drawLastMetric.dataset.hasImage;
-      }
+  if (elements.drawLastMetric && normalizedEntry) {
+    const number = Math.trunc(Number(normalizedEntry.number));
+    if (Number.isFinite(number) && number > 0) {
+      const imagePath = `images/illustrazioni/${number}.png`;
+      elements.drawLastMetric.style.setProperty('--last-number-image', `url('${imagePath}')`);
+      elements.drawLastMetric.dataset.hasImage = 'true';
     } else {
-      drawLastMetric.style.removeProperty('--last-number-image');
-      delete drawLastMetric.dataset.hasImage;
+      elements.drawLastMetric.style.removeProperty('--last-number-image');
+      delete elements.drawLastMetric.dataset.hasImage;
     }
+  } else if (elements.drawLastMetric) {
+    elements.drawLastMetric.style.removeProperty('--last-number-image');
+    delete elements.drawLastMetric.dataset.hasImage;
   }
 
   let message = state.storageErrorMessage || 'Caricamento del tabellone…';
@@ -3187,9 +2285,7 @@ function updateDrawStatus(latestEntry) {
     if (normalizedEntry) {
       const detail = normalizedEntry.italian || normalizedEntry.dialect || '';
       message = `Estratto il numero ${normalizedEntry.number}`;
-      if (detail) {
-        message += ` — ${detail}`;
-      }
+      if (detail) message += ` — ${detail}`;
       message += `. ${drawnCount}/${total} numeri estratti.`;
     } else if (drawnCount === 0) {
       message = 'Pronto a estrarre il primo numero!';
@@ -3200,201 +2296,170 @@ function updateDrawStatus(latestEntry) {
     }
   }
 
-  if (drawStatus) {
-    drawStatus.textContent = message;
+  if (elements.drawStatus) {
+    elements.drawStatus.textContent = message;
   }
 
   const noNumbersLoaded = total === 0;
   const finished = drawnCount === total && total > 0;
 
-  if (drawButton) {
-    drawButton.disabled = noNumbersLoaded || finished || isDataLoading || isDataError;
-
-    let drawLabel = 'Estrai numero';
-
-    if (finished) {
-      drawLabel = 'Fine estrazioni';
-    } else if (isDataLoading) {
-      drawLabel = 'Caricamento in corso';
-    } else if (isDataError) {
-      drawLabel = 'Estrazione non disponibile';
-    } else if (!noNumbersLoaded && drawnCount === 0) {
-      drawLabel = 'Estrai primo numero';
-    } else if (!noNumbersLoaded && drawnCount > 0) {
-      drawLabel = 'Estrai successivo';
-    }
-
-    if (elements.drawButtonLabel) {
-      elements.drawButtonLabel.textContent = drawLabel;
-    }
-
-    drawButton.setAttribute('aria-label', drawLabel);
-    drawButton.title = drawLabel;
+  if (elements.drawButton) {
+    elements.drawButton.disabled = noNumbersLoaded || finished || isDataLoading || isDataError;
   }
 
   if (elements.floatingDrawButton) {
-    const floatingButton = elements.floatingDrawButton;
-    const floatingSr = floatingButton.querySelector('[data-floating-draw-sr]');
-    floatingButton.disabled =
-      noNumbersLoaded || finished || isDataLoading || isDataError;
-
-    let srMessage = 'Estrai numero';
-
-    if (isDataLoading) {
-      srMessage = 'Caricamento del tabellone in corso';
-    } else if (isDataError) {
-      srMessage = 'Estrazione non disponibile';
-    } else if (noNumbersLoaded) {
-      srMessage = 'Caricamento del tabellone in corso';
-    } else if (finished) {
-      srMessage = 'Tutte le estrazioni sono completate';
-    } else if (drawnCount === 0) {
-      srMessage = 'Estrai il primo numero';
-    } else {
-      srMessage = 'Estrai il prossimo numero';
-    }
-
-    floatingButton.setAttribute('aria-label', srMessage);
-    floatingButton.title = srMessage;
-    floatingButton.setAttribute('data-tooltip', srMessage);
-    if (floatingSr) {
-      floatingSr.textContent = srMessage;
-    }
+    elements.floatingDrawButton.disabled = noNumbersLoaded || finished || isDataLoading || isDataError;
   }
 
-  if (resetButton) {
-    resetButton.disabled = drawnCount === 0 || isDataLoading || isDataError;
+  if (elements.resetButton) {
+    elements.resetButton.disabled = drawnCount === 0 || isDataLoading || isDataError;
   }
 }
+
+// ============================================
+// 19. DATA LOADING
+// ============================================
+
+async function loadNumbers() {
+  setDataLoadingState(LoadingStates.LOADING);
+  try {
+    const response = await fetch(DATA_PATHS.NUMBERS);
+    if (!response.ok) throw new Error('Fetch failed');
+    
+    const data = await response.json();
+    const incomingNumbers = Array.isArray(data?.numbers) ? data.numbers : null;
+    if (!incomingNumbers) throw new Error('Invalid data format');
+
+    const seenNumbers = new Set();
+    const sanitizedNumbers = [];
+
+    incomingNumbers.forEach((item) => {
+      if (!item || typeof item !== 'object') return;
+
+      const numericValue = Number(item.number);
+      if (!Number.isFinite(numericValue) || seenNumbers.has(numericValue)) return;
+
+      seenNumbers.add(numericValue);
+      sanitizedNumbers.push({
+        ...item,
+        number: numericValue,
+        italian: typeof item.italian === 'string' ? item.italian : '',
+        dialect: typeof item.dialect === 'string' ? item.dialect : '',
+      });
+    });
+
+    if (!sanitizedNumbers.length) throw new Error('No valid numbers');
+
+    sanitizedNumbers.sort((a, b) => a.number - b.number);
+
+    state.numbers = sanitizedNumbers;
+    state.drawnNumbers = new Set();
+    state.drawHistory = [];
+    sponsorManager.resetAssignments();
+    state.entriesByNumber = new Map();
+    state.storageErrorMessage = '';
+    
+    renderBoard();
+    updateDrawHistory();
+
+    const latestEntry = restoreDrawStateFromStorage();
+    updateDrawStatus(latestEntry || undefined);
+    setDataLoadingState(LoadingStates.SUCCESS);
+  } catch (error) {
+    console.error('Numbers load error', error);
+    state.numbers = [];
+    state.drawnNumbers = new Set();
+    state.drawHistory = [];
+    state.entriesByNumber = new Map();
+    state.cellsByNumber = new Map();
+    state.selected = null;
+    sponsorManager.resetAssignments();
+    state.storageErrorMessage = 'Impossibile caricare i numeri della tombola.';
+    
+    if (elements.board) {
+      elements.board.innerHTML = '<p class="board-error">Errore nel caricamento dei dati della tombola.</p>';
+    }
+    if (elements.drawStatus) {
+      elements.drawStatus.textContent = 'Errore nel caricamento dei numeri.';
+    }
+    if (elements.drawButton) elements.drawButton.disabled = true;
+    if (elements.floatingDrawButton) elements.floatingDrawButton.disabled = true;
+    
+    setDataLoadingState(LoadingStates.ERROR);
+    updateDrawHistory();
+  }
+}
+
+// ============================================
+// 20. EVENT HANDLERS
+// ============================================
 
 function setupEventListeners() {
   if (elements.board) {
     elements.board.addEventListener('click', handleBoardCellClick);
-    registerCleanup(() => {
-      if (elements.board) {
-        elements.board.removeEventListener('click', handleBoardCellClick);
-      }
-    });
   }
 
-  elements.modalClose.addEventListener('click', closeModal);
-  if (elements.modalDialectPlay) {
-    elements.modalDialectPlay.addEventListener('click', () => {
-      if (!state.selected) {
-        blurButtonOnNextFrame(elements.modalDialectPlay);
-        return;
-      }
-
-      const number = Number(state.selected.dataset.number);
-      const entry = getEntryByNumber(number);
-      if (entry) {
-        speakDialectText(entry);
-      }
-      blurButtonOnNextFrame(elements.modalDialectPlay);
-    });
-  }
-
-  if (elements.modalItalianPlay) {
-    elements.modalItalianPlay.addEventListener('click', () => {
-      if (!state.selected) {
-        blurButtonOnNextFrame(elements.modalItalianPlay);
-        return;
-      }
-
-      const number = Number(state.selected.dataset.number);
-      const entry = getEntryByNumber(number);
-      if (entry) {
-        speakItalianText(entry);
-      }
-      blurButtonOnNextFrame(elements.modalItalianPlay);
-    });
-  }
-
-  if (elements.modalNext) {
-    elements.modalNext.addEventListener('click', () => {
-      elements.modalNext.disabled = true;
-      handleDraw();
-    });
-  }
-
-  elements.modal.addEventListener('click', (event) => {
-    if (event.target === elements.modal) {
-      closeModal();
-    }
+  elements.modalClose?.addEventListener('click', closeModal);
+  
+  elements.modalDialectPlay?.addEventListener('click', () => {
+    if (!state.selected) return;
+    const entry = state.entriesByNumber.get(Number(state.selected.dataset.number));
+    if (entry?.dialect) speakText(entry.dialect, { lang: 'it-IT', rate: 0.92, respectToggle: false });
+    blurButtonOnNextFrame(elements.modalDialectPlay);
   });
 
-  if (elements.resetDialog) {
-    elements.resetDialog.addEventListener('click', (event) => {
-      if (event.target === elements.resetDialog) {
-        closeResetDialog();
-      }
-    });
-  }
+  elements.modalItalianPlay?.addEventListener('click', () => {
+    if (!state.selected) return;
+    const entry = state.entriesByNumber.get(Number(state.selected.dataset.number));
+    if (entry?.italian) speakText(entry.italian, { lang: 'it-IT', rate: 0.96, respectToggle: false });
+    blurButtonOnNextFrame(elements.modalItalianPlay);
+  });
 
-  if (elements.resetDialogConfirm) {
-    elements.resetDialogConfirm.addEventListener('click', () => {
-      closeResetDialog({ returnFocus: false });
-      performGameReset();
-    });
-  }
+  elements.modalNext?.addEventListener('click', () => {
+    elements.modalNext.disabled = true;
+    handleDraw();
+  });
 
-  if (Array.isArray(elements.resetDialogCancelButtons)) {
-    elements.resetDialogCancelButtons.forEach((button) => {
-      if (button) {
-        button.addEventListener('click', () => closeResetDialog());
-      }
-    });
-  }
+  elements.modal?.addEventListener('click', (event) => {
+    if (event.target === elements.modal) closeModal();
+  });
+
+  elements.resetDialog?.addEventListener('click', (event) => {
+    if (event.target === elements.resetDialog) closeResetDialog();
+  });
+
+  elements.resetDialogConfirm?.addEventListener('click', () => {
+    closeResetDialog({ returnFocus: false });
+    performGameReset();
+  });
+
+  elements.resetDialogCancelButtons.forEach((button) => {
+    button?.addEventListener('click', () => closeResetDialog());
+  });
 
   document.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape') {
-      return;
-    }
+    if (event.key !== 'Escape') return;
 
     if (state.resetDialogOpen) {
       closeResetDialog();
-      return;
-    }
-
-    if (!elements.modal.hasAttribute('hidden')) {
+    } else if (!elements.modal.hasAttribute('hidden')) {
       closeModal();
-      return;
-    }
-
-    if (state.historyOpen) {
+    } else if (state.historyOpen) {
       closeHistoryPanel();
     }
   });
 
-  if (elements.drawButton) {
-    elements.drawButton.addEventListener('click', handleDraw);
-  }
-
-  if (elements.floatingDrawButton) {
-    elements.floatingDrawButton.addEventListener('click', handleDraw);
-  }
-
-  if (elements.resetButton) {
-    elements.resetButton.addEventListener('click', resetGame);
-  }
-
-  if (elements.historyToggle) {
-    elements.historyToggle.addEventListener('click', toggleHistoryPanel);
-  }
-
-  if (elements.audioToggle) {
-    elements.audioToggle.addEventListener('click', () => {
-      setAudioEnabled(!state.audioEnabled);
-    });
-  }
-
-  if (elements.historyScrim) {
-    elements.historyScrim.addEventListener('click', () => {
-      closeHistoryPanel();
-    });
-  }
-
+  elements.drawButton?.addEventListener('click', handleDraw);
+  elements.floatingDrawButton?.addEventListener('click', handleDraw);
+  elements.resetButton?.addEventListener('click', resetGame);
+  elements.historyToggle?.addEventListener('click', toggleHistoryPanel);
+  elements.audioToggle?.addEventListener('click', () => setAudioEnabled(!state.audioEnabled));
+  elements.historyScrim?.addEventListener('click', () => closeHistoryPanel());
 }
+
+// ============================================
+// 21. INITIALIZATION
+// ============================================
 
 function init() {
   initializeAudioPreference();
