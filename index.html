@@ -11,7 +11,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
-    <script defer src="script.js"></script>
+    <script type="module" src="js/main.js"></script>
   </head>
   <body>
     <a class="skip-link" href="#main-content">Salta al contenuto principale</a>
@@ -248,7 +248,7 @@
       </section>
     </main>
 
-    <div id="draw-portal" class="draw-portal" aria-hidden="true" hidden>
+    <div id="draw-portal" class="draw-portal" hidden>
       <div class="draw-portal__scrim" aria-hidden="true"></div>
       <p id="draw-animation-announcement" class="sr-only" aria-live="assertive"></p>
       <div class="draw-portal__content" role="status" aria-live="assertive">
@@ -413,17 +413,10 @@
 
     <template id="board-cell-template">
       <button class="board-cell" type="button">
-        <img
-          class="board-cell__media"
-          alt=""
-          loading="lazy"
-          decoding="async"
-          aria-hidden="true"
-        />
-        <span class="board-cell__token token" aria-hidden="true">
-          <span class="board-cell__token-number token__number" data-board-token-number></span>
+        <img class="board-cell__media" alt="" aria-hidden="true" />
+        <span class="board-cell__token token token--board" aria-hidden="true">
+          <span class="board-cell__token-number token__number"></span>
         </span>
-        <span class="sr-only" data-board-cell-sr></span>
       </button>
     </template>
 

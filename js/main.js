@@ -1,17 +1,15 @@
-const LoadingStates = Object.freeze({
-  IDLE: 'idle',
-  LOADING: 'loading',
-  SUCCESS: 'success',
-  ERROR: 'error',
-});
-
-const TombolaEvents = Object.freeze({
-  NUMBER_DRAWN: 'tombola:numberDrawn',
-  GAME_RESET: 'tombola:gameReset',
-  SPONSOR_LOADED: 'tombola:sponsorLoaded',
-  SPONSOR_SELECTED: 'tombola:sponsorSelected',
-  SPONSOR_ASSIGNED: 'tombola:sponsorAssigned',
-});
+import {
+  ANIMATION_DELAYS,
+  CSS_CLASSES,
+  DATA_PATHS,
+  DRAW_TIMELINE,
+  EMBEDDED_SPONSORS,
+  EMPTY_DRAW_STATE,
+  LoadingStates,
+  STORAGE_KEYS,
+  TombolaEvents,
+  MEDIA,
+} from './constants.js';
 
 const state = {
   numbers: [],
@@ -89,40 +87,8 @@ const elements = {
   drawLastDetail: document.querySelector('#draw-last-detail'),
 };
 
-const AUDIO_STORAGE_KEY = 'tombola-audio-enabled';
-const DRAW_STATE_STORAGE_KEY = 'TOMBOLA_DRAW_STATE';
-const EMPTY_DRAW_STATE = Object.freeze({ drawnNumbers: [], drawHistory: [] });
-const SPONSOR_DATA_PATH = 'sponsors.json';
-const TILE_IMAGE_FALLBACK = 'images/empty.jpg';
-const EMBEDDED_SPONSORS = Object.freeze([
-  {
-    logo: 'images/sponsor-panificio-stella.svg',
-    url: 'https://www.panificiostella.it/',
-    name: 'Panificio Stella',
-  },
-  {
-    logo: 'images/sponsor-agrumi-del-sud.svg',
-    url: 'https://www.agrumidelsud.it/',
-    name: 'Agrumi del Sud',
-  },
-  {
-    logo: 'images/sponsor-cantina-nojana.svg',
-    url: 'https://www.cantinanojana.it/',
-    name: 'Cantina Nojana',
-  },
-]);
-const DRAW_TIMELINE = Object.freeze({
-  intro: 280,
-  prepareHold: 1480,
-  revealAccent: 320,
-  celebrationHold: 1180,
-  flightDelay: 240,
-  flightDuration: 920,
-  overlayHideDelay: 280,
-  reducedMotionHold: 980,
-  reducedMotionFlight: 420,
-  modalRevealDelay: 520,
-});
+const AUDIO_STORAGE_KEY = STORAGE_KEYS.AUDIO;
+const DRAW_STATE_STORAGE_KEY = STORAGE_KEYS.DRAW_STATE;
 
 function sanitizeUrl(url) {
   if (typeof url !== 'string') {
@@ -547,7 +513,7 @@ function getEmbeddedSponsors() {
 class SponsorManager {
   constructor(options = {}) {
     const {
-      dataPath = SPONSOR_DATA_PATH,
+      dataPath = DATA_PATHS.SPONSORS,
       getFallbackSponsors,
       onSponsorsChanged,
     } = options;
@@ -828,7 +794,7 @@ pickRandom(excludeKey = null) {
 }
 
 const sponsorManager = new SponsorManager({
-  dataPath: SPONSOR_DATA_PATH,
+  dataPath: DATA_PATHS.SPONSORS,
   getFallbackSponsors: getEmbeddedSponsors,
   onSponsorsChanged: (sponsors) => {
     renderSponsorShowcase(sponsors, { force: true });
@@ -1259,6 +1225,81 @@ function getSponsorAccessibleLabel(sponsor) {
   return 'Apri il sito dello sponsor';
 }
 
+function applySponsorLinkAttributes(element, sponsor, options = {}) {
+  if (!element) {
+    return false;
+  }
+
+  const { disableWhenMissing = false, removePointer = false } = options;
+
+  if (!sponsor || typeof sponsor !== 'object') {
+    if (disableWhenMissing) {
+      element.setAttribute('tabindex', '-1');
+    }
+    if (removePointer) {
+      element.style.cursor = 'default';
+      element.style.pointerEvents = 'none';
+    }
+    element.removeAttribute('href');
+    element.removeAttribute('target');
+    element.removeAttribute('rel');
+    element.removeAttribute('aria-label');
+    element.removeAttribute('title');
+    return false;
+  }
+
+  const hasUrl = typeof sponsor.url === 'string' && sponsor.url.trim();
+  if (!hasUrl) {
+    element.removeAttribute('href');
+    element.removeAttribute('target');
+    element.removeAttribute('rel');
+    element.removeAttribute('aria-label');
+    element.removeAttribute('title');
+    if (disableWhenMissing) {
+      element.setAttribute('tabindex', '-1');
+    }
+    if (removePointer) {
+      element.style.cursor = 'default';
+      element.style.pointerEvents = 'none';
+    }
+    return false;
+  }
+
+  const safeUrl = sanitizeUrl(sponsor.url || '');
+  const isExternal = /^https?:\/\//i.test(safeUrl);
+  element.href = safeUrl;
+  element.target = isExternal ? '_blank' : '_self';
+  if (isExternal) {
+    element.rel = 'noopener noreferrer';
+  } else {
+    element.removeAttribute('rel');
+  }
+
+  if (disableWhenMissing) {
+    element.removeAttribute('tabindex');
+  }
+  if (removePointer) {
+    element.style.cursor = '';
+    element.style.pointerEvents = '';
+  }
+
+  const label = getSponsorAccessibleLabel(sponsor);
+  if (label) {
+    element.setAttribute('aria-label', label);
+  } else {
+    element.removeAttribute('aria-label');
+  }
+
+  const displayName = getSponsorDisplayName(sponsor);
+  if (displayName) {
+    element.title = displayName;
+  } else {
+    element.removeAttribute('title');
+  }
+
+  return true;
+}
+
 function renderSponsorShowcase(sponsors, options = {}) {
   const { force = false } = options;
   const { sponsorShowcase, sponsorShowcaseList } = elements;
@@ -1302,29 +1343,7 @@ function renderSponsorShowcase(sponsors, options = {}) {
     container.className = 'sponsor-strip__link';
 
     if (hasUrl) {
-      const safeUrl = sanitizeUrl(sponsor.url || '');
-      const isExternal = /^https?:\/\//i.test(safeUrl);
-      container.href = safeUrl;
-      container.target = isExternal ? '_blank' : '_self';
-      if (isExternal) {
-        container.rel = 'noopener noreferrer';
-      } else {
-        container.removeAttribute('rel');
-      }
-
-      const label = getSponsorAccessibleLabel(sponsor);
-      if (label) {
-        container.setAttribute('aria-label', label);
-      } else {
-        container.removeAttribute('aria-label');
-      }
-
-      const displayName = getSponsorDisplayName(sponsor);
-      if (displayName) {
-        container.title = displayName;
-      } else {
-        container.removeAttribute('title');
-      }
+      applySponsorLinkAttributes(container, sponsor);
     } else {
       container.classList.add('sponsor-strip__link--static');
       container.setAttribute('role', 'presentation');
@@ -1461,17 +1480,16 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
     block.setAttribute('aria-hidden', shouldShowPlaceholder ? 'false' : 'true');
     block.classList.toggle(placeholderClass, shouldShowPlaceholder);
 
-    anchor.href = '#';
-    anchor.target = '_self';
-    anchor.rel = 'noopener noreferrer';
-    anchor.removeAttribute('aria-label');
-    anchor.setAttribute('tabindex', '-1');
+    applySponsorLinkAttributes(anchor, null, {
+      disableWhenMissing: true,
+      removePointer: true,
+    });
+    anchor.classList.toggle('sponsor-link--placeholder', shouldShowPlaceholder);
     if (shouldShowPlaceholder) {
       anchor.setAttribute('aria-hidden', 'true');
     } else {
       anchor.removeAttribute('aria-hidden');
     }
-    anchor.classList.toggle('sponsor-link--placeholder', shouldShowPlaceholder);
 
     if (heading) {
       heading.hidden = !shouldShowPlaceholder;
@@ -1494,37 +1512,11 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
 
   anchor.classList.remove('sponsor-link--placeholder');
   anchor.removeAttribute('aria-hidden');
-  
-  const hasUrl = typeof sponsor.url === 'string' && sponsor.url.trim();
-  
-  if (hasUrl) {
-    const safeUrl = sanitizeUrl(sponsor.url);
-    const isExternal = /^https?:\/\//i.test(safeUrl);
-    anchor.href = safeUrl;
-    anchor.target = isExternal ? '_blank' : '_self';
-    if (isExternal) {
-      anchor.rel = 'noopener noreferrer';
-    } else {
-      anchor.removeAttribute('rel');
-    }
-    anchor.removeAttribute('tabindex');
-    anchor.setAttribute('aria-label', getSponsorAccessibleLabel(sponsor));
-    const displayName = getSponsorDisplayName(sponsor);
-    if (displayName) {
-      anchor.title = displayName;
-    } else {
-      anchor.removeAttribute('title');
-    }
-  } else {
-    anchor.removeAttribute('href');
-    anchor.style.cursor = 'default';
-    anchor.style.pointerEvents = 'none';
-    anchor.removeAttribute('target');
-    anchor.removeAttribute('rel');
-    anchor.removeAttribute('aria-label');
-    anchor.removeAttribute('title');
-    anchor.setAttribute('tabindex', '-1');
-  }
+
+  applySponsorLinkAttributes(anchor, sponsor, {
+    disableWhenMissing: true,
+    removePointer: true,
+  });
 
   if ('loading' in logo) {
     logo.loading = preferLazy ? 'lazy' : 'eager';
@@ -1575,7 +1567,7 @@ function applySponsorToOverlay(sponsor) {
   );
 
   if (drawOverlay) {
-    drawOverlay.classList.toggle('draw-portal--has-sponsor', Boolean(sponsor));
+    drawOverlay.classList.toggle(CSS_CLASSES.DRAW_PORTAL_HAS_SPONSOR, Boolean(sponsor));
   }
 }
 
@@ -2161,23 +2153,14 @@ function renderBoard() {
     const cell = template.content.firstElementChild.cloneNode(true);
     cell.dataset.number = entry.number;
 
-    const srOnlyLabel = cell.querySelector('[data-board-cell-sr]');
-    if (srOnlyLabel) {
-      const labelParts = [`Numero ${entry.number}`];
-      if (typeof entry.italian === 'string' && entry.italian.trim()) {
-        labelParts.push(entry.italian.trim());
-      } else if (typeof entry.dialect === 'string' && entry.dialect.trim()) {
-        labelParts.push(entry.dialect.trim());
-      }
-      srOnlyLabel.textContent = labelParts.join(' – ');
-    }
+    updateBoardCellAccessibility(cell, entry);
 
     const artworkEl = cell.querySelector('.board-cell__media');
     if (artworkEl instanceof HTMLImageElement) {
       applyBoardCellImage(artworkEl, entry);
     }
 
-    const tokenNumberEl = cell.querySelector('[data-board-token-number]');
+    const tokenNumberEl = cell.querySelector('.token__number');
     if (tokenNumberEl) {
       tokenNumberEl.textContent = entry.number;
     }
@@ -2189,7 +2172,7 @@ function renderBoard() {
     cell.setAttribute('aria-label', ariaLabelParts.join(' – '));
 
     const isDrawn = state.drawnNumbers.has(entry.number);
-    cell.classList.toggle('board-cell--drawn', isDrawn);
+    cell.classList.toggle(CSS_CLASSES.BOARD_CELL_DRAWN, isDrawn);
     cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
 
     state.cellsByNumber.set(entry.number, cell);
@@ -2197,6 +2180,43 @@ function renderBoard() {
   });
 
   board.appendChild(fragment);
+}
+
+function getBoardCellLabelParts(entry) {
+  const parts = [`Numero ${entry.number}`];
+  const italian = typeof entry.italian === 'string' ? entry.italian.trim() : '';
+  const dialect = typeof entry.dialect === 'string' ? entry.dialect.trim() : '';
+
+  if (italian) {
+    parts.push(italian);
+  } else if (dialect) {
+    parts.push(dialect);
+  }
+
+  return parts;
+}
+
+function ensureBoardCellSrElement(cell) {
+  let srElement = cell.querySelector('.board-cell__sr');
+  if (!srElement) {
+    srElement = document.createElement('span');
+    srElement.className = 'sr-only board-cell__sr';
+    cell.appendChild(srElement);
+  }
+
+  return srElement;
+}
+
+function updateBoardCellAccessibility(cell, entry) {
+  if (!cell || !entry) {
+    return;
+  }
+
+  const labelParts = getBoardCellLabelParts(entry);
+  const srElement = ensureBoardCellSrElement(cell);
+  const label = labelParts.join(' – ');
+  srElement.textContent = label;
+  cell.setAttribute('aria-label', label);
 }
 
 function handleBoardCellClick(event) {
@@ -2232,7 +2252,7 @@ function getNumberImage(entry) {
     return `images/${entry.number}.jpg`;
   }
 
-  return TILE_IMAGE_FALLBACK;
+  return MEDIA.TILE_FALLBACK;
 }
 
 function handleBoardCellImageError(event) {
@@ -2248,14 +2268,20 @@ function handleBoardCellImageError(event) {
   }
 
   target.dataset.fallbackApplied = 'true';
-  target.src = TILE_IMAGE_FALLBACK;
+  target.src = MEDIA.TILE_FALLBACK;
 }
 
 function applyBoardCellImage(imageEl, entry) {
   if (!(imageEl instanceof HTMLImageElement)) {
-    return TILE_IMAGE_FALLBACK;
+    return MEDIA.TILE_FALLBACK;
   }
 
+  if ('loading' in imageEl) {
+    imageEl.loading = 'lazy';
+  }
+  if ('decoding' in imageEl) {
+    imageEl.decoding = 'async';
+  }
   imageEl.dataset.fallbackApplied = 'false';
   imageEl.removeEventListener('error', handleBoardCellImageError);
   imageEl.addEventListener('error', handleBoardCellImageError);
@@ -2297,13 +2323,103 @@ function handleSelection(entry, cell, options = {}) {
   const { fromDraw = false } = options;
 
   if (state.selected) {
-    state.selected.classList.remove('board-cell--active');
+    state.selected.classList.remove(CSS_CLASSES.BOARD_CELL_ACTIVE);
   }
   state.selected = targetCell;
-  targetCell.classList.add('board-cell--active');
+  targetCell.classList.add(CSS_CLASSES.BOARD_CELL_ACTIVE);
 
   openModal(entry, { fromDraw });
   speakEntry(entry);
+}
+
+function ensureHistoryPanelClosed() {
+  if (state.historyOpen) {
+    closeHistoryPanel();
+  }
+}
+
+function getRemainingEntries() {
+  return state.numbers.filter((entry) => !state.drawnNumbers.has(entry.number));
+}
+
+function selectRandomEntry(entries) {
+  if (!Array.isArray(entries) || entries.length === 0) {
+    return null;
+  }
+
+  const randomIndex = Math.floor(Math.random() * entries.length);
+  return entries[randomIndex] || null;
+}
+
+function closeModalIfOpen() {
+  const { modal } = elements;
+  if (modal && !modal.hasAttribute('hidden')) {
+    closeModal({ returnFocus: false });
+    return true;
+  }
+
+  return false;
+}
+
+function disableDrawButtonsTemporarily() {
+  const { drawButton, floatingDrawButton } = elements;
+  const previousStates = {
+    drawButton: drawButton ? drawButton.disabled : undefined,
+    floating: floatingDrawButton ? floatingDrawButton.disabled : undefined,
+  };
+
+  if (drawButton) {
+    drawButton.disabled = true;
+  }
+  if (floatingDrawButton) {
+    floatingDrawButton.disabled = true;
+  }
+
+  return () => {
+    if (drawButton && previousStates.drawButton === false) {
+      drawButton.disabled = false;
+    }
+    if (floatingDrawButton && previousStates.floating === false) {
+      floatingDrawButton.disabled = false;
+    }
+  };
+}
+
+async function runDrawAnimation(entry, markCallback) {
+  const manager = animationManager;
+  if (!manager || typeof manager.showDrawAnimation !== 'function') {
+    return false;
+  }
+
+  try {
+    const didAnimate = await manager.showDrawAnimation(entry, {
+      onFlightComplete: () => {
+        if (typeof markCallback === 'function') {
+          markCallback();
+        }
+      },
+    });
+    if (!didAnimate) {
+      return false;
+    }
+
+    const delay =
+      typeof manager.getModalRevealDelay === 'function'
+        ? manager.getModalRevealDelay()
+        : 0;
+    return delay > 0;
+  } catch (animationError) {
+    console.warn("Errore durante l'animazione di estrazione", animationError);
+    return false;
+  }
+}
+
+function getModalRevealDelayValue() {
+  if (animationManager && typeof animationManager.getModalRevealDelay === 'function') {
+    return animationManager.getModalRevealDelay();
+  }
+
+  return Number(DRAW_TIMELINE.modalRevealDelay) || 0;
 }
 
 /**
@@ -2311,17 +2427,9 @@ function handleSelection(entry, cell, options = {}) {
  * @param {{ number: number, italian?: string, dialect?: string }} entry
  * @param {{ animate?: boolean, sponsor?: object|null, recordHistory?: boolean }} [options]
  */
-function markNumberDrawn(entry, options = {}) {
-  if (!entry) {
-    return;
-  }
-
-  const { animate = false, sponsor: sponsorOverride = null, recordHistory = true } = options;
+function commitDrawEntry(entry, options = {}) {
+  const { sponsorOverride = null, recordHistory = true } = options;
   const number = entry.number;
-
-  if (state.drawnNumbers.has(number)) {
-    return;
-  }
 
   const previousDrawnNumbers = new Set(state.drawnNumbers);
   const previousHistoryLength = state.drawHistory.length;
@@ -2335,7 +2443,6 @@ function markNumberDrawn(entry, options = {}) {
   const activeSponsor = sponsorOverride || sponsorManager.getCurrentSponsor();
   const sponsorData = persistSponsorForNumber(number, activeSponsor);
   const sponsorPayload = sponsorData ? cloneSponsorData(sponsorData) : null;
-  let shouldNotify = true;
 
   if (recordHistory) {
     state.drawHistory.push({
@@ -2345,9 +2452,7 @@ function markNumberDrawn(entry, options = {}) {
       sponsor: sponsorPayload,
     });
 
-    const persisted = persistDrawState();
-
-    if (!persisted) {
+    if (!persistDrawState()) {
       state.drawnNumbers = previousDrawnNumbers;
       state.drawHistory.splice(previousHistoryLength);
       if (hadStoredSponsor && previousSponsor) {
@@ -2355,7 +2460,8 @@ function markNumberDrawn(entry, options = {}) {
       } else {
         sponsorManager.restoreAssignment(number, null);
       }
-      shouldNotify = false;
+
+      return { success: false, sponsorPayload: null, recordHistory };
     }
 
     updateDrawHistory();
@@ -2365,43 +2471,75 @@ function markNumberDrawn(entry, options = {}) {
     updateDrawStatus();
   }
 
+  return { success: true, sponsorPayload, recordHistory };
+}
+
+function updateBoardCellState(number, options = {}) {
+  const { animate = false } = options;
   const cell = state.cellsByNumber.get(number);
-  if (cell) {
-    const isDrawn = state.drawnNumbers.has(number);
-    cell.classList.toggle('board-cell--drawn', isDrawn);
-    cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
-    if (isDrawn && animate) {
-      cell.classList.add('board-cell--just-drawn');
-      let fallbackTimeout = null;
-      const finalize = () => {
-        cell.classList.remove('board-cell--just-drawn');
-        cell.removeEventListener('animationend', handleAnimationEnd);
-        if (fallbackTimeout !== null) {
-          window.clearTimeout(fallbackTimeout);
-          fallbackTimeout = null;
-        }
-      };
-      const handleAnimationEnd = (event) => {
-        if (event?.animationName && event.animationName !== 'boardCellCelebrate') {
-          return;
-        }
-        finalize();
-      };
-      cell.addEventListener('animationend', handleAnimationEnd);
-      fallbackTimeout = window.setTimeout(finalize, 900);
-    } else {
-      cell.classList.remove('board-cell--just-drawn');
-    }
+  if (!cell) {
+    return;
   }
 
-  if (shouldNotify && recordHistory) {
+  const isDrawn = state.drawnNumbers.has(number);
+  cell.classList.toggle(CSS_CLASSES.BOARD_CELL_DRAWN, isDrawn);
+  cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
+
+  if (!isDrawn || !animate) {
+    cell.classList.remove(CSS_CLASSES.BOARD_CELL_JUST_DRAWN);
+    return;
+  }
+
+  cell.classList.add(CSS_CLASSES.BOARD_CELL_JUST_DRAWN);
+  let fallbackTimeout = null;
+
+  const finalize = () => {
+    cell.classList.remove(CSS_CLASSES.BOARD_CELL_JUST_DRAWN);
+    cell.removeEventListener('animationend', handleAnimationEnd);
+    if (fallbackTimeout !== null) {
+      window.clearTimeout(fallbackTimeout);
+      fallbackTimeout = null;
+    }
+  };
+
+  const handleAnimationEnd = (event) => {
+    if (event?.animationName && event.animationName !== 'boardCellCelebrate') {
+      return;
+    }
+    finalize();
+  };
+
+  cell.addEventListener('animationend', handleAnimationEnd);
+  fallbackTimeout = window.setTimeout(finalize, ANIMATION_DELAYS.FALLBACK);
+}
+
+function markNumberDrawn(entry, options = {}) {
+  if (!entry || !Number.isInteger(entry.number)) {
+    return;
+  }
+
+  const { animate = false, sponsor: sponsorOverride = null, recordHistory = true } = options;
+  const number = entry.number;
+
+  if (state.drawnNumbers.has(number)) {
+    return;
+  }
+
+  const result = commitDrawEntry(entry, { sponsorOverride, recordHistory });
+  if (!result || !result.success) {
+    return;
+  }
+
+  updateBoardCellState(number, { animate });
+
+  if (result.recordHistory) {
     dispatchTombolaEvent(TombolaEvents.NUMBER_DRAWN, {
       entry: {
         number,
         italian: entry.italian || '',
         dialect: entry.dialect || '',
       },
-      sponsor: sponsorPayload,
+      sponsor: result.sponsorPayload,
       animate,
     });
   }
@@ -2416,77 +2554,39 @@ async function handleDraw() {
     return;
   }
 
-  if (state.historyOpen) {
-    closeHistoryPanel();
-  }
+  ensureHistoryPanelClosed();
 
-  const remaining = state.numbers.filter(
-    (entry) => !state.drawnNumbers.has(entry.number)
-  );
-
+  const remaining = getRemainingEntries();
   if (!remaining.length) {
     updateDrawStatus();
     return;
   }
 
-  const modalWasOpen = elements.modal && !elements.modal.hasAttribute('hidden');
-  if (modalWasOpen) {
-    closeModal({ returnFocus: false });
+  closeModalIfOpen();
+  const entry = selectRandomEntry(remaining);
+  if (!entry) {
+    updateDrawStatus();
+    return;
   }
 
-  const randomIndex = Math.floor(Math.random() * remaining.length);
-  const entry = remaining[randomIndex];
-
   state.isAnimatingDraw = true;
-  let restoreDrawButton = false;
-  let restoreFloatingDrawButton = false;
+  const restoreButtons = disableDrawButtonsTemporarily();
   let markRecorded = false;
-  let preparationError = null;
   let shouldDelayModal = false;
 
   try {
     await prepareSponsorForNextDraw();
-
-    if (elements.drawButton) {
-      restoreDrawButton = !elements.drawButton.disabled;
-      elements.drawButton.disabled = true;
-    }
-    if (elements.floatingDrawButton) {
-      restoreFloatingDrawButton = !elements.floatingDrawButton.disabled;
-      elements.floatingDrawButton.disabled = true;
-    }
-
-    try {
-      const manager = animationManager;
-      if (manager && typeof manager.showDrawAnimation === 'function') {
-        const didAnimate = await manager.showDrawAnimation(entry, {
-          onFlightComplete: () => {
-            if (!markRecorded) {
-              markNumberDrawn(entry, { animate: true });
-              markRecorded = true;
-            }
-          },
-        });
-        shouldDelayModal = didAnimate && manager.getModalRevealDelay() > 0;
+    shouldDelayModal = await runDrawAnimation(entry, () => {
+      if (!markRecorded) {
+        markNumberDrawn(entry, { animate: true });
+        markRecorded = true;
       }
-    } catch (animationError) {
-      console.warn('Errore durante l\'animazione di estrazione', animationError);
-    }
-
-    if (!markRecorded) {
-      markNumberDrawn(entry, { animate: true });
-      markRecorded = true;
-    }
-  } catch (error) {
-    preparationError = error;
+    });
+  } catch (preparationError) {
+    console.warn("Impossibile preparare l'estrazione", preparationError);
   } finally {
     state.isAnimatingDraw = false;
-    if (elements.drawButton && restoreDrawButton) {
-      elements.drawButton.disabled = false;
-    }
-    if (elements.floatingDrawButton && restoreFloatingDrawButton) {
-      elements.floatingDrawButton.disabled = false;
-    }
+    restoreButtons();
   }
 
   if (!markRecorded) {
@@ -2494,14 +2594,7 @@ async function handleDraw() {
     markRecorded = true;
   }
 
-  if (preparationError) {
-    console.warn('Impossibile preparare l\'estrazione', preparationError);
-  }
-
-  const modalRevealDelay = animationManager
-    ? animationManager.getModalRevealDelay()
-    : Number(DRAW_TIMELINE.modalRevealDelay) || 0;
-
+  const modalRevealDelay = getModalRevealDelayValue();
   if (shouldDelayModal && modalRevealDelay > 0) {
     await sleep(modalRevealDelay);
   }
@@ -2548,7 +2641,7 @@ function updateDrawHistory() {
     const listItem = document.createElement('li');
     listItem.className = 'history-item';
     if (isLatest) {
-      listItem.classList.add('history-item--latest');
+      listItem.classList.add(CSS_CLASSES.HISTORY_ITEM_LATEST);
       listItem.setAttribute('aria-current', 'true');
     }
 
@@ -2684,7 +2777,7 @@ function performGameReset() {
   }
 
   state.cellsByNumber.forEach((cell) => {
-    cell.classList.remove('board-cell--drawn', 'board-cell--active');
+    cell.classList.remove(CSS_CLASSES.BOARD_CELL_DRAWN, CSS_CLASSES.BOARD_CELL_ACTIVE);
     cell.setAttribute('aria-pressed', 'false');
   });
 
@@ -2883,10 +2976,10 @@ function openModal(entry, options = {}) {
     }
   }
 
-  let imageSource = TILE_IMAGE_FALLBACK;
+  let imageSource = MEDIA.TILE_FALLBACK;
   if (elements.modalImage) {
     imageSource = applyBoardCellImage(elements.modalImage, entry);
-    elements.modalImage.alt = imageSource !== TILE_IMAGE_FALLBACK
+    elements.modalImage.alt = imageSource !== MEDIA.TILE_FALLBACK
       ? entry.italian
         ? `Illustrazione del numero ${entry.number}: ${entry.italian}`
         : `Illustrazione del numero ${entry.number}`
@@ -2896,7 +2989,7 @@ function openModal(entry, options = {}) {
   if (elements.modalImageFrame) {
     elements.modalImageFrame.classList.toggle(
       'number-dialog__image-frame--placeholder',
-      imageSource === TILE_IMAGE_FALLBACK
+      imageSource === MEDIA.TILE_FALLBACK
     );
   }
 

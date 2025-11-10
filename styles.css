@@ -12,9 +12,16 @@
   --accent: #8f1f33;
   --accent-strong: #751528;
   --accent-soft: rgba(143, 31, 51, 0.12);
+  --accent-muted: rgba(117, 21, 40, 0.26);
   --focus-ring: #100d0e;
+  --shadow-ink-soft: rgba(20, 15, 13, 0.08);
+  --shadow-ink-medium: rgba(20, 15, 13, 0.12);
+  --shadow-accent: rgba(117, 21, 40, 0.28);
+  --shadow-accent-strong: rgba(117, 21, 40, 0.34);
   --shadow-sm: 0 0.625rem 1.5rem rgba(20, 15, 13, 0.08);
   --shadow-lg: 0 1.625rem 3.75rem rgba(20, 15, 13, 0.14);
+  --border-ink-soft: rgba(30, 24, 26, 0.12);
+  --border-ink-strong: rgba(30, 24, 26, 0.16);
   --scrim-bg: rgba(20, 15, 13, 0.32);
   --scrim-blur: 0.25rem;
   --radius-lg: 1.75rem;
@@ -393,8 +400,8 @@ button {
   font-size: clamp(0.86rem, 2.4vw, 0.95rem);
   background: rgba(255, 255, 255, 0.78);
   color: var(--ink);
-  border-color: rgba(30, 24, 26, 0.16);
-  box-shadow: 0 0.75rem 1.5rem rgba(20, 15, 13, 0.08);
+  border-color: var(--border-ink-strong);
+  box-shadow: 0 0.75rem 1.5rem var(--shadow-ink-soft);
 }
 
 .button--dashboard:hover,
@@ -449,11 +456,10 @@ button {
   object-fit: contain;
 }
 
-.button:hover,
-.button:focus-visible {
+.button:is(:hover, :focus-visible) {
   background: var(--surface-alt);
   transform: translateY(-0.125rem);
-  box-shadow: 0 0.875rem 1.75rem rgba(20, 15, 13, 0.12);
+  box-shadow: 0 0.875rem 1.75rem var(--shadow-ink-medium);
 }
 
 .button:focus-visible {
@@ -472,17 +478,16 @@ button {
   background: var(--accent);
   color: var(--surface);
   border-color: transparent;
-  box-shadow: 0 1rem 2rem rgba(117, 21, 40, 0.28);
+  box-shadow: 0 1rem 2rem var(--shadow-accent);
 }
 
-.button--primary:hover,
-.button--primary:focus-visible {
+.button--primary:is(:hover, :focus-visible) {
   background: var(--accent-strong);
-  box-shadow: 0 1.125rem 2.5rem rgba(117, 21, 40, 0.34);
+  box-shadow: 0 1.125rem 2.5rem var(--shadow-accent-strong);
 }
 
 .button--primary:disabled {
-  background: rgba(117, 21, 40, 0.26);
+  background: var(--accent-muted);
   box-shadow: none;
 }
 
@@ -492,7 +497,7 @@ button {
   gap: 0.45rem;
   padding: 0.45rem 0.9rem;
   border-radius: 999rem;
-  border: var(--border-hairline) solid rgba(30, 24, 26, 0.12);
+  border: var(--border-hairline) solid var(--border-ink-soft);
   background: var(--surface);
   font-size: 0.92rem;
   font-weight: 600;
@@ -624,6 +629,12 @@ button {
   flex-shrink: 0;
 }
 
+.token--board {
+  --token-border-width: clamp(0.18rem, 0.6vw, 0.3rem);
+  --token-number-size: clamp(1.3rem, 2.8vw, 2.1rem);
+  --token-shadow: inset 0 0 0.6rem rgba(0, 0, 0, 0.08);
+}
+
 .token__number {
   font-family: 'Manrope', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 700;
@@ -668,9 +679,6 @@ button {
 .board-cell__token {
   position: absolute;
   inset: clamp(0.75rem, 16%, 1.1rem);
-  --token-border-width: clamp(0.18rem, 0.6vw, 0.3rem);
-  --token-number-size: clamp(1.3rem, 2.8vw, 2.1rem);
-  --token-shadow: inset 0 0 0.6rem rgba(0, 0, 0, 0.08);
   transition: opacity 160ms ease-out, transform 160ms ease-out;
   opacity: 0;
   transform: scale(0.85);
@@ -1068,7 +1076,7 @@ button {
 .sponsor-strip__link:hover {
   background: rgba(143, 31, 51, 0.06);
   transform: translateY(-0.125rem);
-  box-shadow: 0 0.5rem 1.25rem rgba(20, 15, 13, 0.12);
+  box-shadow: 0 0.5rem 1.25rem var(--shadow-ink-medium);
 }
 
 .sponsor-strip__link:focus-visible {
@@ -1076,7 +1084,7 @@ button {
   outline-offset: var(--focus-ring-offset);
   background: rgba(143, 31, 51, 0.06);
   transform: translateY(-0.125rem);
-  box-shadow: 0 0.5rem 1.25rem rgba(20, 15, 13, 0.12);
+  box-shadow: 0 0.5rem 1.25rem var(--shadow-ink-medium);
 }
 
 .sponsor-strip__link--static {
@@ -1729,7 +1737,7 @@ button {
 .number-dialog {
   width: min(26.875rem, 100%);
   background: rgba(255, 255, 255, 0.9);
-  border: var(--border-hairline) solid rgba(30, 24, 26, 0.12);
+  border: var(--border-hairline) solid var(--border-ink-soft);
   border-radius: var(--radius-md);
   padding: clamp(0.75rem, 2.3vw, 1.05rem);
   box-shadow: none;
@@ -1780,7 +1788,7 @@ button {
 
 .number-dialog__next:hover:not(:disabled),
 .number-dialog__next:focus-visible:not(:disabled) {
-  background: rgba(143, 31, 51, 0.12);
+  background: var(--accent-soft);
 }
 
 .number-dialog__next:focus-visible {
@@ -1856,7 +1864,7 @@ button {
   max-inline-size: 15rem;
   aspect-ratio: 1 / 1;
   border-radius: 0;
-  border: var(--border-hairline) solid rgba(30, 24, 26, 0.12);
+  border: var(--border-hairline) solid var(--border-ink-soft);
   background: var(--surface);
   display: grid;
   place-items: center;
@@ -1902,7 +1910,7 @@ button {
 .confirm-dialog {
   width: min(22.5rem, 100%);
   background: rgba(255, 255, 255, 0.9);
-  border: var(--border-hairline) solid rgba(30, 24, 26, 0.12);
+  border: var(--border-hairline) solid var(--border-ink-soft);
   border-radius: var(--radius-md);
   padding: clamp(1rem, 3vw, 1.35rem);
   display: grid;

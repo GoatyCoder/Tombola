@@ -15,7 +15,9 @@ Interfaccia web statica per condurre la tombola tradizionale nojana in modo digi
 .
 ├── data.json        # Elenco numeri con traduzioni e metadati
 ├── index.html       # Pagina principale e struttura dell'interfaccia
-├── script.js        # Logica dell'applicazione, stato, animazioni e audio
+├── js/
+│   ├── constants.js # Costanti condivise per stato, eventi e asset
+│   └── main.js      # Logica dell'applicazione, stato, animazioni e audio
 ├── sponsors.json    # Configurazione sponsor remoti
 ├── styles.css       # Stili e design token
 └── images/          # Asset grafici per tabellone e sponsor
@@ -36,7 +38,7 @@ Apri quindi <http://localhost:8000> nel browser. Per la riproduzione vocale e l'
 
 ## Personalizzazione dati
 - **Numeri**: aggiorna `data.json` modificando nomi italiani, dialettali e immagini (`image` con percorso relativo). In assenza di immagine viene mostrato un segnaposto.
-- **Sponsor**: gestiti tramite `sponsors.json` oppure fallback integrati in `script.js`. Ogni sponsor deve includere `logo` (percorso immagine) e `url`.
+- **Sponsor**: gestiti tramite `sponsors.json` oppure fallback integrati in `js/constants.js`. Ogni sponsor deve includere `logo` (percorso immagine) e `url`.
 - **Stato iniziale**: per partire da tabellone pulito elimina la chiave `TOMBOLA_DRAW_STATE` dal `localStorage` del dominio.
 
 ## Accessibilità e usabilità
