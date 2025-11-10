@@ -6,26 +6,21 @@
     <title>Tombola Nojana</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
     <script defer src="script.js"></script>
   </head>
   <body>
+    <!-- Skip Link -->
     <a class="skip-link" href="#main-content">Salta al contenuto principale</a>
+
+    <!-- Header -->
     <header class="hero" role="banner">
       <div class="shell hero__shell">
         <div class="hero__brand">
           <div class="hero__presenter-group" aria-label="Amici del Teatro presenta">
             <span class="hero__presenter-logo">
-              <img
-                src="images/logo_amicidelteatro.svg"
-                alt=""
-                loading="lazy"
-                decoding="async"
-              />
+              <img src="images/logo_amicidelteatro.svg" alt="" loading="lazy" decoding="async" />
             </span>
             <span class="hero__presenter">presenta</span>
           </div>
@@ -37,127 +32,57 @@
       </div>
     </header>
 
+    <!-- Main Content -->
     <main id="main-content" class="layout" aria-label="Applicazione Tombola Nojana">
+      
+      <!-- Dashboard Section -->
       <section class="layout__section layout__section--dashboard" aria-labelledby="dashboard-heading">
         <div class="shell dashboard__shell">
           <h2 id="dashboard-heading" class="sr-only">Controllo estrazioni</h2>
+          
           <div class="dashboard__grid">
             <article class="status-card status-card--overview" aria-labelledby="draw-overview-heading">
               <h3 id="draw-overview-heading" class="sr-only">Ultimo numero e stato delle estrazioni</h3>
+              
+              <!-- Summary Metrics -->
               <div class="status-card__summary">
                 <div class="status-card__metric status-card__metric--last" role="status" aria-live="polite">
                   <p class="status-card__label">Ultimo numero</p>
-                  <p id="draw-last-number" class="status-card__value" aria-live="polite" aria-atomic="true">—</p>
+                  <p id="draw-last-number" class="status-card__value" aria-atomic="true">—</p>
                   <p id="draw-last-detail" class="status-card__detail">In attesa della prima estrazione</p>
                 </div>
+                
                 <div class="status-card__metric status-card__metric--progress" role="group" aria-labelledby="progress-label">
                   <p id="progress-label" class="status-card__label sr-only">Numeri estratti</p>
                   <p id="draw-progress-value" class="status-card__value status-card__value--compact">0/0</p>
-                  <div
-                    id="draw-progress-bar"
-                    class="progress"
-                    role="progressbar"
-                    aria-valuemin="0"
-                    aria-valuemax="0"
-                    aria-valuenow="0"
-                  >
+                  <div id="draw-progress-bar" class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0">
                     <span id="draw-progress-fill" class="progress__fill"></span>
                   </div>
                 </div>
               </div>
+
+              <!-- Action Buttons -->
               <div class="status-card__actions">
-                <button
-                  type="button"
-                  id="draw-button"
-                  class="button button--dashboard button--primary"
-                  aria-label="Estrai numero"
-                  title="Estrai numero"
-                  disabled
-                >
-                  <span class="button__label" data-draw-label>Estrai numero</span>
-                  <img
-                    src="images/icon-die.svg"
-                    class="button__icon die-icon"
-                    alt=""
-                    role="presentation"
-                    aria-hidden="true"
-                  />
+                <button type="button" id="draw-button" class="button button--dashboard button--primary" disabled>
+                  <span class="button__label">Estrai numero</span>
+                  <img src="images/icon-die.svg" class="button__icon die-icon" alt="" aria-hidden="true" />
                 </button>
-                <button
-                  type="button"
-                  id="reset-button"
-                  class="button button--dashboard button--dashboard-icon"
-                  aria-label="Reset partita"
-                  title="Reset partita"
-                  disabled
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true" role="presentation" class="button__icon">
-                    <path
-                      d="M6 7.5A6.75 6.75 0 0 1 18.32 9"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                    <path
-                      d="M18 4.5v4.25h-4.25"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                    <path
-                      d="M18 16.5a6.75 6.75 0 0 1-12.32-1.5"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                    <path
-                      d="M6 19.5V15.25h4.25"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
+                
+                <button type="button" id="reset-button" class="button button--dashboard button--icon" aria-label="Reset partita" disabled>
+                  <svg viewBox="0 0 24 24" aria-hidden="true" class="button__icon">
+                    <path d="M6 7.5A6.75 6.75 0 0 1 18.32 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M18 4.5v4.25h-4.25" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M18 16.5a6.75 6.75 0 0 1-12.32-1.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M6 19.5V15.25h4.25" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                   </svg>
-                  <span class="sr-only">Reset partita</span>
                 </button>
-                <button
-                  type="button"
-                  id="history-toggle"
-                  class="button button--dashboard button--dashboard-icon"
-                  aria-expanded="false"
-                  aria-controls="history-panel"
-                  data-label-mobile-open="Chiudi cronologia"
-                  data-label-mobile-closed="Cronologia"
-                  data-label-desktop="Cronologia"
-                  aria-label="Cronologia"
-                  title="Cronologia"
-                >
-                  <svg class="button__icon" viewBox="0 0 24 24" role="presentation" aria-hidden="true">
-                    <path
-                      d="M5.75 4.5h12.5a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H5.75a.75.75 0 0 1-.75-.75V5.25a.75.75 0 0 1 .75-.75Z"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                    <path
-                      d="M8 7h8m-8 4h8m-8 4h5"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
+                
+                <button type="button" id="history-toggle" class="button button--dashboard button--icon" 
+                        aria-expanded="false" aria-controls="history-panel" aria-label="Cronologia">
+                  <svg class="button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5.75 4.5h12.5a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H5.75a.75.75 0 0 1-.75-.75V5.25a.75.75 0 0 1 .75-.75Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M8 7h8m-8 4h8m-8 4h5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                   </svg>
-                  <span class="sr-only" data-history-label>Cronologia</span>
                 </button>
               </div>
             </article>
@@ -165,23 +90,22 @@
         </div>
       </section>
 
+      <!-- Board Section -->
       <section class="layout__section layout__section--board" aria-labelledby="board-heading">
         <div class="shell board-area__shell">
           <div class="board-area__layout">
+            
+            <!-- Board -->
             <article class="board-wrapper">
               <div class="board-head">
                 <h2 id="board-heading" class="board-head__title">Tabellone</h2>
-                <span id="draw-status" class="board-head__status sr-only">Caricamento del tabellone…</span>
+                <span id="draw-status" class="sr-only">Caricamento del tabellone…</span>
               </div>
               <div class="board-grid" id="board" aria-live="polite"></div>
             </article>
-            <aside
-              id="history-panel"
-              class="history"
-              aria-label="Cronologia estrazioni"
-              aria-hidden="true"
-              tabindex="-1"
-            >
+
+            <!-- History Panel -->
+            <aside id="history-panel" class="history" aria-label="Cronologia estrazioni" hidden>
               <header class="history__header">
                 <h3 class="history__title">Cronologia</h3>
                 <p class="history__subtitle">L'ordine completo delle estrazioni.</p>
@@ -190,37 +114,17 @@
               <ol class="history__list" id="draw-history" aria-live="polite"></ol>
             </aside>
           </div>
+
+          <!-- Floating Action Buttons -->
           <div class="board-area__floating">
-            <div class="fab-group" role="presentation">
-              <button
-                type="button"
-                id="floating-draw-button"
-                class="fab fab--primary"
-                aria-label="Estrai numero"
-                title="Estrai numero"
-                data-tooltip="Estrai numero"
-                disabled
-              >
-                <img
-                  src="images/icon-die.svg"
-                  class="fab__icon die-icon"
-                  alt=""
-                  role="presentation"
-                  aria-hidden="true"
-                />
-                <span class="sr-only" data-floating-draw-sr>Estrai numero</span>
+            <div class="fab-group">
+              <button type="button" id="floating-draw-button" class="fab fab--primary" aria-label="Estrai numero" disabled>
+                <img src="images/icon-die.svg" class="fab__icon die-icon" alt="" aria-hidden="true" />
               </button>
-              <button
-                type="button"
-                id="audio-toggle"
-                class="fab fab--secondary audio-fab"
-                aria-pressed="true"
-                aria-label="Disattiva annuncio audio"
-                title="Disattiva annuncio audio"
-                data-tooltip="Disattiva annuncio audio"
-              >
-                <span class="sr-only" data-audio-label>Audio attivo</span>
-                <svg class="audio-fab__icon" viewBox="0 0 24 24" role="presentation" aria-hidden="true">
+              
+              <button type="button" id="audio-toggle" class="fab fab--secondary audio-fab" 
+                      aria-pressed="true" aria-label="Disattiva annuncio audio">
+                <svg class="audio-fab__icon" viewBox="0 0 24 24" aria-hidden="true">
                   <path class="audio-fab__speaker" d="M5.5 9.5H8l3.5-3.5v12L8 14.5H5.5a1.5 1.5 0 0 1-1.5-1.5v-2a1.5 1.5 0 0 1 1.5-1.5Z" />
                   <path class="audio-fab__wave" d="M15.5 9.5a3 3 0 0 1 0 5" />
                   <path class="audio-fab__wave audio-fab__wave--strong" d="M17.8 7.8a6 6 0 0 1 0 8.5" />
@@ -230,15 +134,13 @@
             </div>
           </div>
         </div>
-        <div id="history-scrim" class="scrim" hidden aria-hidden="true"></div>
+        
+        <!-- History Scrim -->
+        <div id="history-scrim" class="scrim" hidden></div>
       </section>
 
-      <section
-        class="layout__section layout__section--sponsor sponsor"
-        id="sponsor-showcase"
-        hidden
-        aria-hidden="true"
-      >
+      <!-- Sponsor Section -->
+      <section class="layout__section layout__section--sponsor sponsor" id="sponsor-showcase" hidden>
         <div class="shell sponsor__shell">
           <header class="sponsor__header">
             <p class="sponsor__eyebrow">Sponsor e partner</p>
@@ -248,12 +150,14 @@
       </section>
     </main>
 
-    <div id="draw-portal" class="draw-portal" aria-hidden="true" hidden>
-      <div class="draw-portal__scrim" aria-hidden="true"></div>
-      <p id="draw-animation-announcement" class="sr-only" aria-live="assertive"></p>
+    <!-- Draw Animation Portal -->
+    <div id="draw-portal" class="draw-portal" hidden>
+      <div class="draw-portal__scrim"></div>
+      <div class="sr-only" id="draw-animation-announcement" aria-live="assertive"></div>
+      
       <div class="draw-portal__content" role="status" aria-live="assertive">
-        <div class="draw-portal__ball token" id="draw-animation-ball" aria-hidden="true">
-          <span class="draw-portal__loader" id="draw-portal-loader" aria-hidden="true">
+        <div class="draw-portal__ball token" id="draw-animation-ball">
+          <span class="draw-portal__loader" id="draw-portal-loader">
             <span class="draw-portal__loader-dot"></span>
             <span class="draw-portal__loader-dot"></span>
             <span class="draw-portal__loader-dot"></span>
@@ -261,147 +165,96 @@
           <span id="draw-animation-number" class="draw-portal__number token__number"></span>
         </div>
       </div>
+
       <div id="draw-sponsor-block" class="draw-portal__sponsor-block" hidden>
         <p id="draw-sponsor-heading" class="draw-portal__sponsor-eyebrow">Sponsor dell'estrazione</p>
-        <a
-          id="draw-sponsor"
-          class="draw-portal__sponsor-link"
-          href="#"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <a id="draw-sponsor" class="draw-portal__sponsor-link" href="#" target="_blank" rel="noopener noreferrer">
           <img id="draw-sponsor-logo" alt="" decoding="async" />
         </a>
       </div>
     </div>
 
-    <div
-      id="reset-dialog"
-      class="modal"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="reset-dialog-title"
-      aria-describedby="reset-dialog-message"
-      aria-hidden="true"
-      hidden
-    >
-      <div class="confirm-dialog" role="document">
+    <!-- Reset Confirmation Dialog -->
+    <div id="reset-dialog" class="modal" role="dialog" aria-modal="true" 
+         aria-labelledby="reset-dialog-title" aria-describedby="reset-dialog-message" hidden>
+      <div class="confirm-dialog">
         <h2 id="reset-dialog-title" class="confirm-dialog__title">Azzerare la partita?</h2>
         <p id="reset-dialog-message" class="confirm-dialog__message">
           Tutti i numeri estratti e la cronologia verranno cancellati.
         </p>
         <div class="confirm-dialog__actions">
           <button type="button" class="button" data-reset-cancel>Continua a giocare</button>
-          <button type="button" class="button button--primary" data-reset-confirm>
-            Azzera tabellone
-          </button>
+          <button type="button" class="button button--primary" data-reset-confirm>Azzera tabellone</button>
         </div>
       </div>
     </div>
 
+    <!-- Number Detail Modal -->
     <div id="number-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-number" hidden>
-      <div class="number-dialog" role="document">
+      <div class="number-dialog">
         <header class="number-dialog__header">
-          <p id="modal-number" class="number-dialog__headline" aria-live="polite"></p>
+          <p id="modal-number" class="number-dialog__headline"></p>
           <div class="number-dialog__header-actions">
-            <button
-              type="button"
-              class="number-dialog__next"
-              id="modal-next"
-              aria-label="Estrai successivo"
-              hidden
-              disabled
-            >
-              <span class="number-dialog__next-label" data-modal-next-label>Estrai successivo</span>
-              <img
-                src="images/icon-die.svg"
-                class="die-icon"
-                alt=""
-                role="presentation"
-                aria-hidden="true"
-              />
+            <button type="button" class="number-dialog__next" id="modal-next" aria-label="Estrai successivo" hidden disabled>
+              <span class="number-dialog__next-label">Estrai successivo</span>
+              <img src="images/icon-die.svg" class="die-icon" alt="" aria-hidden="true" />
             </button>
-            <button type="button" class="number-dialog__close" aria-label="Chiudi" id="modal-close">
+            <button type="button" class="number-dialog__close" id="modal-close" aria-label="Chiudi">
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
         </header>
+
         <div class="number-dialog__body">
           <div class="number-dialog__visual">
             <div class="number-dialog__image-frame" id="modal-image-frame">
               <img id="modal-image" alt="" decoding="async" loading="lazy" />
             </div>
           </div>
+
           <div class="number-dialog__details">
             <div class="number-dialog__languages">
+              <!-- Dialect Card -->
               <article class="number-dialog__language-card number-dialog__language-card--dialect">
                 <header class="number-dialog__language-header">
-                  <span class="number-dialog__language-emblem" aria-hidden="true">
+                  <span class="number-dialog__language-emblem">
                     <img src="images/logo_noicattaro.svg" alt="" loading="lazy" decoding="async" />
                   </span>
                   <span class="number-dialog__language-name">Nojano</span>
-                  <button
-                    type="button"
-                    class="number-dialog__audio-button"
-                    id="modal-dialect-play"
-                    aria-describedby="modal-dialect"
-                    aria-label="Riproduci la pronuncia in nojano"
-                  >
-                    <svg viewBox="0 0 24 24" role="presentation" aria-hidden="true">
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r="8.75"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                      />
+                  <button type="button" class="number-dialog__audio-button" id="modal-dialect-play" 
+                          aria-describedby="modal-dialect" aria-label="Riproduci la pronuncia in nojano">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <circle cx="12" cy="12" r="8.75" fill="none" stroke="currentColor" stroke-width="1.5" />
                       <path d="M10 8.5v7l5-3.5-5-3.5Z" fill="currentColor" />
                     </svg>
-                    <span class="sr-only">Riproduci la pronuncia in nojano</span>
                   </button>
                 </header>
                 <p id="modal-dialect" class="number-dialog__phrase"></p>
               </article>
+
+              <!-- Italian Card -->
               <article class="number-dialog__language-card number-dialog__language-card--italian">
                 <header class="number-dialog__language-header">
-                  <span class="number-dialog__language-emblem" aria-hidden="true">
+                  <span class="number-dialog__language-emblem">
                     <img src="images/logo_italia.svg" alt="" loading="lazy" decoding="async" />
                   </span>
                   <span class="number-dialog__language-name">Italiano</span>
-                  <button
-                    type="button"
-                    class="number-dialog__audio-button"
-                    id="modal-italian-play"
-                    aria-describedby="modal-italian"
-                    aria-label="Riproduci la pronuncia in italiano"
-                  >
-                    <svg viewBox="0 0 24 24" role="presentation" aria-hidden="true">
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r="8.75"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                      />
+                  <button type="button" class="number-dialog__audio-button" id="modal-italian-play" 
+                          aria-describedby="modal-italian" aria-label="Riproduci la pronuncia in italiano">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <circle cx="12" cy="12" r="8.75" fill="none" stroke="currentColor" stroke-width="1.5" />
                       <path d="M10 8.5v7l5-3.5-5-3.5Z" fill="currentColor" />
                     </svg>
-                    <span class="sr-only">Riproduci la pronuncia in italiano</span>
                   </button>
                 </header>
                 <p id="modal-italian" class="number-dialog__phrase"></p>
               </article>
             </div>
+
+            <!-- Sponsor Footer -->
             <footer class="number-dialog__footer">
               <div id="modal-sponsor-block" class="number-dialog__sponsor" hidden>
-                <a
-                  id="modal-sponsor"
-                  class="number-dialog__sponsor-link"
-                  href="#"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+                <a id="modal-sponsor" class="number-dialog__sponsor-link" href="#" target="_blank" rel="noopener noreferrer">
                   <img id="modal-sponsor-logo" alt="" decoding="async" loading="lazy" />
                 </a>
               </div>
@@ -411,22 +264,18 @@
       </div>
     </div>
 
+    <!-- Board Cell Template -->
     <template id="board-cell-template">
       <button class="board-cell" type="button">
-        <img
-          class="board-cell__media"
-          alt=""
-          loading="lazy"
-          decoding="async"
-          aria-hidden="true"
-        />
+        <img class="board-cell__media" alt="" aria-hidden="true" />
         <span class="board-cell__token token" aria-hidden="true">
-          <span class="board-cell__token-number token__number" data-board-token-number></span>
+          <span class="board-cell__token-number token__number"></span>
         </span>
-        <span class="sr-only" data-board-cell-sr></span>
+        <span class="sr-only"></span>
       </button>
     </template>
 
+    <!-- Footer -->
     <footer class="app-footer" role="contentinfo">
       <div class="shell app-footer__shell">
         <div class="app-footer__intro">
@@ -434,68 +283,39 @@
           <p class="app-footer__subtitle">
             Il tabellone digitale per vivere la tombolata in vernacolo nojano in modo interattivo.
           </p>
-          <a
-            class="app-footer__association"
-            href="https://www.amicidelteatro.info/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <img
-              src="images/logo_amicidelteatro_big.svg"
-              alt="Associazione Culturale Amici del Teatro di Noicattaro"
-              class="app-footer__association-logo"
-              loading="lazy"
-              decoding="async"
-            />
+          <a class="app-footer__association" href="https://www.amicidelteatro.info/" target="_blank" rel="noopener noreferrer">
+            <img src="images/logo_amicidelteatro_big.svg" alt="Associazione Culturale Amici del Teatro di Noicattaro" 
+                 class="app-footer__association-logo" loading="lazy" decoding="async" />
           </a>
         </div>
+
         <div class="app-footer__bottom">
-          <div class="app-footer__meta" role="presentation">
+          <div class="app-footer__meta">
             <p class="app-footer__credits">
               <span class="app-footer__credits-name">Associazione Culturale Amici del Teatro</span>
               <span class="app-footer__credits-contact">info@amicidelteatro.it · C.F. 93189030724</span>
             </p>
+            
             <nav class="app-footer__links" aria-label="Collegamenti legali">
-              <a
-                href="https://www.amicidelteatro.info/privacy-policy.html"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Privacy Policy
-              </a>
+              <a href="https://www.amicidelteatro.info/privacy-policy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
               <span class="app-footer__separator" aria-hidden="true">•</span>
-              <a
-                href="https://www.amicidelteatro.info/cookie-policy.html"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Cookie Policy
-              </a>
+              <a href="https://www.amicidelteatro.info/cookie-policy.html" target="_blank" rel="noopener noreferrer">Cookie Policy</a>
             </nav>
+            
             <p class="app-footer__disclaimer">
-              Questa applicazione salva i dati di gioco solo localmente sul tuo dispositivo e non raccoglie
-              informazioni personali.
+              Questa applicazione salva i dati di gioco solo localmente sul tuo dispositivo e non raccoglie informazioni personali.
             </p>
-            <div class="app-footer__powered" role="presentation">
+            
+            <div class="app-footer__powered">
               <span class="app-footer__powered-label">Powered by</span>
-              <a
-                class="app-footer__powered-link"
-                href="mailto:GoatyCoder@proton.me"
-                aria-label="GoatyCoder"
-              >
-                <img
-                  src="images/logo_goatycoder.svg"
-                  alt="GoatyCoder"
-                  class="app-footer__powered-logo"
-                  decoding="async"
-                  loading="lazy"
-                />
+              <a class="app-footer__powered-link" href="mailto:GoatyCoder@proton.me" aria-label="GoatyCoder">
+                <img src="images/logo_goatycoder.svg" alt="GoatyCoder" class="app-footer__powered-logo" 
+                     decoding="async" loading="lazy" />
               </a>
             </div>
           </div>
         </div>
       </div>
     </footer>
-
   </body>
 </html>
