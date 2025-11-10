@@ -1598,8 +1598,6 @@ button:focus-visible {
 
 .app-footer__bottom {
   width: 100%;
-  padding-top: clamp(1.6rem, 3.6vw, 2.4rem);
-  border-top: 1px solid rgba(255, 255, 255, 0.16);
 }
 
 .app-footer__meta {
