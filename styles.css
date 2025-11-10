@@ -1510,6 +1510,10 @@ button:focus-visible {
   justify-content: stretch;
 }
 
+.sponsor-strip__item:is(:hover, :focus-visible) {
+  box-shadow: 0 0.5rem 1.25rem rgba(20, 15, 13, 0.12);
+}
+
 .sponsor-strip__link {
   display: flex;
   flex-direction: column;
@@ -1550,12 +1554,6 @@ button:focus-visible {
   width: auto;
   max-width: 100%;
   object-fit: contain;
-}
-
-.sponsor-strip__link:is(:hover, :focus-visible) {
-  background: rgba(143, 31, 51, 0.06);
-  transform: translateY(-0.125rem);
-  box-shadow: 0 0.5rem 1.25rem rgba(20, 15, 13, 0.12);
 }
 
 .sponsor-strip__link--static {
