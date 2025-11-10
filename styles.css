@@ -198,6 +198,11 @@ button {
   display: grid;
 }
 
+.layout__section--dashboard .dashboard__shell {
+  width: min(100%, 42rem);
+  margin-inline: auto;
+}
+
 .dashboard__grid {
   display: grid;
   gap: var(--space-md);
@@ -553,10 +558,17 @@ button {
   position: relative;
 }
 
+.layout__section--board .board-area__shell {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+}
+
 .board-area__layout {
   display: grid;
   gap: clamp(1.4rem, 3vw, 2rem);
   padding-bottom: calc(3.75rem + var(--space-md));
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .board-wrapper {
@@ -807,13 +819,14 @@ button {
   border: var(--border-hairline) solid rgba(30, 24, 26, 0.1);
   display: grid;
   gap: 1rem;
-  width: min(40rem, calc(100vw - (var(--space-page-inline) * 2)));
-  max-width: calc(100vw - (var(--space-page-inline) * 2));
+  width: 100%;
+  max-width: 100%;
   max-height: min(65vh, 32.5rem);
   position: fixed;
-  left: 50%;
+  left: 0;
+  right: 0;
   bottom: 0;
-  transform: translate(-50%, 110%);
+  transform: translateY(110%);
   transition: transform var(--duration-lg) var(--easing-standard);
   z-index: 40;
   pointer-events: none;
@@ -933,7 +946,7 @@ button {
 }
 
 .history--open {
-  transform: translate(-50%, 0);
+  transform: translateY(0);
   pointer-events: auto;
 }
 
@@ -943,15 +956,7 @@ button {
 
 @media (max-width: 33.75rem) {
   .history {
-    left: 0;
-    right: 0;
-    width: 100%;
-    max-width: 100%;
-    transform: translateY(110%);
-  }
-
-  .history--open {
-    transform: translateY(0);
+    border-radius: 1.5rem 1.5rem 0 0;
   }
 }
 
