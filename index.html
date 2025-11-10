@@ -168,6 +168,45 @@
       <section class="layout__section layout__section--board" aria-labelledby="board-heading">
         <div class="shell board-area__shell">
           <div class="board-area__layout">
+            <div class="board-area__floating">
+              <div class="fab-group" role="presentation">
+                <button
+                  type="button"
+                  id="floating-draw-button"
+                  class="fab fab--primary"
+                  aria-label="Estrai numero"
+                  title="Estrai numero"
+                  data-tooltip="Estrai numero"
+                  disabled
+                >
+                  <img
+                    src="images/icon-die.svg"
+                    class="fab__icon die-icon"
+                    alt=""
+                    role="presentation"
+                    aria-hidden="true"
+                  />
+                  <span class="sr-only" data-floating-draw-sr>Estrai numero</span>
+                </button>
+                <button
+                  type="button"
+                  id="audio-toggle"
+                  class="fab fab--secondary audio-fab"
+                  aria-pressed="true"
+                  aria-label="Disattiva annuncio audio"
+                  title="Disattiva annuncio audio"
+                  data-tooltip="Disattiva annuncio audio"
+                >
+                  <span class="sr-only" data-audio-label>Audio attivo</span>
+                  <svg class="audio-fab__icon" viewBox="0 0 24 24" role="presentation" aria-hidden="true">
+                    <path class="audio-fab__speaker" d="M5.5 9.5H8l3.5-3.5v12L8 14.5H5.5a1.5 1.5 0 0 1-1.5-1.5v-2a1.5 1.5 0 0 1 1.5-1.5Z" />
+                    <path class="audio-fab__wave" d="M15.5 9.5a3 3 0 0 1 0 5" />
+                    <path class="audio-fab__wave audio-fab__wave--strong" d="M17.8 7.8a6 6 0 0 1 0 8.5" />
+                    <path class="audio-fab__cross" d="M16 9l5 5m0-5-5 5" />
+                  </svg>
+                </button>
+              </div>
+            </div>
             <article class="board-wrapper">
               <div class="board-head">
                 <h2 id="board-heading" class="board-head__title">Tabellone</h2>
@@ -189,45 +228,6 @@
               <p class="history__empty" id="draw-history-empty">Nessun numero estratto finora.</p>
               <ol class="history__list" id="draw-history" aria-live="polite"></ol>
             </aside>
-          </div>
-          <div class="board-area__floating">
-            <div class="fab-group" role="presentation">
-              <button
-                type="button"
-                id="floating-draw-button"
-                class="fab fab--primary"
-                aria-label="Estrai numero"
-                title="Estrai numero"
-                data-tooltip="Estrai numero"
-                disabled
-              >
-                <img
-                  src="images/icon-die.svg"
-                  class="fab__icon die-icon"
-                  alt=""
-                  role="presentation"
-                  aria-hidden="true"
-                />
-                <span class="sr-only" data-floating-draw-sr>Estrai numero</span>
-              </button>
-              <button
-                type="button"
-                id="audio-toggle"
-                class="fab fab--secondary audio-fab"
-                aria-pressed="true"
-                aria-label="Disattiva annuncio audio"
-                title="Disattiva annuncio audio"
-                data-tooltip="Disattiva annuncio audio"
-              >
-                <span class="sr-only" data-audio-label>Audio attivo</span>
-                <svg class="audio-fab__icon" viewBox="0 0 24 24" role="presentation" aria-hidden="true">
-                  <path class="audio-fab__speaker" d="M5.5 9.5H8l3.5-3.5v12L8 14.5H5.5a1.5 1.5 0 0 1-1.5-1.5v-2a1.5 1.5 0 0 1 1.5-1.5Z" />
-                  <path class="audio-fab__wave" d="M15.5 9.5a3 3 0 0 1 0 5" />
-                  <path class="audio-fab__wave audio-fab__wave--strong" d="M17.8 7.8a6 6 0 0 1 0 8.5" />
-                  <path class="audio-fab__cross" d="M16 9l5 5m0-5-5 5" />
-                </svg>
-              </button>
-            </div>
           </div>
         </div>
         <div id="history-scrim" class="scrim" hidden aria-hidden="true"></div>
