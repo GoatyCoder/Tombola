@@ -1281,6 +1281,7 @@ function setupSponsorLink(anchor, sponsor) {
     anchor.rel = isExternal ? 'noopener noreferrer' : '';
     anchor.removeAttribute('tabindex');
     anchor.setAttribute('aria-label', getSponsorAccessibleLabel(sponsor));
+    anchor.style.cursor = 'pointer';
     
     const displayName = getSponsorDisplayName(sponsor);
     if (displayName) {
