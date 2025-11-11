@@ -1326,8 +1326,6 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
     anchor.target = '_self';
     anchor.removeAttribute('aria-label');
     anchor.setAttribute('tabindex', '-1');
-    anchor.style.pointerEvents = 'none';
-    anchor.style.cursor = 'default';
     anchor.classList.remove('sponsor-card--interactive', 'sponsor-card--static');
     anchor.classList.toggle('sponsor-card--placeholder', showPlaceholder);
     if (showPlaceholder) anchor.setAttribute('aria-hidden', 'true');
