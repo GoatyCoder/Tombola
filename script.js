@@ -1264,10 +1264,13 @@ function speakEntry(entry) {
   speakText(announcement, { lang: 'it-IT', rate: 0.92 });
 }
 
-// ============================================
-// 13. SPONSOR UI FUNCTIONS
-// ============================================
+/* ============================================
+   SPONSOR UI FUNCTIONS - REFACTORED
+   ============================================ */
 
+/**
+ * Configura il link dello sponsor con URL e accessibilità
+ */
 function setupSponsorLink(anchor, sponsor) {
   if (!anchor) return;
 
@@ -1280,6 +1283,7 @@ function setupSponsorLink(anchor, sponsor) {
     anchor.target = isExternal ? '_blank' : '_self';
     anchor.rel = isExternal ? 'noopener noreferrer' : '';
     anchor.removeAttribute('tabindex');
+    anchor.classList.remove('sponsor-card__link--static');
     anchor.setAttribute('aria-label', getSponsorAccessibleLabel(sponsor));
     anchor.style.cursor = 'pointer';
     
@@ -1291,6 +1295,7 @@ function setupSponsorLink(anchor, sponsor) {
     }
   } else {
     anchor.removeAttribute('href');
+    anchor.classList.add('sponsor-card__link--static');
     anchor.style.cursor = 'default';
     anchor.style.pointerEvents = 'none';
     anchor.removeAttribute('target');
@@ -1301,6 +1306,9 @@ function setupSponsorLink(anchor, sponsor) {
   }
 }
 
+/**
+ * Aggiorna un blocco sponsor con i dati forniti
+ */
 function updateSponsorBlock(blockElements, sponsor, options = {}) {
   if (!blockElements) return;
 
@@ -1309,8 +1317,9 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
 
   if (!block || !anchor || !logo) return;
 
-  const placeholderClass = 'sponsor-block--placeholder';
+  const placeholderClass = 'sponsor-card--placeholder';
 
+  // Caso: nessuno sponsor
   if (!sponsor) {
     block.hidden = !showPlaceholder;
     block.setAttribute('aria-hidden', showPlaceholder ? 'false' : 'true');
@@ -1320,7 +1329,7 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
     anchor.target = '_self';
     anchor.removeAttribute('aria-label');
     anchor.setAttribute('tabindex', '-1');
-    anchor.classList.toggle('sponsor-link--placeholder', showPlaceholder);
+    anchor.classList.add('sponsor-card__link--static');
     if (showPlaceholder) anchor.setAttribute('aria-hidden', 'true');
 
     if (heading) heading.hidden = !showPlaceholder;
@@ -1332,12 +1341,13 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
     return;
   }
 
+  // Caso: sponsor presente
   block.hidden = false;
   block.removeAttribute('hidden');
   block.setAttribute('aria-hidden', 'false');
   block.classList.remove(placeholderClass);
 
-  anchor.classList.remove('sponsor-link--placeholder');
+  anchor.classList.remove('sponsor-card__link--static');
   anchor.removeAttribute('aria-hidden');
   setupSponsorLink(anchor, sponsor);
 
@@ -1351,6 +1361,9 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
   if (heading) heading.hidden = false;
 }
 
+/**
+ * Applica sponsor al portale di estrazione
+ */
 function applySponsorToOverlay(sponsor) {
   updateSponsorBlock(
     {
@@ -1371,6 +1384,9 @@ function applySponsorToOverlay(sponsor) {
   }
 }
 
+/**
+ * Applica sponsor al modale di dettaglio
+ */
 function applySponsorToModal(sponsor) {
   updateSponsorBlock(
     {
@@ -1386,117 +1402,15 @@ function applySponsorToModal(sponsor) {
   );
 }
 
-function ensureModalSponsor(entry, options = {}) {
-  if (!entry) {
-    applySponsorToModal(null);
-    return;
-  }
-
-  const { fromDraw = false } = options;
-  const storedSponsor = sponsorManager.getAssignment(entry.number);
-  
-  if (storedSponsor) {
-    applySponsorToModal(storedSponsor);
-    return;
-  }
-
-  const currentSponsor = sponsorManager.getCurrentSponsor();
-
-  if (fromDraw && currentSponsor) {
-    const remembered = sponsorManager.assignToNumber(entry.number, currentSponsor);
-    applySponsorToModal(remembered);
-    return;
-  }
-
-  const selectRandomSponsor = () => {
-    const previousKey = sponsorManager.lastSponsorKey;
-    const randomSponsor = sponsorManager.pickRandom(previousKey);
-    if (randomSponsor) sponsorManager.lastSponsorKey = getSponsorKey(randomSponsor);
-    return randomSponsor || null;
-  };
-
-  const immediateRandom = selectRandomSponsor();
-  if (immediateRandom) {
-    applySponsorToModal(immediateRandom);
-    return;
-  }
-
-  applySponsorToModal(null);
-
-  const pending = sponsorManager.loadPromise || 
-    (sponsorManager.hasSponsors() ? Promise.resolve(sponsorManager.getAllSponsors()) : loadSponsors());
-
-  pending
-    .then(() => {
-      const updatedStored = sponsorManager.getAssignment(entry.number);
-      if (updatedStored) {
-        applySponsorToModal(updatedStored);
-        return;
-      }
-
-      const latestCurrent = sponsorManager.getCurrentSponsor();
-      if (fromDraw && latestCurrent) {
-        const remembered = sponsorManager.assignToNumber(entry.number, latestCurrent);
-        if (remembered) {
-          applySponsorToModal(remembered);
-          return;
-        }
-      }
-
-      const refreshed = selectRandomSponsor();
-      applySponsorToModal(refreshed);
-    })
-    .catch(() => {
-      const fallbackStored = sponsorManager.getAssignment(entry.number);
-      applySponsorToModal(fallbackStored);
-    });
-}
-
-async function prepareSponsorForNextDraw() {
-  setSponsorLoadingState(LoadingStates.LOADING);
-  return sponsorManager
-    .prepareNext()
-    .then((sponsor) => {
-      const nextState = sponsor ? LoadingStates.SUCCESS : LoadingStates.ERROR;
-      setSponsorLoadingState(nextState);
-      applySponsorToOverlay(sponsor);
-      return sponsor;
-    })
-    .catch((error) => {
-      console.warn('Sponsor preparation error', error);
-      sponsorManager.clearCurrentSponsor();
-      setSponsorLoadingState(LoadingStates.ERROR);
-      applySponsorToOverlay(null);
-      return null;
-    });
-}
-
-function loadSponsors() {
-  setSponsorLoadingState(LoadingStates.LOADING);
-  return sponsorManager
-    .load()
-    .then((sponsors) => {
-      if (!Array.isArray(sponsors) || sponsors.length === 0) {
-        setSponsorLoadingState(LoadingStates.ERROR);
-        applySponsorToOverlay(null);
-      } else {
-        setSponsorLoadingState(LoadingStates.SUCCESS);
-      }
-      return sponsors;
-    })
-    .catch((error) => {
-      console.warn('Sponsors load error', error);
-      setSponsorLoadingState(LoadingStates.ERROR);
-      applySponsorToOverlay(null);
-      throw error;
-    });
-}
-
+/**
+ * Renderizza la showcase degli sponsor
+ */
 function renderSponsorShowcase(sponsors, options = {}) {
   const { force = false } = options;
 
   if (!elements.sponsorShowcase || !elements.sponsorShowcaseList) return;
 
+  // Nasconde se non ci sono sponsor
   if (!Array.isArray(sponsors) || sponsors.length === 0) {
     elements.sponsorShowcaseList.innerHTML = '';
     elements.sponsorShowcase.hidden = true;
@@ -1504,6 +1418,7 @@ function renderSponsorShowcase(sponsors, options = {}) {
     return;
   }
 
+  // Evita rendering multipli
   if (state.sponsorShowcaseRendered && !force) return;
 
   elements.sponsorShowcaseList.innerHTML = '';
@@ -1511,19 +1426,32 @@ function renderSponsorShowcase(sponsors, options = {}) {
   sponsors.forEach((sponsor) => {
     if (!sponsor?.logo?.trim()) return;
 
+    // Crea item della lista
     const item = document.createElement('li');
-    item.className = 'sponsor-strip__item';
+    item.className = 'sponsor__grid-item';
 
+    // Crea card sponsor
+    const card = document.createElement('div');
+    card.className = 'sponsor-card sponsor-card--showcase';
+
+    // Crea link
     const hasUrl = Boolean(sponsor.url?.trim());
-    const container = document.createElement(hasUrl ? 'a' : 'div');
-    container.className = 'sponsor-strip__link';
+    const link = document.createElement('a');
+    link.className = 'sponsor-card__link';
 
     if (hasUrl) {
-      setupSponsorLink(container, sponsor);
+      setupSponsorLink(link, sponsor);
     } else {
-      container.classList.add('sponsor-strip__link--static');
-      container.setAttribute('role', 'presentation');
+      link.classList.add('sponsor-card__link--static');
+      link.setAttribute('role', 'presentation');
     }
+
+    // Crea figure
+    const figure = document.createElement('figure');
+    figure.className = 'sponsor-card__figure';
+
+    const logoWrapper = document.createElement('span');
+    logoWrapper.className = 'sponsor-card__logo';
 
     const logo = document.createElement('img');
     logo.alt = '';
@@ -1531,16 +1459,12 @@ function renderSponsorShowcase(sponsors, options = {}) {
     if ('decoding' in logo) logo.decoding = 'async';
     if ('loading' in logo) logo.loading = 'lazy';
 
-    const figure = document.createElement('figure');
-    figure.className = 'sponsor-strip__figure';
-
-    const logoWrapper = document.createElement('span');
-    logoWrapper.className = 'sponsor-strip__logo';
+    // Assembla la struttura
     logoWrapper.appendChild(logo);
     figure.appendChild(logoWrapper);
-
-    container.appendChild(figure);
-    item.appendChild(container);
+    link.appendChild(figure);
+    card.appendChild(link);
+    item.appendChild(card);
     elements.sponsorShowcaseList.appendChild(item);
   });
 
