@@ -1273,6 +1273,10 @@ function setupSponsorLink(anchor, sponsor) {
 
   const hasUrl = typeof sponsor?.url === 'string' && sponsor.url.trim();
 
+  anchor.classList.remove('sponsor-card--interactive', 'sponsor-card--static');
+  anchor.style.cursor = '';
+  anchor.style.pointerEvents = '';
+
   if (hasUrl) {
     const safeUrl = sanitizeUrl(sponsor.url);
     const isExternal = /^https?:\/\//i.test(safeUrl);
@@ -1282,7 +1286,8 @@ function setupSponsorLink(anchor, sponsor) {
     anchor.removeAttribute('tabindex');
     anchor.setAttribute('aria-label', getSponsorAccessibleLabel(sponsor));
     anchor.style.cursor = 'pointer';
-    
+    anchor.classList.add('sponsor-card--interactive');
+
     const displayName = getSponsorDisplayName(sponsor);
     if (displayName) {
       anchor.title = displayName;
@@ -1298,6 +1303,7 @@ function setupSponsorLink(anchor, sponsor) {
     anchor.removeAttribute('aria-label');
     anchor.removeAttribute('title');
     anchor.setAttribute('tabindex', '-1');
+    anchor.classList.add('sponsor-card--static');
   }
 }
 
@@ -1320,7 +1326,10 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
     anchor.target = '_self';
     anchor.removeAttribute('aria-label');
     anchor.setAttribute('tabindex', '-1');
-    anchor.classList.toggle('sponsor-link--placeholder', showPlaceholder);
+    anchor.style.pointerEvents = 'none';
+    anchor.style.cursor = 'default';
+    anchor.classList.remove('sponsor-card--interactive', 'sponsor-card--static');
+    anchor.classList.toggle('sponsor-card--placeholder', showPlaceholder);
     if (showPlaceholder) anchor.setAttribute('aria-hidden', 'true');
 
     if (heading) heading.hidden = !showPlaceholder;
@@ -1337,7 +1346,7 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
   block.setAttribute('aria-hidden', 'false');
   block.classList.remove(placeholderClass);
 
-  anchor.classList.remove('sponsor-link--placeholder');
+  anchor.classList.remove('sponsor-card--placeholder');
   anchor.removeAttribute('aria-hidden');
   setupSponsorLink(anchor, sponsor);
 
@@ -1516,13 +1525,15 @@ function renderSponsorShowcase(sponsors, options = {}) {
 
     const hasUrl = Boolean(sponsor.url?.trim());
     const container = document.createElement(hasUrl ? 'a' : 'div');
-    container.className = 'sponsor-strip__link';
+    container.className = 'sponsor-card sponsor-card--showcase';
 
     if (hasUrl) {
       setupSponsorLink(container, sponsor);
     } else {
-      container.classList.add('sponsor-strip__link--static');
+      container.classList.add('sponsor-card--static');
       container.setAttribute('role', 'presentation');
+      container.setAttribute('tabindex', '-1');
+      container.style.pointerEvents = 'none';
     }
 
     const logo = document.createElement('img');
@@ -1531,15 +1542,11 @@ function renderSponsorShowcase(sponsors, options = {}) {
     if ('decoding' in logo) logo.decoding = 'async';
     if ('loading' in logo) logo.loading = 'lazy';
 
-    const figure = document.createElement('figure');
-    figure.className = 'sponsor-strip__figure';
+    const media = document.createElement('span');
+    media.className = 'sponsor-card__media';
+    media.appendChild(logo);
 
-    const logoWrapper = document.createElement('span');
-    logoWrapper.className = 'sponsor-strip__logo';
-    logoWrapper.appendChild(logo);
-    figure.appendChild(logoWrapper);
-
-    container.appendChild(figure);
+    container.appendChild(media);
     item.appendChild(container);
     elements.sponsorShowcaseList.appendChild(item);
   });

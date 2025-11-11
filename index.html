@@ -166,10 +166,12 @@
         </div>
       </div>
 
-      <div id="draw-sponsor-block" class="draw-portal__sponsor-block" hidden>
-        <p id="draw-sponsor-heading" class="draw-portal__sponsor-eyebrow">Sponsor dell'estrazione</p>
-        <a id="draw-sponsor" class="draw-portal__sponsor-link" href="#" target="_blank" rel="noopener noreferrer">
-          <img id="draw-sponsor-logo" alt="" decoding="async" />
+      <div id="draw-sponsor-block" class="sponsor-block sponsor-block--overlay" hidden>
+        <p id="draw-sponsor-heading" class="sponsor-block__eyebrow">Sponsor dell'estrazione</p>
+        <a id="draw-sponsor" class="sponsor-card sponsor-card--overlay" href="#" target="_blank" rel="noopener noreferrer">
+          <span class="sponsor-card__media">
+            <img id="draw-sponsor-logo" alt="" decoding="async" />
+          </span>
         </a>
       </div>
     </div>
@@ -253,9 +255,11 @@
 
             <!-- Sponsor Footer -->
             <footer class="number-dialog__footer">
-              <div id="modal-sponsor-block" class="number-dialog__sponsor" hidden>
-                <a id="modal-sponsor" class="number-dialog__sponsor-link" href="#" target="_blank" rel="noopener noreferrer">
-                  <img id="modal-sponsor-logo" alt="" decoding="async" loading="lazy" />
+              <div id="modal-sponsor-block" class="sponsor-block sponsor-block--modal" hidden>
+                <a id="modal-sponsor" class="sponsor-card sponsor-card--modal" href="#" target="_blank" rel="noopener noreferrer">
+                  <span class="sponsor-card__media">
+                    <img id="modal-sponsor-logo" alt="" decoding="async" loading="lazy" />
+                  </span>
                 </a>
               </div>
             </footer>
