@@ -1136,7 +1136,6 @@ button:focus-visible {
 }
 
 .sponsor-card--interactive:is(:hover, :focus-visible) {
-  transform: translateY(-0.125rem);
   box-shadow: 0 0.875rem 1.875rem rgba(20, 15, 13, 0.14);
 }
 
@@ -1175,8 +1174,6 @@ button:focus-visible {
 .sponsor-card--modal {
   max-width: min(19rem, 100%);
   padding: 0.65rem 1.5rem;
-  background: rgba(255, 248, 236, 0.95);
-  border-color: rgba(206, 158, 96, 0.45);
   box-shadow: 0 0.75rem 1.625rem rgba(94, 58, 26, 0.14);
 }
 
