@@ -139,13 +139,27 @@
         <div id="history-scrim" class="scrim" hidden></div>
       </section>
 
-      <!-- Sponsor Section -->
+      <!-- Sponsor Showcase Section -->
       <section class="layout__section layout__section--sponsor sponsor" id="sponsor-showcase" hidden>
         <div class="shell sponsor__shell">
           <header class="sponsor__header">
             <p class="sponsor__eyebrow">Sponsor e partner</p>
           </header>
-          <ul class="sponsor__strip" id="sponsor-showcase-list" aria-label="Elenco sponsor"></ul>
+          <ul class="sponsor__grid" id="sponsor-showcase-list" aria-label="Elenco sponsor">
+            <!-- Dinamicamente popolato con:
+            <li class="sponsor__grid-item">
+              <div class="sponsor-card sponsor-card--showcase">
+                <a class="sponsor-card__link" href="#" target="_blank" rel="noopener noreferrer">
+                  <figure class="sponsor-card__figure">
+                    <span class="sponsor-card__logo">
+                      <img src="..." alt="" loading="lazy" decoding="async" />
+                    </span>
+                  </figure>
+                </a>
+              </div>
+            </li>
+            -->
+          </ul>
         </div>
       </section>
     </main>
@@ -166,10 +180,15 @@
         </div>
       </div>
 
-      <div id="draw-sponsor-block" class="draw-portal__sponsor-block" hidden>
-        <p id="draw-sponsor-heading" class="draw-portal__sponsor-eyebrow">Sponsor dell'estrazione</p>
-        <a id="draw-sponsor" class="draw-portal__sponsor-link" href="#" target="_blank" rel="noopener noreferrer">
-          <img id="draw-sponsor-logo" alt="" decoding="async" />
+      <!-- Draw Animation Portal - Sponsor Block -->
+      <div id="draw-sponsor-block" class="sponsor-card sponsor-card--overlay" hidden>
+        <p id="draw-sponsor-heading" class="sponsor-card__label">Sponsor dell'estrazione</p>
+        <a id="draw-sponsor" class="sponsor-card__link" href="#" target="_blank" rel="noopener noreferrer">
+          <figure class="sponsor-card__figure">
+            <span class="sponsor-card__logo">
+              <img id="draw-sponsor-logo" alt="" decoding="async" />
+            </span>
+          </figure>
         </a>
       </div>
     </div>
@@ -251,11 +270,15 @@
               </article>
             </div>
 
-            <!-- Sponsor Footer -->
+            <!-- Number Detail Modal - Sponsor Block -->
             <footer class="number-dialog__footer">
-              <div id="modal-sponsor-block" class="number-dialog__sponsor" hidden>
-                <a id="modal-sponsor" class="number-dialog__sponsor-link" href="#" target="_blank" rel="noopener noreferrer">
-                  <img id="modal-sponsor-logo" alt="" decoding="async" loading="lazy" />
+              <div id="modal-sponsor-block" class="sponsor-card sponsor-card--modal" hidden>
+                <a id="modal-sponsor" class="sponsor-card__link" href="#" target="_blank" rel="noopener noreferrer">
+                  <figure class="sponsor-card__figure">
+                    <span class="sponsor-card__logo">
+                      <img id="modal-sponsor-logo" alt="" decoding="async" loading="lazy" />
+                    </span>
+                  </figure>
                 </a>
               </div>
             </footer>
