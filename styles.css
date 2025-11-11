@@ -1523,10 +1523,11 @@ button:focus-visible {
   text-align: center;
   min-width: 0;
   width: 100%;
-  background: rgba(255, 255, 255, 0.6);
+  background: #ffffff;
   border: 1px solid var(--border-subtle);
   box-shadow: 0 0.25rem 0.75rem rgba(20, 15, 13, 0.04);
-  transition: transform var(--transition), background var(--transition), box-shadow var(--transition);
+  transition: none;
+  cursor: default;
 }
 
 .sponsor-strip__figure {
@@ -1554,8 +1555,6 @@ button:focus-visible {
 
 .sponsor-strip__link--static {
   pointer-events: none;
-  cursor: default;
-  opacity: 0.85;
 }
 
 .sponsor-strip__link--static:is(:hover, :focus-visible) {
