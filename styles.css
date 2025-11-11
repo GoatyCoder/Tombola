@@ -1142,6 +1142,7 @@ button:focus-visible {
 
 .sponsor-card--static {
   cursor: default;
+  pointer-events: none;
 }
 
 .sponsor-card--placeholder,
