@@ -106,7 +106,6 @@ const elements = {
   modalDialect: document.querySelector('#modal-dialect'),
   modalFigure: document.querySelector('#modal-figure'),
   modalArtwork: document.querySelector('#modal-artwork'),
-  modalFigureNumber: document.querySelector('#modal-figure-number'),
   modalClose: document.querySelector('#modal-close'),
   modalDialectPlay: document.querySelector('#modal-dialect-play'),
   modalItalianPlay: document.querySelector('#modal-italian-play'),
@@ -2045,16 +2044,11 @@ function applyModalIllustration(figureEl, entry) {
   if (!(figureEl instanceof HTMLElement)) return;
 
   const artworkEl = elements.modalArtwork;
-  const numberEl = elements.modalFigureNumber;
 
   const parsedNumber = Math.trunc(Number(entry?.number));
   const paddedNumber = Number.isFinite(parsedNumber)
     ? String(parsedNumber).padStart(2, '0')
     : '—';
-
-  if (numberEl) {
-    numberEl.textContent = paddedNumber;
-  }
 
   const illustration = getNumberIllustration(entry);
   const hasIllustration = Boolean(illustration);
@@ -2063,6 +2057,8 @@ function applyModalIllustration(figureEl, entry) {
   figureEl.classList.toggle('number-figure--placeholder', !hasIllustration);
 
   if (!(artworkEl instanceof HTMLElement)) return;
+
+  artworkEl.textContent = '';
 
   if (hasIllustration) {
     const trimmedItalian = entry?.italian?.trim();
@@ -2075,6 +2071,7 @@ function applyModalIllustration(figureEl, entry) {
     artworkEl.setAttribute('aria-label', label);
     artworkEl.removeAttribute('aria-hidden');
   } else {
+    artworkEl.textContent = paddedNumber;
     artworkEl.style.removeProperty('background-image');
     applyBackgroundFit(artworkEl, '');
     artworkEl.removeAttribute('aria-label');
