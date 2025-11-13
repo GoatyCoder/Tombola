@@ -1073,15 +1073,6 @@ button:focus-visible {
   margin-top: var(--space-sm);
 }
 
-.sponsor-banner__eyebrow {
-  margin: 0;
-  font-size: 0.72rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-  font-weight: 600;
-}
-
 .sponsor-block--placeholder {
   opacity: 0.85;
 }

@@ -48,24 +48,6 @@ const CSS_CLASSES = {
   BALL_REVEALED: 'draw-portal__ball--revealed',
 };
 
-const EMBEDDED_SPONSORS = Object.freeze([
-  {
-    logo: 'images/sponsor-panificio-stella.svg',
-    url: 'https://www.panificiostella.it/',
-    name: 'Panificio Stella',
-  },
-  {
-    logo: 'images/sponsor-agrumi-del-sud.svg',
-    url: 'https://www.agrumidelsud.it/',
-    name: 'Agrumi del Sud',
-  },
-  {
-    logo: 'images/sponsor-cantina-nojana.svg',
-    url: 'https://www.cantinanojana.it/',
-    name: 'Cantina Nojana',
-  },
-]);
-
 const DRAW_TIMELINE = Object.freeze({
   intro: 280,
   prepareHold: 1480,
@@ -143,7 +125,6 @@ const elements = {
   drawOverlayAnnouncement: document.querySelector('#draw-animation-announcement'),
   drawOverlayLoader: document.querySelector('#draw-portal-loader'),
   drawSponsorBlock: document.querySelector('#draw-sponsor-block'),
-  drawSponsorHeading: document.querySelector('#draw-sponsor-heading'),
   drawSponsor: document.querySelector('#draw-sponsor'),
   drawSponsorLogo: document.querySelector('#draw-sponsor-logo'),
   sponsorShowcase: document.querySelector('#sponsor-showcase'),
@@ -540,10 +521,6 @@ function cloneSponsorData(sponsor) {
   return normalizeSponsor(sponsor);
 }
 
-function getEmbeddedSponsors() {
-  return EMBEDDED_SPONSORS.map(cloneSponsorData).filter(Boolean);
-}
-
 function getSponsorDisplayName(sponsor) {
   if (!sponsor) return '';
   if (sponsor.name?.trim()) return sponsor.name.trim();
@@ -571,7 +548,6 @@ function getSponsorAccessibleLabel(sponsor) {
 class SponsorManager {
   constructor(options = {}) {
     this.dataPath = options.dataPath || DATA_PATHS.SPONSORS;
-    this.fallbackProvider = options.getFallbackSponsors || (() => []);
     this.onSponsorsChanged = options.onSponsorsChanged || null;
 
     this.assignments = new Map();
@@ -669,20 +645,17 @@ class SponsorManager {
         const rawList = Array.isArray(data?.sponsors) ? data.sponsors : Array.isArray(data) ? data : [];
         const normalized = rawList.map(normalizeSponsor).filter(Boolean);
 
-        if (normalized.length > 0) {
-          this.sponsors = normalized.map(cloneSponsorData);
-          this.lastSponsorKey = null;
-          this._notifySponsorsChanged('remote');
-          return this.getAllSponsors();
-        }
+        this.sponsors = normalized.map(cloneSponsorData);
+        this.lastSponsorKey = null;
+        this._notifySponsorsChanged(normalized.length > 0 ? 'remote' : 'empty');
+        return this.getAllSponsors();
       } catch (error) {
         console.warn('Sponsor load error', error);
+        this.sponsors = [];
+        this.lastSponsorKey = null;
+        this._notifySponsorsChanged('error');
+        return [];
       }
-
-      this.sponsors = this._getFallbackList();
-      this.lastSponsorKey = null;
-      this._notifySponsorsChanged('fallback');
-      return this.getAllSponsors();
     })();
 
     this.loadPromise = task.finally(() => {
@@ -734,14 +707,6 @@ class SponsorManager {
     return preparation;
   }
 
-  _getFallbackList() {
-    try {
-      return this.fallbackProvider().map(cloneSponsorData).filter(Boolean);
-    } catch {
-      return [];
-    }
-  }
-
   _notifySponsorsChanged(origin = 'unknown') {
     const snapshot = this.getAllSponsors();
     if (this.onSponsorsChanged) this.onSponsorsChanged(snapshot);
@@ -751,7 +716,6 @@ class SponsorManager {
 
 const sponsorManager = new SponsorManager({
   dataPath: DATA_PATHS.SPONSORS,
-  getFallbackSponsors: getEmbeddedSponsors,
   onSponsorsChanged: (sponsors) => {
     renderSponsorShowcase(sponsors, { force: true });
   },
@@ -1303,7 +1267,7 @@ function setupSponsorLink(anchor, sponsor) {
 function updateSponsorBlock(blockElements, sponsor, options = {}) {
   if (!blockElements) return;
 
-  const { block, anchor, logo, heading } = blockElements;
+  const { block, anchor, logo } = blockElements;
   const { showPlaceholder = false, preferLazy = false } = options;
 
   if (!block || !anchor || !logo) return;
@@ -1329,8 +1293,6 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
       anchor.removeAttribute('aria-hidden');
     }
 
-    if (heading) heading.hidden = !showPlaceholder;
-
     logo.hidden = true;
     logo.removeAttribute('src');
     logo.alt = '';
@@ -1354,7 +1316,6 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
   if (logoSrc && logo.src !== logoSrc) logo.src = logoSrc;
   logo.alt = '';
 
-  if (heading) heading.hidden = false;
 }
 
 function applySponsorToOverlay(sponsor) {
@@ -1363,7 +1324,6 @@ function applySponsorToOverlay(sponsor) {
       block: elements.drawSponsorBlock,
       anchor: elements.drawSponsor,
       logo: elements.drawSponsorLogo,
-      heading: elements.drawSponsorHeading,
     },
     sponsor,
     { 
