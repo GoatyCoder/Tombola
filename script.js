@@ -16,6 +16,7 @@ const DATA_PATHS = {
 };
 
 const FALLBACK_IMAGE = 'images/empty.jpg';
+const illustrationFitCache = new Map();
 
 const LoadingStates = Object.freeze({
   IDLE: 'idle',
@@ -1523,6 +1524,73 @@ function getNumberIllustration(entry) {
   return `images/illustrazioni/${number}.png`;
 }
 
+function resolveIllustrationFit(url) {
+  if (!url) return Promise.resolve('contain');
+
+  if (illustrationFitCache.has(url)) {
+    return Promise.resolve(illustrationFitCache.get(url));
+  }
+
+  return new Promise((resolve) => {
+    const image = new Image();
+
+    const finalize = (value) => {
+      const fitValue = value || 'contain';
+      illustrationFitCache.set(url, fitValue);
+      resolve(fitValue);
+    };
+
+    image.onload = () => {
+      const { naturalWidth: width = 0, naturalHeight: height = 0 } = image;
+      if (width > 0 && height > 0) {
+        finalize(width >= height ? '100% auto' : 'auto 100%');
+      } else {
+        finalize('contain');
+      }
+    };
+
+    image.onerror = () => finalize('contain');
+
+    image.decoding = 'async';
+    image.src = url;
+  });
+}
+
+function applyBackgroundFit(element, url, options = {}) {
+  const { sizeProperty } = options;
+
+  if (!(element instanceof HTMLElement)) return;
+
+  if (!url) {
+    if (sizeProperty) {
+      element.style.removeProperty(sizeProperty);
+    } else {
+      element.style.removeProperty('background-size');
+    }
+    delete element.dataset.illustrationSource;
+    return;
+  }
+
+  element.dataset.illustrationSource = url;
+
+  const applySize = (value) => {
+    if (element.dataset.illustrationSource !== url) return;
+    const sizeValue = value || 'contain';
+    if (sizeProperty) {
+      element.style.setProperty(sizeProperty, sizeValue);
+    } else {
+      element.style.backgroundSize = sizeValue;
+    }
+  };
+
+  applySize('contain');
+
+  resolveIllustrationFit(url).then(applySize).catch(() => {
+    if (element.dataset.illustrationSource !== url) return;
+    applySize('contain');
+  });
+}
+
 function handleBoardCellImageError(event) {
   const target = event.currentTarget;
   if (!(target instanceof HTMLImageElement)) return;
@@ -2016,11 +2084,13 @@ function applyModalIllustration(frameEl, entry) {
       : `Illustrazione del numero ${entry.number}`;
 
     frameEl.style.backgroundImage = `url('${illustration}')`;
+    applyBackgroundFit(frameEl, illustration);
     frameEl.classList.remove('number-dialog__image-frame--placeholder');
     frameEl.setAttribute('aria-label', label);
     frameEl.removeAttribute('aria-hidden');
   } else {
     frameEl.style.removeProperty('background-image');
+    applyBackgroundFit(frameEl, '');
     frameEl.classList.add('number-dialog__image-frame--placeholder');
     frameEl.removeAttribute('aria-label');
     frameEl.setAttribute('aria-hidden', 'true');
@@ -2242,13 +2312,22 @@ function updateDrawStatus(latestEntry) {
     const illustration = getNumberIllustration(normalizedEntry);
     if (illustration) {
       elements.drawLastMetric.style.setProperty('--last-number-image', `url('${illustration}')`);
+      applyBackgroundFit(elements.drawLastMetric, illustration, {
+        sizeProperty: '--last-number-image-size',
+      });
       elements.drawLastMetric.dataset.hasImage = 'true';
     } else {
       elements.drawLastMetric.style.removeProperty('--last-number-image');
+      applyBackgroundFit(elements.drawLastMetric, '', {
+        sizeProperty: '--last-number-image-size',
+      });
       delete elements.drawLastMetric.dataset.hasImage;
     }
   } else if (elements.drawLastMetric) {
     elements.drawLastMetric.style.removeProperty('--last-number-image');
+    applyBackgroundFit(elements.drawLastMetric, '', {
+      sizeProperty: '--last-number-image-size',
+    });
     delete elements.drawLastMetric.dataset.hasImage;
   }
 

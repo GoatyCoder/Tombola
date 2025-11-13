@@ -310,7 +310,7 @@ button:focus-visible {
   background-image: var(--last-number-image, none);
   background-repeat: no-repeat;
   background-position: center right;
-  background-size: contain;
+  background-size: var(--last-number-image-size, contain);
   z-index: 0;
 }
 
