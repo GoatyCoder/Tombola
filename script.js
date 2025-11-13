@@ -1557,7 +1557,7 @@ function resolveIllustrationFit(url) {
 }
 
 function applyBackgroundFit(element, url, options = {}) {
-  const { sizeProperty } = options;
+  const { sizeProperty, forceSize } = options;
 
   if (!(element instanceof HTMLElement)) return;
 
@@ -1582,6 +1582,11 @@ function applyBackgroundFit(element, url, options = {}) {
       element.style.backgroundSize = sizeValue;
     }
   };
+
+  if (forceSize) {
+    applySize(forceSize);
+    return;
+  }
 
   applySize('contain');
 
@@ -2314,6 +2319,7 @@ function updateDrawStatus(latestEntry) {
       elements.drawLastMetric.style.setProperty('--last-number-image', `url('${illustration}')`);
       applyBackgroundFit(elements.drawLastMetric, illustration, {
         sizeProperty: '--last-number-image-size',
+        forceSize: 'auto 100%',
       });
       elements.drawLastMetric.dataset.hasImage = 'true';
     } else {
