@@ -1155,47 +1155,46 @@ button:focus-visible {
 
 /* --- Number Dialog --- */
 .number-dialog {
-  width: min(27.5rem, 100%);
-  padding: clamp(1rem, 3vw, 1.4rem);
-  border-radius: calc(var(--radius-lg) - 0.35rem);
-  border: 1px solid rgba(117, 21, 40, 0.12);
-  background: linear-gradient(165deg, rgba(255, 255, 255, 0.96) 10%, rgba(255, 241, 245, 0.92) 100%);
-  box-shadow: 0 1.75rem 3.5rem rgba(17, 10, 12, 0.18);
+  width: min(30rem, 100%);
+  padding: clamp(1.1rem, 3.2vw, 1.85rem);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(143, 31, 51, 0.14);
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 239, 244, 0.94) 100%);
+  box-shadow: var(--shadow-lg);
   display: grid;
-  gap: clamp(0.75rem, 2.3vw, 1.2rem);
+  gap: clamp(0.95rem, 2.6vw, 1.6rem);
   position: relative;
   overflow: hidden;
 }
 
 .number-dialog__header {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  align-items: center;
-  gap: 0.75rem;
-  padding-bottom: clamp(0.4rem, 1.6vw, 0.75rem);
-  border-bottom: 1px solid rgba(117, 21, 40, 0.12);
+  gap: var(--space-xs);
+  padding: 0;
 }
 
 .number-dialog__header-actions {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
 }
 
 .number-dialog__next {
   border: none;
-  background: transparent;
+  background: rgba(143, 31, 51, 0.12);
   color: var(--accent-strong);
   border-radius: 999rem;
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  padding: 0.34rem 0.82rem;
+  padding: 0.42rem 0.9rem;
   cursor: pointer;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   line-height: 1;
-  transition: transform var(--transition), background var(--transition), color var(--transition);
+  transition: background var(--transition), color var(--transition), transform var(--transition);
 }
 
 .number-dialog__next .die-icon {
@@ -1204,16 +1203,16 @@ button:focus-visible {
 }
 
 .number-dialog__next:is(:hover, :focus-visible):not(:disabled) {
-  background: var(--accent-soft);
+  background: rgba(143, 31, 51, 0.2);
 }
 
 .number-dialog__next:active:not(:disabled) {
-  transform: scale(0.94);
+  transform: scale(0.95);
 }
 
 .number-dialog__next:disabled {
   cursor: not-allowed;
-  opacity: 0.5;
+  opacity: 0.45;
 }
 
 .number-dialog__next[hidden] {
@@ -1222,7 +1221,7 @@ button:focus-visible {
 
 .number-dialog__headline {
   margin: 0;
-  font-size: clamp(1.55rem, 3.4vw, 2.05rem);
+  font-size: clamp(1.65rem, 3.6vw, 2.1rem);
   font-weight: 700;
   color: var(--accent-strong);
   letter-spacing: -0.01em;
@@ -1235,7 +1234,7 @@ button:focus-visible {
   font-size: 1.8rem;
   line-height: 1;
   cursor: pointer;
-  padding: 0.2rem;
+  padding: 0.25rem;
   display: grid;
   place-items: center;
   transition: color var(--transition);
@@ -1247,7 +1246,7 @@ button:focus-visible {
 
 .number-dialog__body {
   display: grid;
-  gap: clamp(0.85rem, 2.4vw, 1.3rem);
+  gap: clamp(1rem, 2.6vw, 1.45rem);
 }
 
 .number-dialog__visual {
@@ -1255,106 +1254,114 @@ button:focus-visible {
   justify-items: center;
 }
 
-.number-dialog__image-frame {
-  position: relative;
-  inline-size: 100%;
-  max-inline-size: 15rem;
+.number-figure {
+  margin: 0;
+  inline-size: min(18rem, 100%);
   aspect-ratio: 1 / 1;
-  margin: clamp(0.4rem, 1.4vw, 0.75rem);
   border-radius: calc(var(--radius-lg) - 0.6rem);
-  background-position: center;
-  background-size: contain;
-  background-repeat: no-repeat;
+  background: linear-gradient(140deg, rgba(255, 255, 255, 0.96), rgba(255, 238, 242, 0.9));
+  box-shadow: 0 1.6rem 3.2rem rgba(17, 10, 12, 0.22);
+  position: relative;
   overflow: hidden;
   display: grid;
   place-items: center;
-  padding: clamp(0.6rem, 2.1vw, 1rem);
-  background-color: rgba(255, 255, 255, 0.85);
-  box-shadow: inset 0 0 0 1px rgba(117, 21, 40, 0.12), 0 1.25rem 2.5rem rgba(17, 10, 12, 0.12);
+  padding: clamp(0.85rem, 3vw, 1.2rem);
+  isolation: isolate;
 }
 
-.number-dialog__image-frame--placeholder {
-  background: radial-gradient(circle at 22% 22%, rgba(255, 220, 224, 0.45), transparent 62%),
-    radial-gradient(circle at 80% 18%, rgba(255, 234, 218, 0.35), transparent 70%),
-    linear-gradient(140deg, rgba(255, 255, 255, 0.96), rgba(255, 240, 242, 0.92));
-}
-
-.number-dialog__badge {
+.number-figure::before {
+  content: '';
   position: absolute;
-  top: clamp(0.55rem, 2vw, 0.85rem);
-  left: clamp(0.55rem, 2vw, 0.85rem);
-  inline-size: clamp(3.35rem, 11vw, 3.85rem);
-  block-size: clamp(3.35rem, 11vw, 3.85rem);
-  border-radius: 1.8rem;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(255, 233, 238, 0.92));
-  border: 1px solid rgba(117, 21, 40, 0.18);
-  box-shadow: 0 1.4rem 2.8rem rgba(17, 10, 12, 0.22);
-  color: var(--accent-strong);
+  inset: 12%;
+  border-radius: calc(var(--radius-lg) - 1.1rem);
+  background: radial-gradient(circle at 30% 28%, rgba(255, 222, 228, 0.45), transparent 60%),
+    radial-gradient(circle at 70% 20%, rgba(255, 237, 218, 0.42), transparent 65%);
+  z-index: -1;
+}
+
+.number-figure__artwork {
+  width: 100%;
+  height: 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  transition: opacity var(--transition), transform var(--transition);
+}
+
+.number-figure__number {
+  position: absolute;
+  inset-block-end: clamp(0.9rem, 3vw, 1.2rem);
+  inset-inline: clamp(0.95rem, 3vw, 1.4rem);
+  padding: 0.45rem 1.1rem;
+  border-radius: 999rem;
+  background: rgba(143, 31, 51, 0.9);
+  color: #fff;
   font-weight: 700;
-  display: grid;
-  place-items: center;
-  padding: 0.25rem;
-  transition: transform var(--transition), box-shadow var(--transition);
-  pointer-events: none;
-  user-select: none;
-}
-
-.number-dialog__badge-number {
-  font-size: clamp(1.55rem, 3.8vw, 2.05rem);
+  font-size: clamp(1.8rem, 5.6vw, 2.6rem);
   letter-spacing: -0.04em;
+  box-shadow: 0 1.4rem 2.8rem rgba(143, 31, 51, 0.28);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: clamp(4.5rem, 14vw, 5.8rem);
 }
 
-.number-dialog__badge--with-illustration {
-  backdrop-filter: blur(0.25rem);
+.number-figure--placeholder {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.98), rgba(255, 228, 236, 0.95));
+  padding: clamp(1.4rem, 5vw, 1.9rem);
 }
 
-.number-dialog__image-frame--placeholder .number-dialog__badge {
+.number-figure--placeholder .number-figure__artwork {
+  opacity: 0;
+}
+
+.number-figure--placeholder .number-figure__number {
   position: static;
-  inline-size: clamp(5rem, 34vw, 6.75rem);
-  block-size: clamp(5rem, 34vw, 6.75rem);
-  border-radius: calc(var(--radius-lg) - 0.5rem);
-  box-shadow: 0 1.8rem 3.2rem rgba(17, 10, 12, 0.18);
-  background: linear-gradient(160deg, #ffffff 10%, #ffeef2 100%);
-  border: 1px solid rgba(117, 21, 40, 0.16);
+  background: none;
+  color: var(--accent-strong);
+  box-shadow: none;
+  font-size: clamp(2.8rem, 10.5vw, 3.8rem);
+  min-inline-size: auto;
 }
 
-.number-dialog__image-frame--placeholder .number-dialog__badge-number {
-  font-size: clamp(2.65rem, 10vw, 3.5rem);
+.number-figure--with-artwork .number-figure__artwork {
+  opacity: 1;
 }
 
 .number-dialog__details {
   display: grid;
-  gap: clamp(0.6rem, 2vw, 1rem);
+  gap: clamp(0.7rem, 2vw, 1.1rem);
 }
 
 .number-dialog__languages {
   display: grid;
-  gap: clamp(0.55rem, 1.7vw, 0.9rem);
+  gap: clamp(0.55rem, 1.7vw, 0.95rem);
 }
 
 .number-dialog__language-card {
   display: grid;
-  gap: 0.32rem;
-  padding: 0.45rem 0.65rem;
+  gap: 0.35rem;
+  padding: 0.55rem 0.75rem;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(117, 21, 40, 0.12);
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(143, 31, 51, 0.16);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
 }
 
 .number-dialog__language-card--dialect {
-  border-color: rgba(143, 31, 51, 0.24);
+  border-color: rgba(143, 31, 51, 0.28);
+  background: rgba(255, 244, 246, 0.92);
 }
 
 .number-dialog__language-header {
   display: flex;
   align-items: center;
-  gap: 0.38rem;
+  gap: 0.4rem;
 }
 
 .number-dialog__language-emblem img {
-  width: 1.625rem;
-  height: 1.625rem;
+  width: 1.6rem;
+  height: 1.6rem;
   object-fit: contain;
 }
 
@@ -1395,24 +1402,23 @@ button:focus-visible {
 
 .number-dialog__phrase {
   margin: 0;
-  font-size: 0.92rem;
-  line-height: 1.48;
+  font-size: 0.94rem;
+  line-height: 1.52;
   color: var(--ink);
 }
 
 .number-dialog__language-card--dialect .number-dialog__phrase {
-  font-style: italic;
+  color: var(--accent-strong);
 }
 
 .number-dialog__phrase--empty {
-  color: var(--ink-soft);
-  font-style: italic;
+  opacity: 0.65;
 }
 
 .number-dialog__footer {
-  border-top: 1px solid var(--border-light);
-  padding-top: 0.6rem;
-  margin-top: 0.1rem;
+  border-top: 1px solid rgba(143, 31, 51, 0.14);
+  padding-top: clamp(0.45rem, 1.6vw, 0.85rem);
+  margin-top: 0.2rem;
   display: grid;
   gap: 0.5rem;
 }

@@ -104,9 +104,9 @@ const elements = {
   modalNumber: document.querySelector('#modal-number'),
   modalItalian: document.querySelector('#modal-italian'),
   modalDialect: document.querySelector('#modal-dialect'),
-  modalImageFrame: document.querySelector('#modal-image-frame'),
-  modalNumberBadge: document.querySelector('#modal-number-badge'),
-  modalNumberBadgeValue: document.querySelector('#modal-number-badge-value'),
+  modalFigure: document.querySelector('#modal-figure'),
+  modalArtwork: document.querySelector('#modal-artwork'),
+  modalFigureNumber: document.querySelector('#modal-figure-number'),
   modalClose: document.querySelector('#modal-close'),
   modalDialectPlay: document.querySelector('#modal-dialect-play'),
   modalItalianPlay: document.querySelector('#modal-italian-play'),
@@ -2041,27 +2041,28 @@ function handleSelection(entry, cell, options = {}) {
   speakEntry(entry);
 }
 
-function applyModalIllustration(frameEl, entry) {
-  if (!(frameEl instanceof HTMLElement)) return;
+function applyModalIllustration(figureEl, entry) {
+  if (!(figureEl instanceof HTMLElement)) return;
+
+  const artworkEl = elements.modalArtwork;
+  const numberEl = elements.modalFigureNumber;
 
   const parsedNumber = Math.trunc(Number(entry?.number));
   const paddedNumber = Number.isFinite(parsedNumber)
     ? String(parsedNumber).padStart(2, '0')
     : '—';
 
-  if (elements.modalNumberBadgeValue) {
-    elements.modalNumberBadgeValue.textContent = paddedNumber;
+  if (numberEl) {
+    numberEl.textContent = paddedNumber;
   }
 
   const illustration = getNumberIllustration(entry);
   const hasIllustration = Boolean(illustration);
 
-  if (elements.modalNumberBadge) {
-    elements.modalNumberBadge.classList.toggle(
-      'number-dialog__badge--with-illustration',
-      hasIllustration,
-    );
-  }
+  figureEl.classList.toggle('number-figure--with-artwork', hasIllustration);
+  figureEl.classList.toggle('number-figure--placeholder', !hasIllustration);
+
+  if (!(artworkEl instanceof HTMLElement)) return;
 
   if (hasIllustration) {
     const trimmedItalian = entry?.italian?.trim();
@@ -2069,17 +2070,15 @@ function applyModalIllustration(frameEl, entry) {
       ? `Illustrazione del numero ${entry.number}: ${trimmedItalian}`
       : `Illustrazione del numero ${entry.number}`;
 
-    frameEl.style.backgroundImage = `url('${illustration}')`;
-    applyBackgroundFit(frameEl, illustration);
-    frameEl.classList.remove('number-dialog__image-frame--placeholder');
-    frameEl.setAttribute('aria-label', label);
-    frameEl.removeAttribute('aria-hidden');
+    artworkEl.style.backgroundImage = `url('${illustration}')`;
+    applyBackgroundFit(artworkEl, illustration);
+    artworkEl.setAttribute('aria-label', label);
+    artworkEl.removeAttribute('aria-hidden');
   } else {
-    frameEl.style.removeProperty('background-image');
-    applyBackgroundFit(frameEl, '');
-    frameEl.classList.add('number-dialog__image-frame--placeholder');
-    frameEl.removeAttribute('aria-label');
-    frameEl.setAttribute('aria-hidden', 'true');
+    artworkEl.style.removeProperty('background-image');
+    applyBackgroundFit(artworkEl, '');
+    artworkEl.removeAttribute('aria-label');
+    artworkEl.setAttribute('aria-hidden', 'true');
   }
 }
 
@@ -2110,8 +2109,8 @@ function openModal(entry, options = {}) {
     elements.modalDialectPlay.disabled = !hasDialect;
   }
 
-  if (elements.modalImageFrame) {
-    applyModalIllustration(elements.modalImageFrame, entry);
+  if (elements.modalFigure) {
+    applyModalIllustration(elements.modalFigure, entry);
   }
 
   ensureModalSponsor(entry, { fromDraw });
