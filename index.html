@@ -166,10 +166,9 @@
         </div>
       </div>
 
-      <div id="draw-sponsor-block" class="draw-portal__sponsor-block" hidden>
-        <p id="draw-sponsor-heading" class="draw-portal__sponsor-eyebrow">Sponsor dell'estrazione</p>
-        <a id="draw-sponsor" class="draw-portal__sponsor-link" href="#" target="_blank" rel="noopener noreferrer">
-          <img id="draw-sponsor-logo" alt="" decoding="async" />
+      <div id="draw-sponsor-block" class="sponsor-banner sponsor-banner--overlay" hidden>
+        <a id="draw-sponsor" class="sponsor-card" href="#" target="_blank" rel="noopener noreferrer">
+          <img id="draw-sponsor-logo" class="sponsor-card__logo" alt="" decoding="async" />
         </a>
       </div>
     </div>
@@ -207,9 +206,7 @@
 
         <div class="number-dialog__body">
           <div class="number-dialog__visual">
-            <div class="number-dialog__image-frame" id="modal-image-frame">
-              <img id="modal-image" alt="" decoding="async" loading="lazy" />
-            </div>
+            <div class="number-dialog__image-frame" id="modal-image-frame" role="img" aria-hidden="true"></div>
           </div>
 
           <div class="number-dialog__details">
@@ -253,9 +250,9 @@
 
             <!-- Sponsor Footer -->
             <footer class="number-dialog__footer">
-              <div id="modal-sponsor-block" class="number-dialog__sponsor" hidden>
-                <a id="modal-sponsor" class="number-dialog__sponsor-link" href="#" target="_blank" rel="noopener noreferrer">
-                  <img id="modal-sponsor-logo" alt="" decoding="async" loading="lazy" />
+              <div id="modal-sponsor-block" class="sponsor-banner sponsor-banner--modal" hidden>
+                <a id="modal-sponsor" class="sponsor-card" href="#" target="_blank" rel="noopener noreferrer">
+                  <img id="modal-sponsor-logo" class="sponsor-card__logo" alt="" decoding="async" loading="lazy" />
                 </a>
               </div>
             </footer>
