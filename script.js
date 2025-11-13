@@ -1281,8 +1281,8 @@ function setupSponsorLink(anchor, sponsor) {
     anchor.rel = isExternal ? 'noopener noreferrer' : '';
     anchor.removeAttribute('tabindex');
     anchor.setAttribute('aria-label', getSponsorAccessibleLabel(sponsor));
-    anchor.style.cursor = 'pointer';
-    
+    anchor.classList.remove('sponsor-card--static');
+
     const displayName = getSponsorDisplayName(sponsor);
     if (displayName) {
       anchor.title = displayName;
@@ -1291,13 +1291,12 @@ function setupSponsorLink(anchor, sponsor) {
     }
   } else {
     anchor.removeAttribute('href');
-    anchor.style.cursor = 'default';
-    anchor.style.pointerEvents = 'none';
     anchor.removeAttribute('target');
     anchor.removeAttribute('rel');
     anchor.removeAttribute('aria-label');
     anchor.removeAttribute('title');
     anchor.setAttribute('tabindex', '-1');
+    anchor.classList.add('sponsor-card--static');
   }
 }
 
@@ -1316,12 +1315,19 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
     block.setAttribute('aria-hidden', showPlaceholder ? 'false' : 'true');
     block.classList.toggle(placeholderClass, showPlaceholder);
 
-    anchor.href = '#';
-    anchor.target = '_self';
+    anchor.classList.toggle('sponsor-card--placeholder', showPlaceholder);
+    anchor.classList.add('sponsor-card--static');
+    anchor.removeAttribute('href');
+    anchor.removeAttribute('target');
+    anchor.removeAttribute('rel');
     anchor.removeAttribute('aria-label');
+    anchor.removeAttribute('title');
     anchor.setAttribute('tabindex', '-1');
-    anchor.classList.toggle('sponsor-link--placeholder', showPlaceholder);
-    if (showPlaceholder) anchor.setAttribute('aria-hidden', 'true');
+    if (showPlaceholder) {
+      anchor.setAttribute('aria-hidden', 'true');
+    } else {
+      anchor.removeAttribute('aria-hidden');
+    }
 
     if (heading) heading.hidden = !showPlaceholder;
 
@@ -1337,7 +1343,7 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
   block.setAttribute('aria-hidden', 'false');
   block.classList.remove(placeholderClass);
 
-  anchor.classList.remove('sponsor-link--placeholder');
+  anchor.classList.remove('sponsor-card--placeholder');
   anchor.removeAttribute('aria-hidden');
   setupSponsorLink(anchor, sponsor);
 
@@ -1516,30 +1522,23 @@ function renderSponsorShowcase(sponsors, options = {}) {
 
     const hasUrl = Boolean(sponsor.url?.trim());
     const container = document.createElement(hasUrl ? 'a' : 'div');
-    container.className = 'sponsor-strip__link';
+    container.className = 'sponsor-card sponsor-strip__card';
 
     if (hasUrl) {
       setupSponsorLink(container, sponsor);
     } else {
-      container.classList.add('sponsor-strip__link--static');
+      container.classList.add('sponsor-card--static');
       container.setAttribute('role', 'presentation');
     }
 
     const logo = document.createElement('img');
+    logo.className = 'sponsor-card__logo';
     logo.alt = '';
     logo.src = sponsor.logo.trim();
     if ('decoding' in logo) logo.decoding = 'async';
     if ('loading' in logo) logo.loading = 'lazy';
 
-    const figure = document.createElement('figure');
-    figure.className = 'sponsor-strip__figure';
-
-    const logoWrapper = document.createElement('span');
-    logoWrapper.className = 'sponsor-strip__logo';
-    logoWrapper.appendChild(logo);
-    figure.appendChild(logoWrapper);
-
-    container.appendChild(figure);
+    container.appendChild(logo);
     item.appendChild(container);
     elements.sponsorShowcaseList.appendChild(item);
   });
