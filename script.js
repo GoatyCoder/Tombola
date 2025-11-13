@@ -1513,9 +1513,20 @@ function renderSponsorShowcase(sponsors, options = {}) {
 // ============================================
 
 function getNumberIllustration(entry) {
-  const number = Math.trunc(Number(entry?.number));
+  if (!entry) return '';
+
+  const sources = [entry.illustration, entry.image];
+
+  for (const source of sources) {
+    const sanitized = sanitizeUrl(source);
+    if (sanitized && sanitized !== '#') return sanitized;
+  }
+
+  const number = Math.trunc(Number(entry.number));
   if (!Number.isFinite(number) || number <= 0) return '';
-  return `images/illustrazioni/${number}.png`;
+
+  const fallback = sanitizeUrl(`images/illustrazioni/${number}.png`);
+  return fallback === '#' ? '' : fallback;
 }
 
 function resolveIllustrationFit(url) {
@@ -2051,7 +2062,7 @@ function applyModalIllustration(figureEl, entry) {
     : '—';
 
   const illustration = getNumberIllustration(entry);
-  const hasIllustration = Boolean(illustration);
+  const hasIllustration = Boolean(illustration && illustration !== '#');
 
   figureEl.classList.toggle('number-figure--with-artwork', hasIllustration);
   figureEl.classList.toggle('number-figure--placeholder', !hasIllustration);
@@ -2292,7 +2303,7 @@ function updateDrawStatus(latestEntry) {
 
   if (elements.drawLastMetric && normalizedEntry) {
     const illustration = getNumberIllustration(normalizedEntry);
-    if (illustration) {
+    if (illustration && illustration !== '#') {
       elements.drawLastMetric.style.setProperty('--last-number-image', `url('${illustration}')`);
       applyBackgroundFit(elements.drawLastMetric, illustration, {
         sizeProperty: '--last-number-image-size',
