@@ -1269,21 +1269,17 @@ button:focus-visible {
   aspect-ratio: 1 / 1;
   border-radius: 0;
   border: 1px solid var(--border-light);
-  background: var(--surface);
-  display: grid;
-  place-items: center;
+  background-color: var(--surface);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
   overflow: hidden;
   justify-self: center;
 }
 
-.number-dialog__image-frame img {
-  inline-size: 100%;
-  block-size: 100%;
-  object-fit: cover;
-}
-
 .number-dialog__image-frame--placeholder {
   border-style: dashed;
+  background-color: var(--surface);
   background: repeating-linear-gradient(
     135deg,
     var(--surface-alt),
@@ -1309,10 +1305,6 @@ button:focus-visible {
   padding: 0.2rem 0.6rem;
   border-radius: 0.25rem;
   pointer-events: none;
-}
-
-.number-dialog__image-frame--placeholder img {
-  opacity: 0.35;
 }
 
 .number-dialog__details {

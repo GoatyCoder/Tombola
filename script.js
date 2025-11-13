@@ -104,7 +104,6 @@ const elements = {
   modalNumber: document.querySelector('#modal-number'),
   modalItalian: document.querySelector('#modal-italian'),
   modalDialect: document.querySelector('#modal-dialect'),
-  modalImage: document.querySelector('#modal-image'),
   modalImageFrame: document.querySelector('#modal-image-frame'),
   modalClose: document.querySelector('#modal-close'),
   modalDialectPlay: document.querySelector('#modal-dialect-play'),
@@ -1518,6 +1517,12 @@ function getNumberImage(entry) {
   return FALLBACK_IMAGE;
 }
 
+function getNumberIllustration(entry) {
+  const number = Math.trunc(Number(entry?.number));
+  if (!Number.isFinite(number) || number <= 0) return '';
+  return `images/illustrazioni/${number}.png`;
+}
+
 function handleBoardCellImageError(event) {
   const target = event.currentTarget;
   if (!(target instanceof HTMLImageElement)) return;
@@ -1999,6 +2004,29 @@ function handleSelection(entry, cell, options = {}) {
   speakEntry(entry);
 }
 
+function applyModalIllustration(frameEl, entry) {
+  if (!(frameEl instanceof HTMLElement)) return;
+
+  const illustration = getNumberIllustration(entry);
+
+  if (illustration) {
+    const trimmedItalian = entry?.italian?.trim();
+    const label = trimmedItalian
+      ? `Illustrazione del numero ${entry.number}: ${trimmedItalian}`
+      : `Illustrazione del numero ${entry.number}`;
+
+    frameEl.style.backgroundImage = `url('${illustration}')`;
+    frameEl.classList.remove('number-dialog__image-frame--placeholder');
+    frameEl.setAttribute('aria-label', label);
+    frameEl.removeAttribute('aria-hidden');
+  } else {
+    frameEl.style.removeProperty('background-image');
+    frameEl.classList.add('number-dialog__image-frame--placeholder');
+    frameEl.removeAttribute('aria-label');
+    frameEl.setAttribute('aria-hidden', 'true');
+  }
+}
+
 function openModal(entry, options = {}) {
   const { fromDraw = false } = options;
 
@@ -2026,18 +2054,8 @@ function openModal(entry, options = {}) {
     elements.modalDialectPlay.disabled = !hasDialect;
   }
 
-  if (elements.modalImage) {
-    const imageSource = applyBoardCellImage(elements.modalImage, entry);
-    elements.modalImage.alt = imageSource !== FALLBACK_IMAGE
-      ? entry.italian ? `Illustrazione del numero ${entry.number}: ${entry.italian}` : `Illustrazione del numero ${entry.number}`
-      : `Segnaposto per il numero ${entry.number}`;
-  }
-
   if (elements.modalImageFrame) {
-    elements.modalImageFrame.classList.toggle(
-      'number-dialog__image-frame--placeholder',
-      getNumberImage(entry) === FALLBACK_IMAGE
-    );
+    applyModalIllustration(elements.modalImageFrame, entry);
   }
 
   ensureModalSponsor(entry, { fromDraw });
@@ -2221,10 +2239,9 @@ function updateDrawStatus(latestEntry) {
   }
 
   if (elements.drawLastMetric && normalizedEntry) {
-    const number = Math.trunc(Number(normalizedEntry.number));
-    if (Number.isFinite(number) && number > 0) {
-      const imagePath = `images/illustrazioni/${number}.png`;
-      elements.drawLastMetric.style.setProperty('--last-number-image', `url('${imagePath}')`);
+    const illustration = getNumberIllustration(normalizedEntry);
+    if (illustration) {
+      elements.drawLastMetric.style.setProperty('--last-number-image', `url('${illustration}')`);
       elements.drawLastMetric.dataset.hasImage = 'true';
     } else {
       elements.drawLastMetric.style.removeProperty('--last-number-image');
