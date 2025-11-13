@@ -309,8 +309,8 @@ button:focus-visible {
 .status-card__metric--last::after {
   background-image: var(--last-number-image, none);
   background-repeat: no-repeat;
-  background-position: right center;
-  background-size: auto 100%;
+  background-position: center right;
+  background-size: contain;
   z-index: 0;
 }
 
@@ -1271,7 +1271,7 @@ button:focus-visible {
   border: 1px solid var(--border-light);
   background-color: var(--surface);
   background-position: center;
-  background-size: cover;
+  background-size: contain;
   background-repeat: no-repeat;
   overflow: hidden;
   justify-self: center;
