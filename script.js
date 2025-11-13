@@ -37,6 +37,7 @@ const CSS_CLASSES = {
   CELL_ACTIVE: 'board-cell--active',
   CELL_INCOMING: 'board-cell--incoming',
   CELL_JUST_DRAWN: 'board-cell--just-drawn',
+  FLOATING_HIDDEN: 'board-area__floating--hidden',
   MODAL_OPEN: 'modal-open',
   MODAL_VISIBLE: 'modal--visible',
   HISTORY_OPEN: 'history--open',
@@ -92,6 +93,9 @@ const state = {
   sponsorLoadingState: LoadingStates.IDLE,
   activeFocusTrapCleanup: null,
   activeFocusTrapElement: null,
+  floatingAutoHideEnabled: false,
+  floatingHovering: false,
+  floatingHideTimer: null,
 };
 
 // ============================================
@@ -135,13 +139,17 @@ const elements = {
   historyScrim: document.querySelector('#history-scrim'),
   audioToggle: document.querySelector('#audio-toggle'),
   floatingDrawButton: document.querySelector('#floating-draw-button'),
+  floatingContainer: document.querySelector('.board-area__floating'),
   drawProgressValue: document.querySelector('#draw-progress-value'),
   drawProgressBar: document.querySelector('#draw-progress-bar'),
   drawProgressFill: document.querySelector('#draw-progress-bar .progress__fill'),
   drawLastMetric: document.querySelector('.status-card__metric--last'),
   drawLastNumber: document.querySelector('#draw-last-number'),
   drawLastDetail: document.querySelector('#draw-last-detail'),
+  boardWrapper: document.querySelector('.board-wrapper'),
 };
+
+const FLOATING_CONTROL_TIMEOUT = 4800;
 
 // ============================================
 // 4. UTILITY FUNCTIONS
@@ -2415,6 +2423,120 @@ async function loadNumbers() {
 }
 
 // ============================================
+// 19. FLOATING CONTROLS
+// ============================================
+
+function cancelFloatingControlsHide() {
+  if (!state.floatingAutoHideEnabled) return;
+  if (state.floatingHideTimer) {
+    clearTimeout(state.floatingHideTimer);
+    state.floatingHideTimer = null;
+  }
+}
+
+function scheduleFloatingControlsHide(delay = FLOATING_CONTROL_TIMEOUT) {
+  if (!state.floatingAutoHideEnabled) return;
+  cancelFloatingControlsHide();
+  state.floatingHideTimer = window.setTimeout(() => {
+    if (!state.floatingHovering) hideFloatingControls();
+  }, delay);
+}
+
+function hideFloatingControls() {
+  if (!elements.floatingContainer) return;
+  elements.floatingContainer.classList.add(CSS_CLASSES.FLOATING_HIDDEN);
+}
+
+function showFloatingControls({ autoHide = true } = {}) {
+  if (!elements.floatingContainer) return;
+  elements.floatingContainer.classList.remove(CSS_CLASSES.FLOATING_HIDDEN);
+
+  if (!state.floatingAutoHideEnabled) return;
+
+  if (autoHide) {
+    scheduleFloatingControlsHide();
+  } else {
+    cancelFloatingControlsHide();
+  }
+}
+
+function handleFloatingPointerEnter() {
+  state.floatingHovering = true;
+  showFloatingControls({ autoHide: false });
+}
+
+function handleFloatingPointerLeave() {
+  state.floatingHovering = false;
+  scheduleFloatingControlsHide();
+}
+
+function handleFloatingFocusIn() {
+  state.floatingHovering = true;
+  showFloatingControls({ autoHide: false });
+}
+
+function handleFloatingFocusOut(event) {
+  const nextTarget = event.relatedTarget;
+  const isNextInsideBoard = nextTarget && (elements.board?.contains(nextTarget) || elements.boardWrapper?.contains(nextTarget));
+  const isNextInsideFloating = nextTarget && elements.floatingContainer?.contains(nextTarget);
+
+  if (isNextInsideBoard || isNextInsideFloating) return;
+
+  state.floatingHovering = false;
+  scheduleFloatingControlsHide();
+}
+
+function initializeFloatingControls() {
+  if (!elements.floatingContainer) return;
+
+  const prefersHover = window.matchMedia?.('(hover: hover) and (pointer: fine)');
+  state.floatingAutoHideEnabled = Boolean(prefersHover?.matches);
+
+  const hoverTargets = new Set([
+    elements.boardWrapper,
+    elements.board,
+    elements.floatingContainer,
+  ]);
+
+  hoverTargets.forEach((target) => {
+    target?.addEventListener('mouseenter', handleFloatingPointerEnter);
+    target?.addEventListener('mouseleave', handleFloatingPointerLeave);
+  });
+
+  const focusTargets = new Set([
+    elements.board,
+    elements.floatingContainer,
+  ]);
+
+  focusTargets.forEach((target) => {
+    target?.addEventListener('focusin', handleFloatingFocusIn);
+    target?.addEventListener('focusout', handleFloatingFocusOut);
+  });
+
+  showFloatingControls({ autoHide: false });
+
+  if (state.floatingAutoHideEnabled) {
+    scheduleFloatingControlsHide();
+
+    const handlePreferenceChange = (event) => {
+      state.floatingAutoHideEnabled = Boolean(event.matches);
+      if (state.floatingAutoHideEnabled) {
+        scheduleFloatingControlsHide();
+      } else {
+        cancelFloatingControlsHide();
+        showFloatingControls({ autoHide: false });
+      }
+    };
+
+    if (prefersHover?.addEventListener) {
+      prefersHover.addEventListener('change', handlePreferenceChange);
+    } else if (prefersHover?.addListener) {
+      prefersHover.addListener(handlePreferenceChange);
+    }
+  }
+}
+
+// ============================================
 // 20. EVENT HANDLERS
 // ============================================
 
@@ -2488,6 +2610,7 @@ function setupEventListeners() {
 function init() {
   initializeAudioPreference();
   setupEventListeners();
+  initializeFloatingControls();
   syncHistoryPanelToLayout({ immediate: true });
   updateLoadingUI();
   loadNumbers();
