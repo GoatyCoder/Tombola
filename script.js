@@ -1623,6 +1623,9 @@ function renderBoard() {
     const numberEl = cell.querySelector('.board-cell__number');
     if (numberEl) numberEl.textContent = entry.number;
 
+    const tokenNumberEl = cell.querySelector('.board-cell__token-number');
+    if (tokenNumberEl) tokenNumberEl.textContent = entry.number;
+
     const isDrawn = state.drawnNumbers.has(entry.number);
     cell.classList.toggle(CSS_CLASSES.CELL_DRAWN, isDrawn);
     cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');

@@ -611,7 +611,24 @@ button:focus-visible {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
   transition: transform var(--duration-sm) var(--easing-standard),
-    color var(--duration-sm) var(--easing-standard);
+    color var(--duration-sm) var(--easing-standard),
+    opacity var(--duration-sm) var(--easing-standard);
+}
+
+.board-cell__token {
+  position: absolute;
+  inset: clamp(0.52rem, 12%, 0.9rem);
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.78);
+  transition: opacity var(--duration-sm) var(--easing-standard),
+    transform var(--duration-sm) var(--easing-standard);
+  z-index: 1;
+  --token-border-width: clamp(0.18rem, 0.5vw, 0.26rem);
+  --token-number-size: clamp(1.35rem, 3.1vw, 2.25rem);
+  --token-shadow: inset 0 0 0.55rem rgba(0, 0, 0, 0.12);
 }
 
 .board-cell:focus {
@@ -630,7 +647,13 @@ button:focus-visible {
 }
 
 .board-cell--drawn .board-cell__number {
-  transform: scale(1.05);
+  transform: scale(0.92);
+  opacity: 0;
+}
+
+.board-cell--drawn .board-cell__token {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .board-cell--incoming::after {
@@ -659,8 +682,8 @@ button:focus-visible {
   box-shadow: inset 0 0 0 1px rgba(117, 21, 40, 0.38);
 }
 
-.board-cell--just-drawn .board-cell__number {
-  animation: boardNumberCelebrate 720ms cubic-bezier(0.22, 0.75, 0.3, 1.08);
+.board-cell--just-drawn .board-cell__token {
+  animation: boardTokenCelebrate 720ms cubic-bezier(0.22, 0.75, 0.3, 1.08);
 }
 
 .draw-flight-ball {
@@ -1656,9 +1679,9 @@ button:focus-visible {
   }
 }
 
-@keyframes boardNumberCelebrate {
+@keyframes boardTokenCelebrate {
   0% {
-    transform: scale(0.4) rotate(-8deg);
+    transform: scale(0.4) rotate(-10deg);
     opacity: 0;
   }
   60% {
