@@ -588,51 +588,45 @@ button:focus-visible {
 .board-cell {
   position: relative;
   aspect-ratio: 1 / 1;
-  display: block;
+  display: grid;
+  place-items: center;
   padding: 0;
-  border: 0;
-  background: none;
-  box-shadow: none;
+  border-radius: clamp(0.45rem, 1.2vw, 0.75rem);
+  border: clamp(0.15rem, 0.45vw, 0.22rem) solid rgba(143, 31, 51, 0.8);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.38), 0 0.35rem 0.75rem rgba(20, 15, 13, 0.12);
   cursor: pointer;
+  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition), background-color var(--transition);
   contain: layout style paint;
 }
 
-.board-cell__media {
-  display: block;
-  inline-size: 100%;
-  block-size: 100%;
-  object-fit: cover;
-}
-
-.board-cell__token {
-  position: absolute;
-  inset: clamp(0.75rem, 16%, 1.1rem);
-  --token-border-width: clamp(0.18rem, 0.6vw, 0.3rem);
-  --token-number-size: clamp(1.3rem, 2.8vw, 2.1rem);
-  --token-shadow: inset 0 0 0.6rem rgba(0, 0, 0, 0.08);
-  transition: opacity 160ms ease-out, transform 160ms ease-out;
-  opacity: 0;
-  transform: scale(0.85);
-  pointer-events: none;
-  z-index: 2;
+.board-cell__number {
+  font-size: clamp(1.45rem, 3.2vw, 2.35rem);
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.015em;
+  transition: color var(--transition), transform var(--transition);
 }
 
 .board-cell:focus {
   outline: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4), 0 0 0 0.2rem rgba(117, 21, 40, 0.45);
 }
 
 .board-cell--active {
-  outline: 0.1875rem solid rgba(117, 21, 40, 0.8);
-  outline-offset: var(--focus-ring-offset);
+  border-color: var(--accent-strong);
+  background: linear-gradient(145deg, rgba(246, 244, 241, 0.95), rgba(255, 255, 255, 0.95));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55), 0 0.55rem 1.2rem rgba(117, 21, 40, 0.18);
+  transform: translateY(-2px);
 }
 
-.board-cell--drawn .board-cell__media {
-  filter: grayscale(0.5) brightness(0.9);
+.board-cell--drawn {
+  background: linear-gradient(160deg, rgba(248, 238, 233, 0.98), rgba(244, 226, 224, 0.92));
+  border-color: rgba(117, 21, 40, 0.85);
 }
 
-.board-cell--drawn .board-cell__token {
-  opacity: 1;
-  transform: scale(1);
+.board-cell--drawn .board-cell__number {
+  color: var(--accent-strong);
 }
 
 .board-cell--incoming::after {
@@ -655,12 +649,8 @@ button:focus-visible {
   animation: boardCellCelebrateGlow 880ms ease-out;
 }
 
-.board-cell--just-drawn .board-cell__token {
+.board-cell--just-drawn .board-cell__number {
   animation: boardTokenCelebrate 720ms cubic-bezier(0.22, 0.75, 0.3, 1.08);
-}
-
-.board-cell--just-drawn .board-cell__media {
-  animation: boardCellFade 720ms ease-out;
 }
 
 .draw-flight-ball {

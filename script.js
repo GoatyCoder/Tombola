@@ -15,7 +15,6 @@ const DATA_PATHS = {
   SPONSORS: 'sponsors.json',
 };
 
-const FALLBACK_IMAGE = 'images/empty.jpg';
 const illustrationFitCache = new Map();
 
 const LoadingStates = Object.freeze({
@@ -1512,12 +1511,6 @@ function renderSponsorShowcase(sponsors, options = {}) {
 // 14. BOARD RENDERING
 // ============================================
 
-function getNumberImage(entry) {
-  if (entry?.image) return entry.image;
-  if (entry?.number) return `images/${entry.number}.jpg`;
-  return FALLBACK_IMAGE;
-}
-
 function getNumberIllustration(entry) {
   const number = Math.trunc(Number(entry?.number));
   if (!Number.isFinite(number) || number <= 0) return '';
@@ -1596,32 +1589,6 @@ function applyBackgroundFit(element, url, options = {}) {
   });
 }
 
-function handleBoardCellImageError(event) {
-  const target = event.currentTarget;
-  if (!(target instanceof HTMLImageElement)) return;
-
-  if (target.dataset.fallbackApplied === 'true') {
-    target.style.display = 'none';
-    target.removeEventListener('error', handleBoardCellImageError);
-    return;
-  }
-
-  target.dataset.fallbackApplied = 'true';
-  target.src = FALLBACK_IMAGE;
-}
-
-function applyBoardCellImage(imageEl, entry) {
-  if (!(imageEl instanceof HTMLImageElement)) return FALLBACK_IMAGE;
-
-  imageEl.dataset.fallbackApplied = 'false';
-  imageEl.removeEventListener('error', handleBoardCellImageError);
-  imageEl.addEventListener('error', handleBoardCellImageError);
-  imageEl.style.removeProperty('display');
-  const source = getNumberImage(entry);
-  imageEl.src = source;
-  return source;
-}
-
 function renderBoard() {
   if (!elements.board || !elements.template) return;
 
@@ -1645,12 +1612,7 @@ function renderBoard() {
       srLabel.textContent = labelParts.join(' – ');
     }
 
-    const artworkEl = cell.querySelector('.board-cell__media');
-    if (artworkEl instanceof HTMLImageElement) {
-      applyBoardCellImage(artworkEl, entry);
-    }
-
-    const tokenNumberEl = cell.querySelector('.board-cell__token-number');
+    const tokenNumberEl = cell.querySelector('.board-cell__number');
     if (tokenNumberEl) tokenNumberEl.textContent = entry.number;
 
     const isDrawn = state.drawnNumbers.has(entry.number);
