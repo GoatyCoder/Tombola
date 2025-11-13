@@ -2062,7 +2062,7 @@ function applyModalIllustration(figureEl, entry) {
     : '—';
 
   const illustration = getNumberIllustration(entry);
-  const hasIllustration = Boolean(illustration && illustration !== '#');
+  const hasIllustration = Boolean(illustration);
 
   figureEl.classList.toggle('number-figure--with-artwork', hasIllustration);
   figureEl.classList.toggle('number-figure--placeholder', !hasIllustration);
