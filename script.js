@@ -2303,7 +2303,7 @@ function updateDrawStatus(latestEntry) {
 
   if (elements.drawLastMetric && normalizedEntry) {
     const illustration = getNumberIllustration(normalizedEntry);
-    if (illustration && illustration !== '#') {
+    if (illustration) {
       elements.drawLastMetric.style.setProperty('--last-number-image', `url('${illustration}')`);
       applyBackgroundFit(elements.drawLastMetric, illustration, {
         sizeProperty: '--last-number-image-size',
