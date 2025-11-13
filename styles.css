@@ -1269,7 +1269,6 @@ button:focus-visible {
   aspect-ratio: 1 / 1;
   margin: clamp(0.45rem, 1.4vw, 0.85rem);
   border-radius: 0;
-  border: 1px solid var(--border-light);
   background-position: center;
   background-size: contain;
   background-repeat: no-repeat;
@@ -1278,7 +1277,6 @@ button:focus-visible {
 }
 
 .number-dialog__image-frame--placeholder {
-  border-style: dashed;
   background: none;
 }
 
