@@ -105,6 +105,8 @@ const elements = {
   modalItalian: document.querySelector('#modal-italian'),
   modalDialect: document.querySelector('#modal-dialect'),
   modalImageFrame: document.querySelector('#modal-image-frame'),
+  modalNumberBadge: document.querySelector('#modal-number-badge'),
+  modalNumberBadgeValue: document.querySelector('#modal-number-badge-value'),
   modalClose: document.querySelector('#modal-close'),
   modalDialectPlay: document.querySelector('#modal-dialect-play'),
   modalItalianPlay: document.querySelector('#modal-italian-play'),
@@ -2042,9 +2044,26 @@ function handleSelection(entry, cell, options = {}) {
 function applyModalIllustration(frameEl, entry) {
   if (!(frameEl instanceof HTMLElement)) return;
 
-  const illustration = getNumberIllustration(entry);
+  const parsedNumber = Math.trunc(Number(entry?.number));
+  const paddedNumber = Number.isFinite(parsedNumber)
+    ? String(parsedNumber).padStart(2, '0')
+    : '—';
 
-  if (illustration) {
+  if (elements.modalNumberBadgeValue) {
+    elements.modalNumberBadgeValue.textContent = paddedNumber;
+  }
+
+  const illustration = getNumberIllustration(entry);
+  const hasIllustration = Boolean(illustration);
+
+  if (elements.modalNumberBadge) {
+    elements.modalNumberBadge.classList.toggle(
+      'number-dialog__badge--with-illustration',
+      hasIllustration,
+    );
+  }
+
+  if (hasIllustration) {
     const trimmedItalian = entry?.italian?.trim();
     const label = trimmedItalian
       ? `Illustrazione del numero ${entry.number}: ${trimmedItalian}`
