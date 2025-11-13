@@ -50,19 +50,52 @@ const CSS_CLASSES = {
 
 const EMBEDDED_SPONSORS = Object.freeze([
   {
-    logo: 'images/sponsor-panificio-stella.svg',
-    url: 'https://www.panificiostella.it/',
-    name: 'Panificio Stella',
+    logo: 'images/sponsor/divella.png',
+    url: 'https://www.divella.it/',
+    name: 'Divella',
+    onlyShowcase: false,
   },
   {
-    logo: 'images/sponsor-agrumi-del-sud.svg',
-    url: 'https://www.agrumidelsud.it/',
-    name: 'Agrumi del Sud',
+    logo: 'images/sponsor/berardi.png',
+    url: 'https://www.berardiautomotive.it/',
+    name: 'Berardi Automotive',
+    onlyShowcase: false,
   },
   {
-    logo: 'images/sponsor-cantina-nojana.svg',
-    url: 'https://www.cantinanojana.it/',
-    name: 'Cantina Nojana',
+    logo: 'images/sponsor/arca.png',
+    url: 'https://www.facebook.com/pasticcerialarca',
+    name: "Pasticceria L'Arca Di Porrelli Arcangelo",
+    onlyShowcase: false,
+  },
+  {
+    logo: 'images/sponsor/ecasa.png',
+    url: 'https://www.ecasa-immobiliare.it/',
+    name: 'È Casa Immobiliare',
+    onlyShowcase: false,
+  },
+  {
+    logo: 'images/sponsor/ilsorriso.png',
+    url: 'https://www.facebook.com/ilsorrisopanificio',
+    name: 'Panificio Il Sorriso',
+    onlyShowcase: false,
+  },
+  {
+    logo: 'images/sponsor/grafica2P.png',
+    url: 'https://www.facebook.com/Grafica2p/',
+    name: 'Grafica 2P',
+    onlyShowcase: false,
+  },
+  {
+    logo: 'images/sponsor/LUTE.png',
+    url: null,
+    name: 'LUTE Noicàttaro',
+    onlyShowcase: true,
+  },
+  {
+    logo: 'images/sponsor/ProLoco.png',
+    url: 'https://www.facebook.com/ProLocoNoicattaroNojapro',
+    name: 'Pro Loco Noicàttaro',
+    onlyShowcase: true,
   },
 ]);
 
