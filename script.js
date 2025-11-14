@@ -1597,6 +1597,32 @@ function applyBackgroundFit(element, url, options = {}) {
   });
 }
 
+function buildBoardCellLabel(entry, { drawn = false } = {}) {
+  if (!entry) return '';
+
+  const labelParts = [`Numero ${entry.number}`];
+
+  const italian = entry.italian?.trim();
+  const dialect = entry.dialect?.trim();
+
+  if (italian) {
+    labelParts.push(italian);
+  } else if (dialect) {
+    labelParts.push(dialect);
+  }
+
+  labelParts.push(drawn ? 'Estratto' : 'Disponibile');
+
+  return labelParts.join(' – ');
+}
+
+function syncBoardCellAccessibility(cell, entry, { drawn = false } = {}) {
+  if (!cell || !entry) return;
+
+  const srLabel = cell.querySelector('.sr-only');
+  if (srLabel) srLabel.textContent = buildBoardCellLabel(entry, { drawn });
+}
+
 function renderBoard() {
   if (!elements.board || !elements.template) return;
 
@@ -1612,14 +1638,6 @@ function renderBoard() {
     const cell = elements.template.content.firstElementChild.cloneNode(true);
     cell.dataset.number = entry.number;
 
-    const srLabel = cell.querySelector('.sr-only');
-    if (srLabel) {
-      const labelParts = [`Numero ${entry.number}`];
-      if (entry.italian?.trim()) labelParts.push(entry.italian.trim());
-      else if (entry.dialect?.trim()) labelParts.push(entry.dialect.trim());
-      srLabel.textContent = labelParts.join(' – ');
-    }
-
     const numberEl = cell.querySelector('.board-cell__number');
     if (numberEl) numberEl.textContent = entry.number;
 
@@ -1629,6 +1647,7 @@ function renderBoard() {
     const isDrawn = state.drawnNumbers.has(entry.number);
     cell.classList.toggle(CSS_CLASSES.CELL_DRAWN, isDrawn);
     cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
+    syncBoardCellAccessibility(cell, entry, { drawn: isDrawn });
 
     state.cellsByNumber.set(entry.number, cell);
     fragment.appendChild(cell);
@@ -1875,7 +1894,8 @@ function markNumberDrawn(entry, options = {}) {
     const isDrawn = state.drawnNumbers.has(number);
     cell.classList.toggle(CSS_CLASSES.CELL_DRAWN, isDrawn);
     cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
-    
+    syncBoardCellAccessibility(cell, entry, { drawn: isDrawn });
+
     if (isDrawn && animate) {
       cell.classList.add(CSS_CLASSES.CELL_JUST_DRAWN);
       const handleAnimationEnd = (event) => {
@@ -1992,9 +2012,11 @@ function performGameReset() {
   clearPersistedDrawState();
   if (state.storageErrorMessage) updateDrawStatus();
 
-  state.cellsByNumber.forEach((cell) => {
+  state.cellsByNumber.forEach((cell, number) => {
     cell.classList.remove(CSS_CLASSES.CELL_DRAWN, CSS_CLASSES.CELL_ACTIVE);
     cell.setAttribute('aria-pressed', 'false');
+    const entry = state.entriesByNumber.get(number);
+    syncBoardCellAccessibility(cell, entry, { drawn: false });
   });
 
   state.selected = null;
