@@ -15,7 +15,6 @@ const DATA_PATHS = {
   SPONSORS: 'sponsors.json',
 };
 
-const FALLBACK_IMAGE = 'images/empty.jpg';
 const illustrationFitCache = new Map();
 
 const LoadingStates = Object.freeze({
@@ -38,6 +37,8 @@ const CSS_CLASSES = {
   CELL_ACTIVE: 'board-cell--active',
   CELL_INCOMING: 'board-cell--incoming',
   CELL_JUST_DRAWN: 'board-cell--just-drawn',
+  FLOATING_HIDDEN: 'board-area__floating--hidden',
+  FLOATING_INACTIVE: 'board-area__floating--inactive',
   MODAL_OPEN: 'modal-open',
   MODAL_VISIBLE: 'modal--visible',
   HISTORY_OPEN: 'history--open',
@@ -93,6 +94,10 @@ const state = {
   sponsorLoadingState: LoadingStates.IDLE,
   activeFocusTrapCleanup: null,
   activeFocusTrapElement: null,
+  floatingAutoHideEnabled: false,
+  floatingHovering: false,
+  floatingHideTimer: null,
+  floatingBoardInView: false,
 };
 
 // ============================================
@@ -136,13 +141,18 @@ const elements = {
   historyScrim: document.querySelector('#history-scrim'),
   audioToggle: document.querySelector('#audio-toggle'),
   floatingDrawButton: document.querySelector('#floating-draw-button'),
+  floatingContainer: document.querySelector('.board-area__floating'),
   drawProgressValue: document.querySelector('#draw-progress-value'),
   drawProgressBar: document.querySelector('#draw-progress-bar'),
   drawProgressFill: document.querySelector('#draw-progress-bar .progress__fill'),
   drawLastMetric: document.querySelector('.status-card__metric--last'),
   drawLastNumber: document.querySelector('#draw-last-number'),
   drawLastDetail: document.querySelector('#draw-last-detail'),
+  boardWrapper: document.querySelector('.board-wrapper'),
 };
+
+const FLOATING_CONTROL_TIMEOUT = 4800;
+const FLOATING_SCROLL_HIDE_DELAY = 1400;
 
 // ============================================
 // 4. UTILITY FUNCTIONS
@@ -1512,12 +1522,6 @@ function renderSponsorShowcase(sponsors, options = {}) {
 // 14. BOARD RENDERING
 // ============================================
 
-function getNumberImage(entry) {
-  if (entry?.image) return entry.image;
-  if (entry?.number) return `images/${entry.number}.jpg`;
-  return FALLBACK_IMAGE;
-}
-
 function getNumberIllustration(entry) {
   const number = Math.trunc(Number(entry?.number));
   if (!Number.isFinite(number) || number <= 0) return '';
@@ -1596,30 +1600,30 @@ function applyBackgroundFit(element, url, options = {}) {
   });
 }
 
-function handleBoardCellImageError(event) {
-  const target = event.currentTarget;
-  if (!(target instanceof HTMLImageElement)) return;
+function buildBoardCellLabel(entry, { drawn = false } = {}) {
+  if (!entry) return '';
 
-  if (target.dataset.fallbackApplied === 'true') {
-    target.style.display = 'none';
-    target.removeEventListener('error', handleBoardCellImageError);
-    return;
+  const labelParts = [`Numero ${entry.number}`];
+
+  const italian = entry.italian?.trim();
+  const dialect = entry.dialect?.trim();
+
+  if (italian) {
+    labelParts.push(italian);
+  } else if (dialect) {
+    labelParts.push(dialect);
   }
 
-  target.dataset.fallbackApplied = 'true';
-  target.src = FALLBACK_IMAGE;
+  labelParts.push(drawn ? 'Estratto' : 'Disponibile');
+
+  return labelParts.join(' – ');
 }
 
-function applyBoardCellImage(imageEl, entry) {
-  if (!(imageEl instanceof HTMLImageElement)) return FALLBACK_IMAGE;
+function syncBoardCellAccessibility(cell, entry, { drawn = false } = {}) {
+  if (!cell || !entry) return;
 
-  imageEl.dataset.fallbackApplied = 'false';
-  imageEl.removeEventListener('error', handleBoardCellImageError);
-  imageEl.addEventListener('error', handleBoardCellImageError);
-  imageEl.style.removeProperty('display');
-  const source = getNumberImage(entry);
-  imageEl.src = source;
-  return source;
+  const srLabel = cell.querySelector('.sr-only');
+  if (srLabel) srLabel.textContent = buildBoardCellLabel(entry, { drawn });
 }
 
 function renderBoard() {
@@ -1637,18 +1641,8 @@ function renderBoard() {
     const cell = elements.template.content.firstElementChild.cloneNode(true);
     cell.dataset.number = entry.number;
 
-    const srLabel = cell.querySelector('.sr-only');
-    if (srLabel) {
-      const labelParts = [`Numero ${entry.number}`];
-      if (entry.italian?.trim()) labelParts.push(entry.italian.trim());
-      else if (entry.dialect?.trim()) labelParts.push(entry.dialect.trim());
-      srLabel.textContent = labelParts.join(' – ');
-    }
-
-    const artworkEl = cell.querySelector('.board-cell__media');
-    if (artworkEl instanceof HTMLImageElement) {
-      applyBoardCellImage(artworkEl, entry);
-    }
+    const numberEl = cell.querySelector('.board-cell__number');
+    if (numberEl) numberEl.textContent = entry.number;
 
     const tokenNumberEl = cell.querySelector('.board-cell__token-number');
     if (tokenNumberEl) tokenNumberEl.textContent = entry.number;
@@ -1656,6 +1650,7 @@ function renderBoard() {
     const isDrawn = state.drawnNumbers.has(entry.number);
     cell.classList.toggle(CSS_CLASSES.CELL_DRAWN, isDrawn);
     cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
+    syncBoardCellAccessibility(cell, entry, { drawn: isDrawn });
 
     state.cellsByNumber.set(entry.number, cell);
     fragment.appendChild(cell);
@@ -1902,7 +1897,8 @@ function markNumberDrawn(entry, options = {}) {
     const isDrawn = state.drawnNumbers.has(number);
     cell.classList.toggle(CSS_CLASSES.CELL_DRAWN, isDrawn);
     cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
-    
+    syncBoardCellAccessibility(cell, entry, { drawn: isDrawn });
+
     if (isDrawn && animate) {
       cell.classList.add(CSS_CLASSES.CELL_JUST_DRAWN);
       const handleAnimationEnd = (event) => {
@@ -2019,9 +2015,11 @@ function performGameReset() {
   clearPersistedDrawState();
   if (state.storageErrorMessage) updateDrawStatus();
 
-  state.cellsByNumber.forEach((cell) => {
+  state.cellsByNumber.forEach((cell, number) => {
     cell.classList.remove(CSS_CLASSES.CELL_DRAWN, CSS_CLASSES.CELL_ACTIVE);
     cell.setAttribute('aria-pressed', 'false');
+    const entry = state.entriesByNumber.get(number);
+    syncBoardCellAccessibility(cell, entry, { drawn: false });
   });
 
   state.selected = null;
@@ -2453,6 +2451,202 @@ async function loadNumbers() {
 }
 
 // ============================================
+// 19. FLOATING CONTROLS
+// ============================================
+
+function cancelFloatingControlsHide() {
+  if (state.floatingHideTimer) {
+    clearTimeout(state.floatingHideTimer);
+    state.floatingHideTimer = null;
+  }
+}
+
+function scheduleFloatingControlsHide(delay = FLOATING_CONTROL_TIMEOUT) {
+  if (!state.floatingAutoHideEnabled) return;
+  cancelFloatingControlsHide();
+  state.floatingHideTimer = window.setTimeout(() => {
+    if (!state.floatingHovering) hideFloatingControls();
+  }, delay);
+}
+
+function hideFloatingControls() {
+  if (!elements.floatingContainer) return;
+  elements.floatingContainer.classList.add(CSS_CLASSES.FLOATING_HIDDEN);
+}
+
+function showFloatingControls({ autoHide = true } = {}) {
+  if (!elements.floatingContainer) return;
+  elements.floatingContainer.classList.remove(CSS_CLASSES.FLOATING_HIDDEN);
+
+  if (!state.floatingAutoHideEnabled) return;
+
+  if (autoHide) {
+    scheduleFloatingControlsHide();
+  } else {
+    cancelFloatingControlsHide();
+  }
+}
+
+function handleFloatingPointerEnter() {
+  state.floatingHovering = true;
+  elements.floatingContainer?.classList.remove(CSS_CLASSES.FLOATING_INACTIVE);
+  showFloatingControls({ autoHide: false });
+}
+
+function handleFloatingPointerLeave() {
+  state.floatingHovering = false;
+  scheduleFloatingControlsHide();
+}
+
+function handleFloatingFocusIn() {
+  state.floatingHovering = true;
+  elements.floatingContainer?.classList.remove(CSS_CLASSES.FLOATING_INACTIVE);
+  showFloatingControls({ autoHide: false });
+}
+
+function handleFloatingFocusOut(event) {
+  const nextTarget = event.relatedTarget;
+  const isNextInsideBoard = nextTarget && (elements.board?.contains(nextTarget) || elements.boardWrapper?.contains(nextTarget));
+  const isNextInsideFloating = nextTarget && elements.floatingContainer?.contains(nextTarget);
+
+  if (isNextInsideBoard || isNextInsideFloating) return;
+
+  state.floatingHovering = false;
+  scheduleFloatingControlsHide();
+}
+
+function handleFloatingScrollActivity() {
+  if (!elements.floatingContainer || !state.floatingBoardInView) return;
+
+  elements.floatingContainer.classList.remove(CSS_CLASSES.FLOATING_INACTIVE);
+  showFloatingControls({ autoHide: false });
+
+  if (state.floatingAutoHideEnabled) {
+    scheduleFloatingControlsHide(FLOATING_SCROLL_HIDE_DELAY);
+  }
+}
+
+function initializeFloatingControls() {
+  if (!elements.floatingContainer) return;
+
+  const prefersHover = window.matchMedia?.('(hover: hover) and (pointer: fine)');
+  state.floatingAutoHideEnabled = Boolean(prefersHover?.matches);
+
+  let initialBoardVisibility = true;
+  if (elements.boardWrapper && typeof window !== 'undefined') {
+    const rect = elements.boardWrapper.getBoundingClientRect();
+    initialBoardVisibility = rect.bottom > 0 && rect.top < window.innerHeight;
+  }
+
+  state.floatingBoardInView = initialBoardVisibility;
+  if (!initialBoardVisibility) {
+    elements.floatingContainer.classList.add(CSS_CLASSES.FLOATING_INACTIVE);
+  } else {
+    handleFloatingScrollActivity();
+  }
+
+  const hoverTargets = new Set([
+    elements.boardWrapper,
+    elements.board,
+    elements.floatingContainer,
+  ]);
+
+  hoverTargets.forEach((target) => {
+    target?.addEventListener('mouseenter', handleFloatingPointerEnter);
+    target?.addEventListener('mouseleave', handleFloatingPointerLeave);
+  });
+
+  const focusTargets = new Set([
+    elements.board,
+    elements.floatingContainer,
+  ]);
+
+  focusTargets.forEach((target) => {
+    target?.addEventListener('focusin', handleFloatingFocusIn);
+    target?.addEventListener('focusout', handleFloatingFocusOut);
+  });
+
+  if (state.floatingAutoHideEnabled) {
+    scheduleFloatingControlsHide(FLOATING_SCROLL_HIDE_DELAY);
+
+    const handlePreferenceChange = (event) => {
+      state.floatingAutoHideEnabled = Boolean(event.matches);
+      if (state.floatingAutoHideEnabled) {
+        scheduleFloatingControlsHide(FLOATING_SCROLL_HIDE_DELAY);
+      } else {
+        cancelFloatingControlsHide();
+        showFloatingControls({ autoHide: false });
+      }
+    };
+
+    if (prefersHover?.addEventListener) {
+      prefersHover.addEventListener('change', handlePreferenceChange);
+    } else if (prefersHover?.addListener) {
+      prefersHover.addListener(handlePreferenceChange);
+    }
+  }
+
+  let scrollAnimationFrame = null;
+  const handleScroll = () => {
+    if (!state.floatingBoardInView) return;
+    if (!elements.floatingContainer || elements.floatingContainer.classList.contains(CSS_CLASSES.FLOATING_INACTIVE)) return;
+
+    if (scrollAnimationFrame != null) return;
+
+    const invoke = () => {
+      scrollAnimationFrame = null;
+      handleFloatingScrollActivity();
+    };
+
+    if (typeof requestAnimationFrame === 'function') {
+      scrollAnimationFrame = requestAnimationFrame(invoke);
+    } else {
+      invoke();
+    }
+  };
+
+  window.addEventListener('scroll', handleScroll, { passive: true });
+  registerCleanup(() => window.removeEventListener('scroll', handleScroll));
+
+  const canObserveBoard = typeof window !== 'undefined' && 'IntersectionObserver' in window;
+  if (elements.boardWrapper && canObserveBoard) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.target !== elements.boardWrapper) return;
+
+          const inView = entry.isIntersecting && entry.intersectionRatio > 0;
+          state.floatingBoardInView = inView;
+
+          if (!inView) {
+            state.floatingHovering = false;
+            cancelFloatingControlsHide();
+            hideFloatingControls();
+            elements.floatingContainer.classList.add(CSS_CLASSES.FLOATING_INACTIVE);
+            return;
+          }
+
+          elements.floatingContainer.classList.remove(CSS_CLASSES.FLOATING_INACTIVE);
+          handleFloatingScrollActivity();
+        });
+      },
+      {
+        root: null,
+        threshold: 0.18,
+        rootMargin: '0px 0px -30% 0px',
+      },
+    );
+
+    observer.observe(elements.boardWrapper);
+    registerCleanup(() => observer.disconnect());
+  } else if (!state.floatingBoardInView) {
+    state.floatingBoardInView = true;
+    elements.floatingContainer.classList.remove(CSS_CLASSES.FLOATING_INACTIVE);
+    handleFloatingScrollActivity();
+  }
+}
+
+// ============================================
 // 20. EVENT HANDLERS
 // ============================================
 
@@ -2526,6 +2720,7 @@ function setupEventListeners() {
 function init() {
   initializeAudioPreference();
   setupEventListeners();
+  initializeFloatingControls();
   syncHistoryPanelToLayout({ immediate: true });
   updateLoadingUI();
   loadNumbers();
