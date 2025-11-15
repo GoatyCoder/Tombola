@@ -15,7 +15,7 @@ const DATA_PATHS = {
   SPONSORS: 'sponsors.json',
 };
 
-const FALLBACK_IMAGE = 'images/empty.jpg';
+const illustrationFitCache = new Map();
 
 const LoadingStates = Object.freeze({
   IDLE: 'idle',
@@ -47,24 +47,6 @@ const CSS_CLASSES = {
   BALL_LOADING: 'draw-portal__ball--loading',
   BALL_REVEALED: 'draw-portal__ball--revealed',
 };
-
-const EMBEDDED_SPONSORS = Object.freeze([
-  {
-    logo: 'images/sponsor-panificio-stella.svg',
-    url: 'https://www.panificiostella.it/',
-    name: 'Panificio Stella',
-  },
-  {
-    logo: 'images/sponsor-agrumi-del-sud.svg',
-    url: 'https://www.agrumidelsud.it/',
-    name: 'Agrumi del Sud',
-  },
-  {
-    logo: 'images/sponsor-cantina-nojana.svg',
-    url: 'https://www.cantinanojana.it/',
-    name: 'Cantina Nojana',
-  },
-]);
 
 const DRAW_TIMELINE = Object.freeze({
   intro: 280,
@@ -122,11 +104,10 @@ const elements = {
   modalNumber: document.querySelector('#modal-number'),
   modalItalian: document.querySelector('#modal-italian'),
   modalDialect: document.querySelector('#modal-dialect'),
-  modalImage: document.querySelector('#modal-image'),
   modalImageFrame: document.querySelector('#modal-image-frame'),
   modalClose: document.querySelector('#modal-close'),
-  modalDialectPlay: document.querySelector('#modal-dialect-play'),
-  modalItalianPlay: document.querySelector('#modal-italian-play'),
+  modalDialectCard: document.querySelector('#modal-dialect-card'),
+  modalItalianCard: document.querySelector('#modal-italian-card'),
   modalNext: document.querySelector('#modal-next'),
   modalSponsorBlock: document.querySelector('#modal-sponsor-block'),
   modalSponsor: document.querySelector('#modal-sponsor'),
@@ -143,7 +124,6 @@ const elements = {
   drawOverlayAnnouncement: document.querySelector('#draw-animation-announcement'),
   drawOverlayLoader: document.querySelector('#draw-portal-loader'),
   drawSponsorBlock: document.querySelector('#draw-sponsor-block'),
-  drawSponsorHeading: document.querySelector('#draw-sponsor-heading'),
   drawSponsor: document.querySelector('#draw-sponsor'),
   drawSponsorLogo: document.querySelector('#draw-sponsor-logo'),
   sponsorShowcase: document.querySelector('#sponsor-showcase'),
@@ -154,7 +134,6 @@ const elements = {
   historyToggle: document.querySelector('#history-toggle'),
   historyScrim: document.querySelector('#history-scrim'),
   audioToggle: document.querySelector('#audio-toggle'),
-  floatingDrawButton: document.querySelector('#floating-draw-button'),
   drawProgressValue: document.querySelector('#draw-progress-value'),
   drawProgressBar: document.querySelector('#draw-progress-bar'),
   drawProgressFill: document.querySelector('#draw-progress-bar .progress__fill'),
@@ -540,10 +519,6 @@ function cloneSponsorData(sponsor) {
   return normalizeSponsor(sponsor);
 }
 
-function getEmbeddedSponsors() {
-  return EMBEDDED_SPONSORS.map(cloneSponsorData).filter(Boolean);
-}
-
 function getSponsorDisplayName(sponsor) {
   if (!sponsor) return '';
   if (sponsor.name?.trim()) return sponsor.name.trim();
@@ -571,7 +546,6 @@ function getSponsorAccessibleLabel(sponsor) {
 class SponsorManager {
   constructor(options = {}) {
     this.dataPath = options.dataPath || DATA_PATHS.SPONSORS;
-    this.fallbackProvider = options.getFallbackSponsors || (() => []);
     this.onSponsorsChanged = options.onSponsorsChanged || null;
 
     this.assignments = new Map();
@@ -669,20 +643,17 @@ class SponsorManager {
         const rawList = Array.isArray(data?.sponsors) ? data.sponsors : Array.isArray(data) ? data : [];
         const normalized = rawList.map(normalizeSponsor).filter(Boolean);
 
-        if (normalized.length > 0) {
-          this.sponsors = normalized.map(cloneSponsorData);
-          this.lastSponsorKey = null;
-          this._notifySponsorsChanged('remote');
-          return this.getAllSponsors();
-        }
+        this.sponsors = normalized.map(cloneSponsorData);
+        this.lastSponsorKey = null;
+        this._notifySponsorsChanged(normalized.length > 0 ? 'remote' : 'empty');
+        return this.getAllSponsors();
       } catch (error) {
         console.warn('Sponsor load error', error);
+        this.sponsors = [];
+        this.lastSponsorKey = null;
+        this._notifySponsorsChanged('error');
+        return [];
       }
-
-      this.sponsors = this._getFallbackList();
-      this.lastSponsorKey = null;
-      this._notifySponsorsChanged('fallback');
-      return this.getAllSponsors();
     })();
 
     this.loadPromise = task.finally(() => {
@@ -734,14 +705,6 @@ class SponsorManager {
     return preparation;
   }
 
-  _getFallbackList() {
-    try {
-      return this.fallbackProvider().map(cloneSponsorData).filter(Boolean);
-    } catch {
-      return [];
-    }
-  }
-
   _notifySponsorsChanged(origin = 'unknown') {
     const snapshot = this.getAllSponsors();
     if (this.onSponsorsChanged) this.onSponsorsChanged(snapshot);
@@ -751,7 +714,6 @@ class SponsorManager {
 
 const sponsorManager = new SponsorManager({
   dataPath: DATA_PATHS.SPONSORS,
-  getFallbackSponsors: getEmbeddedSponsors,
   onSponsorsChanged: (sponsors) => {
     renderSponsorShowcase(sponsors, { force: true });
   },
@@ -1281,8 +1243,8 @@ function setupSponsorLink(anchor, sponsor) {
     anchor.rel = isExternal ? 'noopener noreferrer' : '';
     anchor.removeAttribute('tabindex');
     anchor.setAttribute('aria-label', getSponsorAccessibleLabel(sponsor));
-    anchor.style.cursor = 'pointer';
-    
+    anchor.classList.remove('sponsor-card--static');
+
     const displayName = getSponsorDisplayName(sponsor);
     if (displayName) {
       anchor.title = displayName;
@@ -1291,20 +1253,19 @@ function setupSponsorLink(anchor, sponsor) {
     }
   } else {
     anchor.removeAttribute('href');
-    anchor.style.cursor = 'default';
-    anchor.style.pointerEvents = 'none';
     anchor.removeAttribute('target');
     anchor.removeAttribute('rel');
     anchor.removeAttribute('aria-label');
     anchor.removeAttribute('title');
     anchor.setAttribute('tabindex', '-1');
+    anchor.classList.add('sponsor-card--static');
   }
 }
 
 function updateSponsorBlock(blockElements, sponsor, options = {}) {
   if (!blockElements) return;
 
-  const { block, anchor, logo, heading } = blockElements;
+  const { block, anchor, logo } = blockElements;
   const { showPlaceholder = false, preferLazy = false } = options;
 
   if (!block || !anchor || !logo) return;
@@ -1316,14 +1277,19 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
     block.setAttribute('aria-hidden', showPlaceholder ? 'false' : 'true');
     block.classList.toggle(placeholderClass, showPlaceholder);
 
-    anchor.href = '#';
-    anchor.target = '_self';
+    anchor.classList.toggle('sponsor-card--placeholder', showPlaceholder);
+    anchor.classList.add('sponsor-card--static');
+    anchor.removeAttribute('href');
+    anchor.removeAttribute('target');
+    anchor.removeAttribute('rel');
     anchor.removeAttribute('aria-label');
+    anchor.removeAttribute('title');
     anchor.setAttribute('tabindex', '-1');
-    anchor.classList.toggle('sponsor-link--placeholder', showPlaceholder);
-    if (showPlaceholder) anchor.setAttribute('aria-hidden', 'true');
-
-    if (heading) heading.hidden = !showPlaceholder;
+    if (showPlaceholder) {
+      anchor.setAttribute('aria-hidden', 'true');
+    } else {
+      anchor.removeAttribute('aria-hidden');
+    }
 
     logo.hidden = true;
     logo.removeAttribute('src');
@@ -1337,7 +1303,7 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
   block.setAttribute('aria-hidden', 'false');
   block.classList.remove(placeholderClass);
 
-  anchor.classList.remove('sponsor-link--placeholder');
+  anchor.classList.remove('sponsor-card--placeholder');
   anchor.removeAttribute('aria-hidden');
   setupSponsorLink(anchor, sponsor);
 
@@ -1348,7 +1314,6 @@ function updateSponsorBlock(blockElements, sponsor, options = {}) {
   if (logoSrc && logo.src !== logoSrc) logo.src = logoSrc;
   logo.alt = '';
 
-  if (heading) heading.hidden = false;
 }
 
 function applySponsorToOverlay(sponsor) {
@@ -1357,7 +1322,6 @@ function applySponsorToOverlay(sponsor) {
       block: elements.drawSponsorBlock,
       anchor: elements.drawSponsor,
       logo: elements.drawSponsorLogo,
-      heading: elements.drawSponsorHeading,
     },
     sponsor,
     { 
@@ -1516,30 +1480,23 @@ function renderSponsorShowcase(sponsors, options = {}) {
 
     const hasUrl = Boolean(sponsor.url?.trim());
     const container = document.createElement(hasUrl ? 'a' : 'div');
-    container.className = 'sponsor-strip__link';
+    container.className = 'sponsor-card sponsor-strip__card';
 
     if (hasUrl) {
       setupSponsorLink(container, sponsor);
     } else {
-      container.classList.add('sponsor-strip__link--static');
+      container.classList.add('sponsor-card--static');
       container.setAttribute('role', 'presentation');
     }
 
     const logo = document.createElement('img');
+    logo.className = 'sponsor-card__logo';
     logo.alt = '';
     logo.src = sponsor.logo.trim();
     if ('decoding' in logo) logo.decoding = 'async';
     if ('loading' in logo) logo.loading = 'lazy';
 
-    const figure = document.createElement('figure');
-    figure.className = 'sponsor-strip__figure';
-
-    const logoWrapper = document.createElement('span');
-    logoWrapper.className = 'sponsor-strip__logo';
-    logoWrapper.appendChild(logo);
-    figure.appendChild(logoWrapper);
-
-    container.appendChild(figure);
+    container.appendChild(logo);
     item.appendChild(container);
     elements.sponsorShowcaseList.appendChild(item);
   });
@@ -1553,36 +1510,108 @@ function renderSponsorShowcase(sponsors, options = {}) {
 // 14. BOARD RENDERING
 // ============================================
 
-function getNumberImage(entry) {
-  if (entry?.image) return entry.image;
-  if (entry?.number) return `images/${entry.number}.jpg`;
-  return FALLBACK_IMAGE;
+function getNumberIllustration(entry) {
+  const number = Math.trunc(Number(entry?.number));
+  if (!Number.isFinite(number) || number <= 0) return '';
+  return `images/illustrazioni/${number}.png`;
 }
 
-function handleBoardCellImageError(event) {
-  const target = event.currentTarget;
-  if (!(target instanceof HTMLImageElement)) return;
+function resolveIllustrationFit(url) {
+  if (!url) return Promise.resolve('contain');
 
-  if (target.dataset.fallbackApplied === 'true') {
-    target.style.display = 'none';
-    target.removeEventListener('error', handleBoardCellImageError);
+  if (illustrationFitCache.has(url)) {
+    return Promise.resolve(illustrationFitCache.get(url));
+  }
+
+  return new Promise((resolve) => {
+    const image = new Image();
+
+    const finalize = (value) => {
+      const fitValue = value || 'contain';
+      illustrationFitCache.set(url, fitValue);
+      resolve(fitValue);
+    };
+
+    image.onload = () => {
+      const { naturalWidth: width = 0, naturalHeight: height = 0 } = image;
+      if (width > 0 && height > 0) {
+        finalize(width >= height ? '100% auto' : 'auto 100%');
+      } else {
+        finalize('contain');
+      }
+    };
+
+    image.onerror = () => finalize('contain');
+
+    image.decoding = 'async';
+    image.src = url;
+  });
+}
+
+function applyBackgroundFit(element, url, options = {}) {
+  const { sizeProperty, forceSize } = options;
+
+  if (!(element instanceof HTMLElement)) return;
+
+  if (!url) {
+    if (sizeProperty) {
+      element.style.removeProperty(sizeProperty);
+    } else {
+      element.style.removeProperty('background-size');
+    }
+    delete element.dataset.illustrationSource;
     return;
   }
 
-  target.dataset.fallbackApplied = 'true';
-  target.src = FALLBACK_IMAGE;
+  element.dataset.illustrationSource = url;
+
+  const applySize = (value) => {
+    if (element.dataset.illustrationSource !== url) return;
+    const sizeValue = value || 'contain';
+    if (sizeProperty) {
+      element.style.setProperty(sizeProperty, sizeValue);
+    } else {
+      element.style.backgroundSize = sizeValue;
+    }
+  };
+
+  if (forceSize) {
+    applySize(forceSize);
+    return;
+  }
+
+  applySize('contain');
+
+  resolveIllustrationFit(url).then(applySize).catch(() => {
+    if (element.dataset.illustrationSource !== url) return;
+    applySize('contain');
+  });
 }
 
-function applyBoardCellImage(imageEl, entry) {
-  if (!(imageEl instanceof HTMLImageElement)) return FALLBACK_IMAGE;
+function buildBoardCellLabel(entry, { drawn = false } = {}) {
+  if (!entry) return '';
 
-  imageEl.dataset.fallbackApplied = 'false';
-  imageEl.removeEventListener('error', handleBoardCellImageError);
-  imageEl.addEventListener('error', handleBoardCellImageError);
-  imageEl.style.removeProperty('display');
-  const source = getNumberImage(entry);
-  imageEl.src = source;
-  return source;
+  const labelParts = [`Numero ${entry.number}`];
+
+  const italian = entry.italian?.trim();
+  const dialect = entry.dialect?.trim();
+
+  if (italian) {
+    labelParts.push(italian);
+  } else if (dialect) {
+    labelParts.push(dialect);
+  }
+
+  labelParts.push(drawn ? 'Estratto' : 'Disponibile');
+
+  return labelParts.join(' – ');
+}
+
+function syncBoardCellAccessibility(cell, entry, { drawn = false } = {}) {
+  if (!cell || !entry) return;
+
+  const srLabel = cell.querySelector('.sr-only');
+  if (srLabel) srLabel.textContent = buildBoardCellLabel(entry, { drawn });
 }
 
 function renderBoard() {
@@ -1600,18 +1629,8 @@ function renderBoard() {
     const cell = elements.template.content.firstElementChild.cloneNode(true);
     cell.dataset.number = entry.number;
 
-    const srLabel = cell.querySelector('.sr-only');
-    if (srLabel) {
-      const labelParts = [`Numero ${entry.number}`];
-      if (entry.italian?.trim()) labelParts.push(entry.italian.trim());
-      else if (entry.dialect?.trim()) labelParts.push(entry.dialect.trim());
-      srLabel.textContent = labelParts.join(' – ');
-    }
-
-    const artworkEl = cell.querySelector('.board-cell__media');
-    if (artworkEl instanceof HTMLImageElement) {
-      applyBoardCellImage(artworkEl, entry);
-    }
+    const numberEl = cell.querySelector('.board-cell__number');
+    if (numberEl) numberEl.textContent = entry.number;
 
     const tokenNumberEl = cell.querySelector('.board-cell__token-number');
     if (tokenNumberEl) tokenNumberEl.textContent = entry.number;
@@ -1619,6 +1638,7 @@ function renderBoard() {
     const isDrawn = state.drawnNumbers.has(entry.number);
     cell.classList.toggle(CSS_CLASSES.CELL_DRAWN, isDrawn);
     cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
+    syncBoardCellAccessibility(cell, entry, { drawn: isDrawn });
 
     state.cellsByNumber.set(entry.number, cell);
     fragment.appendChild(cell);
@@ -1865,7 +1885,8 @@ function markNumberDrawn(entry, options = {}) {
     const isDrawn = state.drawnNumbers.has(number);
     cell.classList.toggle(CSS_CLASSES.CELL_DRAWN, isDrawn);
     cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
-    
+    syncBoardCellAccessibility(cell, entry, { drawn: isDrawn });
+
     if (isDrawn && animate) {
       cell.classList.add(CSS_CLASSES.CELL_JUST_DRAWN);
       const handleAnimationEnd = (event) => {
@@ -1904,7 +1925,6 @@ async function handleDraw() {
 
   state.isAnimatingDraw = true;
   let restoreDrawButton = false;
-  let restoreFloatingDrawButton = false;
   let markRecorded = false;
   let shouldDelayModal = false;
 
@@ -1914,10 +1934,6 @@ async function handleDraw() {
     if (elements.drawButton) {
       restoreDrawButton = !elements.drawButton.disabled;
       elements.drawButton.disabled = true;
-    }
-    if (elements.floatingDrawButton) {
-      restoreFloatingDrawButton = !elements.floatingDrawButton.disabled;
-      elements.floatingDrawButton.disabled = true;
     }
 
     try {
@@ -1943,7 +1959,6 @@ async function handleDraw() {
   } finally {
     state.isAnimatingDraw = false;
     if (elements.drawButton && restoreDrawButton) elements.drawButton.disabled = false;
-    if (elements.floatingDrawButton && restoreFloatingDrawButton) elements.floatingDrawButton.disabled = false;
   }
 
   if (shouldDelayModal) {
@@ -1982,9 +1997,11 @@ function performGameReset() {
   clearPersistedDrawState();
   if (state.storageErrorMessage) updateDrawStatus();
 
-  state.cellsByNumber.forEach((cell) => {
+  state.cellsByNumber.forEach((cell, number) => {
     cell.classList.remove(CSS_CLASSES.CELL_DRAWN, CSS_CLASSES.CELL_ACTIVE);
     cell.setAttribute('aria-pressed', 'false');
+    const entry = state.entriesByNumber.get(number);
+    syncBoardCellAccessibility(cell, entry, { drawn: false });
   });
 
   state.selected = null;
@@ -2040,6 +2057,31 @@ function handleSelection(entry, cell, options = {}) {
   speakEntry(entry);
 }
 
+function applyModalIllustration(frameEl, entry) {
+  if (!(frameEl instanceof HTMLElement)) return;
+
+  const illustration = getNumberIllustration(entry);
+
+  if (illustration) {
+    const trimmedItalian = entry?.italian?.trim();
+    const label = trimmedItalian
+      ? `Illustrazione del numero ${entry.number}: ${trimmedItalian}`
+      : `Illustrazione del numero ${entry.number}`;
+
+    frameEl.style.backgroundImage = `url('${illustration}')`;
+    applyBackgroundFit(frameEl, illustration);
+    frameEl.classList.remove('number-dialog__image-frame--placeholder');
+    frameEl.setAttribute('aria-label', label);
+    frameEl.removeAttribute('aria-hidden');
+  } else {
+    frameEl.style.removeProperty('background-image');
+    applyBackgroundFit(frameEl, '');
+    frameEl.classList.add('number-dialog__image-frame--placeholder');
+    frameEl.removeAttribute('aria-label');
+    frameEl.setAttribute('aria-hidden', 'true');
+  }
+}
+
 function openModal(entry, options = {}) {
   const { fromDraw = false } = options;
 
@@ -2059,26 +2101,16 @@ function openModal(entry, options = {}) {
     elements.modalDialect.classList.toggle('number-dialog__phrase--empty', !hasDialect);
   }
 
-  if (elements.modalItalianPlay) {
-    elements.modalItalianPlay.disabled = !hasItalian;
+  if (elements.modalItalianCard) {
+    elements.modalItalianCard.disabled = !hasItalian;
   }
 
-  if (elements.modalDialectPlay) {
-    elements.modalDialectPlay.disabled = !hasDialect;
-  }
-
-  if (elements.modalImage) {
-    const imageSource = applyBoardCellImage(elements.modalImage, entry);
-    elements.modalImage.alt = imageSource !== FALLBACK_IMAGE
-      ? entry.italian ? `Illustrazione del numero ${entry.number}: ${entry.italian}` : `Illustrazione del numero ${entry.number}`
-      : `Segnaposto per il numero ${entry.number}`;
+  if (elements.modalDialectCard) {
+    elements.modalDialectCard.disabled = !hasDialect;
   }
 
   if (elements.modalImageFrame) {
-    elements.modalImageFrame.classList.toggle(
-      'number-dialog__image-frame--placeholder',
-      getNumberImage(entry) === FALLBACK_IMAGE
-    );
+    applyModalIllustration(elements.modalImageFrame, entry);
   }
 
   ensureModalSponsor(entry, { fromDraw });
@@ -2262,17 +2294,26 @@ function updateDrawStatus(latestEntry) {
   }
 
   if (elements.drawLastMetric && normalizedEntry) {
-    const number = Math.trunc(Number(normalizedEntry.number));
-    if (Number.isFinite(number) && number > 0) {
-      const imagePath = `images/illustrazioni/${number}.png`;
-      elements.drawLastMetric.style.setProperty('--last-number-image', `url('${imagePath}')`);
+    const illustration = getNumberIllustration(normalizedEntry);
+    if (illustration) {
+      elements.drawLastMetric.style.setProperty('--last-number-image', `url('${illustration}')`);
+      applyBackgroundFit(elements.drawLastMetric, illustration, {
+        sizeProperty: '--last-number-image-size',
+        forceSize: 'auto 100%',
+      });
       elements.drawLastMetric.dataset.hasImage = 'true';
     } else {
       elements.drawLastMetric.style.removeProperty('--last-number-image');
+      applyBackgroundFit(elements.drawLastMetric, '', {
+        sizeProperty: '--last-number-image-size',
+      });
       delete elements.drawLastMetric.dataset.hasImage;
     }
   } else if (elements.drawLastMetric) {
     elements.drawLastMetric.style.removeProperty('--last-number-image');
+    applyBackgroundFit(elements.drawLastMetric, '', {
+      sizeProperty: '--last-number-image-size',
+    });
     delete elements.drawLastMetric.dataset.hasImage;
   }
 
@@ -2306,10 +2347,6 @@ function updateDrawStatus(latestEntry) {
 
   if (elements.drawButton) {
     elements.drawButton.disabled = noNumbersLoaded || finished || isDataLoading || isDataError;
-  }
-
-  if (elements.floatingDrawButton) {
-    elements.floatingDrawButton.disabled = noNumbersLoaded || finished || isDataLoading || isDataError;
   }
 
   if (elements.resetButton) {
@@ -2384,7 +2421,6 @@ async function loadNumbers() {
       elements.drawStatus.textContent = 'Errore nel caricamento dei numeri.';
     }
     if (elements.drawButton) elements.drawButton.disabled = true;
-    if (elements.floatingDrawButton) elements.floatingDrawButton.disabled = true;
     
     setDataLoadingState(LoadingStates.ERROR);
     updateDrawHistory();
@@ -2402,18 +2438,16 @@ function setupEventListeners() {
 
   elements.modalClose?.addEventListener('click', closeModal);
   
-  elements.modalDialectPlay?.addEventListener('click', () => {
-    if (!state.selected) return;
+  elements.modalDialectCard?.addEventListener('click', () => {
+    if (!state.selected || elements.modalDialectCard?.disabled) return;
     const entry = state.entriesByNumber.get(Number(state.selected.dataset.number));
     if (entry?.dialect) speakText(entry.dialect, { lang: 'it-IT', rate: 0.92, respectToggle: false });
-    blurButtonOnNextFrame(elements.modalDialectPlay);
   });
 
-  elements.modalItalianPlay?.addEventListener('click', () => {
-    if (!state.selected) return;
+  elements.modalItalianCard?.addEventListener('click', () => {
+    if (!state.selected || elements.modalItalianCard?.disabled) return;
     const entry = state.entriesByNumber.get(Number(state.selected.dataset.number));
     if (entry?.italian) speakText(entry.italian, { lang: 'it-IT', rate: 0.96, respectToggle: false });
-    blurButtonOnNextFrame(elements.modalItalianPlay);
   });
 
   elements.modalNext?.addEventListener('click', () => {
@@ -2451,7 +2485,6 @@ function setupEventListeners() {
   });
 
   elements.drawButton?.addEventListener('click', handleDraw);
-  elements.floatingDrawButton?.addEventListener('click', handleDraw);
   elements.resetButton?.addEventListener('click', resetGame);
   elements.historyToggle?.addEventListener('click', toggleHistoryPanel);
   elements.audioToggle?.addEventListener('click', () => setAudioEnabled(!state.audioEnabled));
