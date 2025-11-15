@@ -2070,13 +2070,13 @@ function applyModalIllustration(frameEl, entry) {
 
     frameEl.style.backgroundImage = `url('${illustration}')`;
     applyBackgroundFit(frameEl, illustration);
-    frameEl.classList.remove('number-dialog__image-frame--placeholder');
+    frameEl.classList.remove('number-dialog__visual--placeholder');
     frameEl.setAttribute('aria-label', label);
     frameEl.removeAttribute('aria-hidden');
   } else {
     frameEl.style.removeProperty('background-image');
     applyBackgroundFit(frameEl, '');
-    frameEl.classList.add('number-dialog__image-frame--placeholder');
+    frameEl.classList.add('number-dialog__visual--placeholder');
     frameEl.removeAttribute('aria-label');
     frameEl.setAttribute('aria-hidden', 'true');
   }
