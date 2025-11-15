@@ -2069,14 +2069,14 @@ function applyModalIllustration(frameEl, entry) {
       : `Illustrazione del numero ${entry.number}`;
 
     frameEl.style.backgroundImage = `url('${illustration}')`;
-    applyBackgroundFit(frameEl, illustration);
-    frameEl.classList.remove('number-dialog__image-frame--placeholder');
+    applyBackgroundFit(frameEl, illustration, { forceSize: 'contain' });
+    frameEl.classList.remove('number-dialog__visual--placeholder');
     frameEl.setAttribute('aria-label', label);
     frameEl.removeAttribute('aria-hidden');
   } else {
     frameEl.style.removeProperty('background-image');
     applyBackgroundFit(frameEl, '');
-    frameEl.classList.add('number-dialog__image-frame--placeholder');
+    frameEl.classList.add('number-dialog__visual--placeholder');
     frameEl.removeAttribute('aria-label');
     frameEl.setAttribute('aria-hidden', 'true');
   }
@@ -2087,6 +2087,9 @@ function openModal(entry, options = {}) {
 
   const paddedNumber = String(entry.number).padStart(2, '0');
   elements.modalNumber.textContent = `Numero ${paddedNumber}`;
+  if (elements.modal) {
+    elements.modal.setAttribute('data-number', paddedNumber);
+  }
 
   const hasItalian = Boolean(entry.italian?.trim());
   const hasDialect = Boolean(entry.dialect?.trim());
