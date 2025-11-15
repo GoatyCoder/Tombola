@@ -2532,9 +2532,11 @@ function initializeFloatingControls() {
   const prefersHover = window.matchMedia?.('(hover: hover) and (pointer: fine)');
   state.floatingAutoHideEnabled = Boolean(prefersHover?.matches);
 
+  const boardVisibilityTarget = elements.board || elements.boardWrapper;
+
   let initialBoardVisibility = true;
-  if (elements.boardWrapper && typeof window !== 'undefined') {
-    const rect = elements.boardWrapper.getBoundingClientRect();
+  if (boardVisibilityTarget && typeof window !== 'undefined') {
+    const rect = boardVisibilityTarget.getBoundingClientRect();
     initialBoardVisibility = rect.bottom > 0 && rect.top < window.innerHeight;
   }
 
@@ -2545,11 +2547,10 @@ function initializeFloatingControls() {
     handleFloatingScrollActivity();
   }
 
-  const hoverTargets = new Set([
-    elements.boardWrapper,
+  const hoverTargets = [
     elements.board,
     elements.floatingContainer,
-  ]);
+  ];
 
   hoverTargets.forEach((target) => {
     target?.addEventListener('mouseenter', handleFloatingPointerEnter);
@@ -2609,11 +2610,11 @@ function initializeFloatingControls() {
   registerCleanup(() => window.removeEventListener('scroll', handleScroll));
 
   const canObserveBoard = typeof window !== 'undefined' && 'IntersectionObserver' in window;
-  if (elements.boardWrapper && canObserveBoard) {
+  if (boardVisibilityTarget && canObserveBoard) {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.target !== elements.boardWrapper) return;
+          if (entry.target !== boardVisibilityTarget) return;
 
           const inView = entry.isIntersecting && entry.intersectionRatio > 0;
           state.floatingBoardInView = inView;
@@ -2637,7 +2638,7 @@ function initializeFloatingControls() {
       },
     );
 
-    observer.observe(elements.boardWrapper);
+    observer.observe(boardVisibilityTarget);
     registerCleanup(() => observer.disconnect());
   } else if (!state.floatingBoardInView) {
     state.floatingBoardInView = true;
