@@ -2069,7 +2069,7 @@ function applyModalIllustration(frameEl, entry) {
       : `Illustrazione del numero ${entry.number}`;
 
     frameEl.style.backgroundImage = `url('${illustration}')`;
-    applyBackgroundFit(frameEl, illustration);
+    applyBackgroundFit(frameEl, illustration, { forceSize: 'contain' });
     frameEl.classList.remove('number-dialog__visual--placeholder');
     frameEl.setAttribute('aria-label', label);
     frameEl.removeAttribute('aria-hidden');
