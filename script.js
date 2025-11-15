@@ -2087,6 +2087,9 @@ function openModal(entry, options = {}) {
 
   const paddedNumber = String(entry.number).padStart(2, '0');
   elements.modalNumber.textContent = `Numero ${paddedNumber}`;
+  if (elements.modal) {
+    elements.modal.setAttribute('data-number', paddedNumber);
+  }
 
   const hasItalian = Boolean(entry.italian?.trim());
   const hasDialect = Boolean(entry.dialect?.trim());

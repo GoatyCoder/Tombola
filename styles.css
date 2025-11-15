@@ -1151,22 +1151,54 @@ button:focus-visible {
 
 /* --- Number Dialog --- */
 .number-dialog {
-  width: min(26.875rem, 100%);
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-  padding: clamp(0.75rem, 2.3vw, 1.05rem);
-  box-shadow: none;
+  position: relative;
+  isolation: isolate;
+  width: min(30rem, 100%);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(255, 249, 245, 0.96));
+  border: 1px solid rgba(143, 31, 51, 0.08);
+  border-radius: var(--radius-lg);
+  padding: clamp(1rem, 3vw, 1.35rem);
+  box-shadow: 0 1.25rem 3.5rem rgba(20, 15, 13, 0.28);
   display: grid;
-  gap: clamp(0.5rem, 1.8vw, 0.75rem);
-  backdrop-filter: blur(0.25rem);
+  gap: clamp(0.6rem, 2vw, 1rem);
+  backdrop-filter: blur(0.35rem);
+  overflow: hidden;
+}
+
+.number-dialog::before {
+  content: '';
+  position: absolute;
+  inset: auto auto -30% -15%;
+  width: clamp(16rem, 36vw, 25rem);
+  aspect-ratio: 1 / 1;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 215, 186, 0.9), rgba(255, 154, 154, 0.35));
+  filter: blur(0.35rem);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.number-dialog::after {
+  content: attr(data-number);
+  position: absolute;
+  top: clamp(0.5rem, 4vw, 1.5rem);
+  right: clamp(-1.5rem, -2vw, -0.5rem);
+  font-size: clamp(4.5rem, 14vw, 8.5rem);
+  font-weight: 800;
+  color: rgba(143, 31, 51, 0.08);
+  letter-spacing: -0.04em;
+  line-height: 1;
+  pointer-events: none;
+  z-index: -1;
+  text-shadow: 0 0.4rem 1.2rem rgba(20, 15, 13, 0.25);
 }
 
 .number-dialog__header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.6rem;
+  flex-wrap: wrap;
 }
 
 .number-dialog__next {
@@ -1212,10 +1244,11 @@ button:focus-visible {
 
 .number-dialog__headline {
   margin: 0;
-  font-size: clamp(1.5rem, 3.6vw, 1.9rem);
+  font-size: clamp(1.8rem, 4.5vw, 2.4rem);
   font-weight: 700;
   color: var(--accent-strong);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
 }
 
 .number-dialog__close {
@@ -1238,25 +1271,40 @@ button:focus-visible {
 .number-dialog__body {
   display: grid;
   gap: clamp(0.65rem, 2.2vw, 1rem);
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(143, 31, 51, 0.08);
+  padding: clamp(0.65rem, 2vw, 1rem);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
 }
 
 .number-dialog__visual {
-  display: grid;
-  justify-items: stretch;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: clamp(11rem, 28vw, 15rem);
+  padding: clamp(0.45rem, 1.8vw, 1rem);
+  border-radius: var(--radius-md);
+  background: linear-gradient(145deg, rgba(255, 254, 252, 0.85), rgba(253, 237, 226, 0.9));
+  border: 1px solid rgba(143, 31, 51, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35), 0 1.25rem 1.8rem rgba(20, 15, 13, 0.1);
+  overflow: hidden;
 }
 
 .number-dialog__image-frame {
   position: relative;
   inline-size: 100%;
-  max-inline-size: 15rem;
+  max-inline-size: clamp(12rem, 22vw, 16rem);
   aspect-ratio: 1 / 1;
-  margin: clamp(0.45rem, 1.4vw, 0.85rem);
-  border-radius: 0;
+  margin: 0;
+  border-radius: var(--radius-md);
   background-position: center;
-  background-size: contain;
+  background-size: cover;
   background-repeat: no-repeat;
   overflow: hidden;
   justify-self: center;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28), 0 1rem 1.75rem rgba(20, 15, 13, 0.18);
 }
 
 .number-dialog__image-frame--placeholder {
@@ -1293,17 +1341,18 @@ button:focus-visible {
 
 .number-dialog__language-card {
   display: grid;
-  gap: 0.28rem;
-  padding: 0.34rem 0.52rem;
+  gap: 0.35rem;
+  padding: clamp(0.45rem, 1.6vw, 0.75rem) clamp(0.55rem, 2vw, 0.9rem);
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border-light);
-  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(143, 31, 51, 0.08);
+  background: rgba(255, 255, 255, 0.95);
   cursor: pointer;
   text-align: left;
   transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
   width: 100%;
   -webkit-appearance: none;
   appearance: none;
+  box-shadow: 0 0.4rem 1rem rgba(20, 15, 13, 0.08);
 }
 
 .number-dialog__language-card:disabled {
@@ -1794,6 +1843,17 @@ button:focus-visible {
   }
 }
 
+@media (min-width: 48rem) {
+  .number-dialog {
+    width: min(52rem, 100%);
+    padding: clamp(1.2rem, 2.4vw, 1.75rem);
+  }
+
+  .number-dialog__headline {
+    font-size: clamp(2rem, 3.6vw, 2.6rem);
+  }
+}
+
 /* --- Tablet Landscape --- */
 @media (min-width: 45rem) {
   .status-card__summary {
@@ -1813,6 +1873,28 @@ button:focus-visible {
 
   .app-footer__meta {
     max-width: 50rem;
+  }
+}
+
+@media (min-width: 62rem) {
+  .number-dialog {
+    width: min(64rem, 100%);
+    padding: clamp(1.5rem, 3vw, 2rem);
+    gap: clamp(1rem, 2.4vw, 1.5rem);
+  }
+
+  .number-dialog__body {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    align-items: stretch;
+    gap: clamp(1rem, 2.2vw, 1.5rem);
+  }
+
+  .number-dialog__visual {
+    min-height: clamp(14rem, 28vw, 20rem);
+  }
+
+  .number-dialog__languages {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
