@@ -15,7 +15,6 @@ const DATA_PATHS = {
   SPONSORS: 'sponsors.json',
 };
 
-const FALLBACK_IMAGE = 'images/empty.jpg';
 const illustrationFitCache = new Map();
 
 const LoadingStates = Object.freeze({
@@ -107,8 +106,8 @@ const elements = {
   modalDialect: document.querySelector('#modal-dialect'),
   modalImageFrame: document.querySelector('#modal-image-frame'),
   modalClose: document.querySelector('#modal-close'),
-  modalDialectPlay: document.querySelector('#modal-dialect-play'),
-  modalItalianPlay: document.querySelector('#modal-italian-play'),
+  modalDialectCard: document.querySelector('#modal-dialect-card'),
+  modalItalianCard: document.querySelector('#modal-italian-card'),
   modalNext: document.querySelector('#modal-next'),
   modalSponsorBlock: document.querySelector('#modal-sponsor-block'),
   modalSponsor: document.querySelector('#modal-sponsor'),
@@ -135,7 +134,6 @@ const elements = {
   historyToggle: document.querySelector('#history-toggle'),
   historyScrim: document.querySelector('#history-scrim'),
   audioToggle: document.querySelector('#audio-toggle'),
-  floatingDrawButton: document.querySelector('#floating-draw-button'),
   drawProgressValue: document.querySelector('#draw-progress-value'),
   drawProgressBar: document.querySelector('#draw-progress-bar'),
   drawProgressFill: document.querySelector('#draw-progress-bar .progress__fill'),
@@ -1512,12 +1510,6 @@ function renderSponsorShowcase(sponsors, options = {}) {
 // 14. BOARD RENDERING
 // ============================================
 
-function getNumberImage(entry) {
-  if (entry?.image) return entry.image;
-  if (entry?.number) return `images/${entry.number}.jpg`;
-  return FALLBACK_IMAGE;
-}
-
 function getNumberIllustration(entry) {
   const number = Math.trunc(Number(entry?.number));
   if (!Number.isFinite(number) || number <= 0) return '';
@@ -1596,30 +1588,30 @@ function applyBackgroundFit(element, url, options = {}) {
   });
 }
 
-function handleBoardCellImageError(event) {
-  const target = event.currentTarget;
-  if (!(target instanceof HTMLImageElement)) return;
+function buildBoardCellLabel(entry, { drawn = false } = {}) {
+  if (!entry) return '';
 
-  if (target.dataset.fallbackApplied === 'true') {
-    target.style.display = 'none';
-    target.removeEventListener('error', handleBoardCellImageError);
-    return;
+  const labelParts = [`Numero ${entry.number}`];
+
+  const italian = entry.italian?.trim();
+  const dialect = entry.dialect?.trim();
+
+  if (italian) {
+    labelParts.push(italian);
+  } else if (dialect) {
+    labelParts.push(dialect);
   }
 
-  target.dataset.fallbackApplied = 'true';
-  target.src = FALLBACK_IMAGE;
+  labelParts.push(drawn ? 'Estratto' : 'Disponibile');
+
+  return labelParts.join(' – ');
 }
 
-function applyBoardCellImage(imageEl, entry) {
-  if (!(imageEl instanceof HTMLImageElement)) return FALLBACK_IMAGE;
+function syncBoardCellAccessibility(cell, entry, { drawn = false } = {}) {
+  if (!cell || !entry) return;
 
-  imageEl.dataset.fallbackApplied = 'false';
-  imageEl.removeEventListener('error', handleBoardCellImageError);
-  imageEl.addEventListener('error', handleBoardCellImageError);
-  imageEl.style.removeProperty('display');
-  const source = getNumberImage(entry);
-  imageEl.src = source;
-  return source;
+  const srLabel = cell.querySelector('.sr-only');
+  if (srLabel) srLabel.textContent = buildBoardCellLabel(entry, { drawn });
 }
 
 function renderBoard() {
@@ -1637,18 +1629,8 @@ function renderBoard() {
     const cell = elements.template.content.firstElementChild.cloneNode(true);
     cell.dataset.number = entry.number;
 
-    const srLabel = cell.querySelector('.sr-only');
-    if (srLabel) {
-      const labelParts = [`Numero ${entry.number}`];
-      if (entry.italian?.trim()) labelParts.push(entry.italian.trim());
-      else if (entry.dialect?.trim()) labelParts.push(entry.dialect.trim());
-      srLabel.textContent = labelParts.join(' – ');
-    }
-
-    const artworkEl = cell.querySelector('.board-cell__media');
-    if (artworkEl instanceof HTMLImageElement) {
-      applyBoardCellImage(artworkEl, entry);
-    }
+    const numberEl = cell.querySelector('.board-cell__number');
+    if (numberEl) numberEl.textContent = entry.number;
 
     const tokenNumberEl = cell.querySelector('.board-cell__token-number');
     if (tokenNumberEl) tokenNumberEl.textContent = entry.number;
@@ -1656,6 +1638,7 @@ function renderBoard() {
     const isDrawn = state.drawnNumbers.has(entry.number);
     cell.classList.toggle(CSS_CLASSES.CELL_DRAWN, isDrawn);
     cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
+    syncBoardCellAccessibility(cell, entry, { drawn: isDrawn });
 
     state.cellsByNumber.set(entry.number, cell);
     fragment.appendChild(cell);
@@ -1902,7 +1885,8 @@ function markNumberDrawn(entry, options = {}) {
     const isDrawn = state.drawnNumbers.has(number);
     cell.classList.toggle(CSS_CLASSES.CELL_DRAWN, isDrawn);
     cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
-    
+    syncBoardCellAccessibility(cell, entry, { drawn: isDrawn });
+
     if (isDrawn && animate) {
       cell.classList.add(CSS_CLASSES.CELL_JUST_DRAWN);
       const handleAnimationEnd = (event) => {
@@ -1941,7 +1925,6 @@ async function handleDraw() {
 
   state.isAnimatingDraw = true;
   let restoreDrawButton = false;
-  let restoreFloatingDrawButton = false;
   let markRecorded = false;
   let shouldDelayModal = false;
 
@@ -1951,10 +1934,6 @@ async function handleDraw() {
     if (elements.drawButton) {
       restoreDrawButton = !elements.drawButton.disabled;
       elements.drawButton.disabled = true;
-    }
-    if (elements.floatingDrawButton) {
-      restoreFloatingDrawButton = !elements.floatingDrawButton.disabled;
-      elements.floatingDrawButton.disabled = true;
     }
 
     try {
@@ -1980,7 +1959,6 @@ async function handleDraw() {
   } finally {
     state.isAnimatingDraw = false;
     if (elements.drawButton && restoreDrawButton) elements.drawButton.disabled = false;
-    if (elements.floatingDrawButton && restoreFloatingDrawButton) elements.floatingDrawButton.disabled = false;
   }
 
   if (shouldDelayModal) {
@@ -2019,9 +1997,11 @@ function performGameReset() {
   clearPersistedDrawState();
   if (state.storageErrorMessage) updateDrawStatus();
 
-  state.cellsByNumber.forEach((cell) => {
+  state.cellsByNumber.forEach((cell, number) => {
     cell.classList.remove(CSS_CLASSES.CELL_DRAWN, CSS_CLASSES.CELL_ACTIVE);
     cell.setAttribute('aria-pressed', 'false');
+    const entry = state.entriesByNumber.get(number);
+    syncBoardCellAccessibility(cell, entry, { drawn: false });
   });
 
   state.selected = null;
@@ -2121,12 +2101,12 @@ function openModal(entry, options = {}) {
     elements.modalDialect.classList.toggle('number-dialog__phrase--empty', !hasDialect);
   }
 
-  if (elements.modalItalianPlay) {
-    elements.modalItalianPlay.disabled = !hasItalian;
+  if (elements.modalItalianCard) {
+    elements.modalItalianCard.disabled = !hasItalian;
   }
 
-  if (elements.modalDialectPlay) {
-    elements.modalDialectPlay.disabled = !hasDialect;
+  if (elements.modalDialectCard) {
+    elements.modalDialectCard.disabled = !hasDialect;
   }
 
   if (elements.modalImageFrame) {
@@ -2369,10 +2349,6 @@ function updateDrawStatus(latestEntry) {
     elements.drawButton.disabled = noNumbersLoaded || finished || isDataLoading || isDataError;
   }
 
-  if (elements.floatingDrawButton) {
-    elements.floatingDrawButton.disabled = noNumbersLoaded || finished || isDataLoading || isDataError;
-  }
-
   if (elements.resetButton) {
     elements.resetButton.disabled = drawnCount === 0 || isDataLoading || isDataError;
   }
@@ -2445,7 +2421,6 @@ async function loadNumbers() {
       elements.drawStatus.textContent = 'Errore nel caricamento dei numeri.';
     }
     if (elements.drawButton) elements.drawButton.disabled = true;
-    if (elements.floatingDrawButton) elements.floatingDrawButton.disabled = true;
     
     setDataLoadingState(LoadingStates.ERROR);
     updateDrawHistory();
@@ -2463,18 +2438,16 @@ function setupEventListeners() {
 
   elements.modalClose?.addEventListener('click', closeModal);
   
-  elements.modalDialectPlay?.addEventListener('click', () => {
-    if (!state.selected) return;
+  elements.modalDialectCard?.addEventListener('click', () => {
+    if (!state.selected || elements.modalDialectCard?.disabled) return;
     const entry = state.entriesByNumber.get(Number(state.selected.dataset.number));
     if (entry?.dialect) speakText(entry.dialect, { lang: 'it-IT', rate: 0.92, respectToggle: false });
-    blurButtonOnNextFrame(elements.modalDialectPlay);
   });
 
-  elements.modalItalianPlay?.addEventListener('click', () => {
-    if (!state.selected) return;
+  elements.modalItalianCard?.addEventListener('click', () => {
+    if (!state.selected || elements.modalItalianCard?.disabled) return;
     const entry = state.entriesByNumber.get(Number(state.selected.dataset.number));
     if (entry?.italian) speakText(entry.italian, { lang: 'it-IT', rate: 0.96, respectToggle: false });
-    blurButtonOnNextFrame(elements.modalItalianPlay);
   });
 
   elements.modalNext?.addEventListener('click', () => {
@@ -2512,7 +2485,6 @@ function setupEventListeners() {
   });
 
   elements.drawButton?.addEventListener('click', handleDraw);
-  elements.floatingDrawButton?.addEventListener('click', handleDraw);
   elements.resetButton?.addEventListener('click', resetGame);
   elements.historyToggle?.addEventListener('click', toggleHistoryPanel);
   elements.audioToggle?.addEventListener('click', () => setAudioEnabled(!state.audioEnabled));

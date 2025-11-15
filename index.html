@@ -51,7 +51,7 @@
                   <p id="draw-last-number" class="status-card__value" aria-atomic="true">—</p>
                   <p id="draw-last-detail" class="status-card__detail">In attesa della prima estrazione</p>
                 </div>
-                
+
                 <div class="status-card__metric status-card__metric--progress" role="group" aria-labelledby="progress-label">
                   <p id="progress-label" class="status-card__label sr-only">Numeri estratti</p>
                   <p id="draw-progress-value" class="status-card__value status-card__value--compact">0/0</p>
@@ -67,7 +67,7 @@
                   <span class="button__label">Estrai numero</span>
                   <img src="images/icon-die.svg" class="button__icon die-icon" alt="" aria-hidden="true" />
                 </button>
-                
+
                 <button type="button" id="reset-button" class="button button--dashboard button--icon" aria-label="Reset partita" disabled>
                   <svg viewBox="0 0 24 24" aria-hidden="true" class="button__icon">
                     <path d="M6 7.5A6.75 6.75 0 0 1 18.32 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
@@ -76,8 +76,24 @@
                     <path d="M6 19.5V15.25h4.25" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                   </svg>
                 </button>
-                
-                <button type="button" id="history-toggle" class="button button--dashboard button--icon" 
+
+                <button
+                  type="button"
+                  id="audio-toggle"
+                  class="button button--dashboard button--icon audio-toggle"
+                  aria-pressed="true"
+                  aria-label="Disattiva annuncio audio"
+                  title="Disattiva annuncio audio"
+                >
+                  <svg class="button__icon audio-toggle__icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path class="audio-toggle__speaker" d="M5.5 9.5H8l3.5-3.5v12L8 14.5H5.5a1.5 1.5 0 0 1-1.5-1.5v-2a1.5 1.5 0 0 1 1.5-1.5Z" />
+                    <path class="audio-toggle__wave" d="M15.5 9.5a3 3 0 0 1 0 5" />
+                    <path class="audio-toggle__wave audio-toggle__wave--strong" d="M17.8 7.8a6 6 0 0 1 0 8.5" />
+                    <path class="audio-toggle__cross" d="M16 9l5 5m0-5-5 5" />
+                  </svg>
+                </button>
+
+                <button type="button" id="history-toggle" class="button button--dashboard button--icon"
                         aria-expanded="false" aria-controls="history-panel" aria-label="Cronologia">
                   <svg class="button__icon" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M5.75 4.5h12.5a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H5.75a.75.75 0 0 1-.75-.75V5.25a.75.75 0 0 1 .75-.75Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
@@ -101,6 +117,7 @@
                 <h2 id="board-heading" class="board-head__title">Tabellone</h2>
                 <span id="draw-status" class="sr-only">Caricamento del tabellone…</span>
               </div>
+
               <div class="board-grid" id="board" aria-live="polite"></div>
             </article>
 
@@ -113,25 +130,6 @@
               <p class="history__empty" id="draw-history-empty">Nessun numero estratto finora.</p>
               <ol class="history__list" id="draw-history" aria-live="polite"></ol>
             </aside>
-          </div>
-
-          <!-- Floating Action Buttons -->
-          <div class="board-area__floating">
-            <div class="fab-group">
-              <button type="button" id="floating-draw-button" class="fab fab--primary" aria-label="Estrai numero" disabled>
-                <img src="images/icon-die.svg" class="fab__icon die-icon" alt="" aria-hidden="true" />
-              </button>
-              
-              <button type="button" id="audio-toggle" class="fab fab--secondary audio-fab" 
-                      aria-pressed="true" aria-label="Disattiva annuncio audio">
-                <svg class="audio-fab__icon" viewBox="0 0 24 24" aria-hidden="true">
-                  <path class="audio-fab__speaker" d="M5.5 9.5H8l3.5-3.5v12L8 14.5H5.5a1.5 1.5 0 0 1-1.5-1.5v-2a1.5 1.5 0 0 1 1.5-1.5Z" />
-                  <path class="audio-fab__wave" d="M15.5 9.5a3 3 0 0 1 0 5" />
-                  <path class="audio-fab__wave audio-fab__wave--strong" d="M17.8 7.8a6 6 0 0 1 0 8.5" />
-                  <path class="audio-fab__cross" d="M16 9l5 5m0-5-5 5" />
-                </svg>
-              </button>
-            </div>
           </div>
         </div>
         
@@ -193,15 +191,9 @@
       <div class="number-dialog">
         <header class="number-dialog__header">
           <p id="modal-number" class="number-dialog__headline" aria-live="polite"></p>
-          <div class="number-dialog__header-actions">
-            <button type="button" class="number-dialog__next" id="modal-next" aria-label="Estrai successivo" hidden disabled>
-              <span class="number-dialog__next-label">Estrai successivo</span>
-              <img src="images/icon-die.svg" class="die-icon" alt="" aria-hidden="true" />
-            </button>
-            <button type="button" class="number-dialog__close" id="modal-close" aria-label="Chiudi">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
+          <button type="button" class="number-dialog__close" id="modal-close" aria-label="Chiudi">
+            <span aria-hidden="true">&times;</span>
+          </button>
         </header>
 
         <div class="number-dialog__body">
@@ -212,44 +204,50 @@
           <div class="number-dialog__details">
             <div class="number-dialog__languages">
               <!-- Dialect Card -->
-              <article class="number-dialog__language-card number-dialog__language-card--dialect">
-                <header class="number-dialog__language-header">
+              <button type="button" class="number-dialog__language-card number-dialog__language-card--dialect"
+                      id="modal-dialect-card" aria-describedby="modal-dialect"
+                      aria-label="Riproduci la pronuncia in nojano">
+                <span class="number-dialog__language-header">
                   <span class="number-dialog__language-emblem">
                     <img src="images/logo_noicattaro.svg" alt="" loading="lazy" decoding="async" />
                   </span>
                   <span class="number-dialog__language-name">Nojano</span>
-                  <button type="button" class="number-dialog__audio-button" id="modal-dialect-play" 
-                          aria-describedby="modal-dialect" aria-label="Riproduci la pronuncia in nojano">
+                  <span class="number-dialog__language-audio" aria-hidden="true">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <circle cx="12" cy="12" r="8.75" fill="none" stroke="currentColor" stroke-width="1.5" />
                       <path d="M10 8.5v7l5-3.5-5-3.5Z" fill="currentColor" />
                     </svg>
-                  </button>
-                </header>
+                  </span>
+                </span>
                 <p id="modal-dialect" class="number-dialog__phrase"></p>
-              </article>
+              </button>
 
               <!-- Italian Card -->
-              <article class="number-dialog__language-card number-dialog__language-card--italian">
-                <header class="number-dialog__language-header">
+              <button type="button" class="number-dialog__language-card number-dialog__language-card--italian"
+                      id="modal-italian-card" aria-describedby="modal-italian"
+                      aria-label="Riproduci la pronuncia in italiano">
+                <span class="number-dialog__language-header">
                   <span class="number-dialog__language-emblem">
                     <img src="images/logo_italia.svg" alt="" loading="lazy" decoding="async" />
                   </span>
                   <span class="number-dialog__language-name">Italiano</span>
-                  <button type="button" class="number-dialog__audio-button" id="modal-italian-play" 
-                          aria-describedby="modal-italian" aria-label="Riproduci la pronuncia in italiano">
+                  <span class="number-dialog__language-audio" aria-hidden="true">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <circle cx="12" cy="12" r="8.75" fill="none" stroke="currentColor" stroke-width="1.5" />
                       <path d="M10 8.5v7l5-3.5-5-3.5Z" fill="currentColor" />
                     </svg>
-                  </button>
-                </header>
+                  </span>
+                </span>
                 <p id="modal-italian" class="number-dialog__phrase"></p>
-              </article>
+              </button>
             </div>
 
             <!-- Sponsor Footer -->
             <footer class="number-dialog__footer">
+              <button type="button" class="number-dialog__next" id="modal-next" aria-label="Estrai successivo" hidden disabled>
+                <span class="number-dialog__next-label">Estrai successivo</span>
+                <img src="images/icon-die-inverse.svg" class="die-icon" alt="" aria-hidden="true" />
+              </button>
               <div id="modal-sponsor-block" class="sponsor-banner sponsor-banner--modal" hidden>
                 <a id="modal-sponsor" class="sponsor-card" href="#" target="_blank" rel="noopener noreferrer">
                   <img id="modal-sponsor-logo" class="sponsor-card__logo" alt="" decoding="async" loading="lazy" />
@@ -264,10 +262,10 @@
     <!-- Board Cell Template -->
     <template id="board-cell-template">
       <button class="board-cell" type="button">
-        <img class="board-cell__media" alt="" aria-hidden="true" loading="lazy" decoding="async" />
         <span class="board-cell__token token" aria-hidden="true">
           <span class="board-cell__token-number token__number"></span>
         </span>
+        <span class="board-cell__number" aria-hidden="true"></span>
         <span class="sr-only"></span>
       </button>
     </template>
