@@ -76,6 +76,8 @@ const state = {
   numbers: [],
   selected: null,
   currentUtterance: null,
+  currentAudio: null,
+  audioPlaybackToken: 0,
   cellsByNumber: new Map(),
   entriesByNumber: new Map(),
   drawnNumbers: new Set(),
@@ -1149,9 +1151,12 @@ function initializeAudioPreference() {
 function setAudioEnabled(enabled) {
   state.audioEnabled = Boolean(enabled);
 
-  if (!enabled && state.currentUtterance && typeof speechSynthesis !== 'undefined') {
-    speechSynthesis.cancel();
-    state.currentUtterance = null;
+  if (!enabled) {
+    stopAudioPlayback();
+    if (state.currentUtterance && typeof speechSynthesis !== 'undefined') {
+      speechSynthesis.cancel();
+      state.currentUtterance = null;
+    }
   }
 
   updateAudioToggle();
@@ -1224,6 +1229,156 @@ function speakEntry(entry) {
     .join('. ');
 
   speakText(announcement, { lang: 'it-IT', rate: 0.92 });
+}
+
+function getAudioFilePath(number, variant = 'base') {
+  if (typeof number !== 'number' && typeof number !== 'string') return null;
+
+  const trimmed = String(number).trim();
+  if (!trimmed) return null;
+
+  const suffix = variant === 'italian' ? '_it' : variant === 'dialect' ? '_nj' : '';
+  return `audio/${trimmed}${suffix}.mp3`;
+}
+
+function stopAudioPlayback() {
+  state.audioPlaybackToken += 1;
+
+  if (state.currentAudio) {
+    try {
+      state.currentAudio.pause();
+      state.currentAudio.currentTime = 0;
+    } catch (error) {
+      console.warn('Audio stop error', error);
+    }
+    state.currentAudio = null;
+  }
+}
+
+function playAudioSequence(sequence) {
+  if (!Array.isArray(sequence) || sequence.length === 0) return null;
+
+  stopAudioPlayback();
+  const token = state.audioPlaybackToken;
+
+  return new Promise((resolve) => {
+    let finished = false;
+    let requiredPlayed = false;
+
+    const conclude = (success) => {
+      if (finished) return;
+      finished = true;
+      if (state.currentAudio) {
+        try {
+          state.currentAudio.pause();
+        } catch (error) {
+          console.warn('Audio cleanup error', error);
+        }
+        state.currentAudio = null;
+      }
+      resolve(success);
+    };
+
+    const playNext = () => {
+      if (finished) return;
+      if (token !== state.audioPlaybackToken) {
+        conclude(false);
+        return;
+      }
+
+      const next = sequence.shift();
+      if (!next || !next.src) {
+        conclude(requiredPlayed);
+        return;
+      }
+
+      const audio = new Audio(next.src);
+      state.currentAudio = audio;
+
+      const cleanup = () => {
+        audio.removeEventListener('ended', handleEnded);
+        audio.removeEventListener('error', handleError);
+        if (state.currentAudio === audio) {
+          state.currentAudio = null;
+        }
+      };
+
+      const handleEnded = () => {
+        cleanup();
+        playNext();
+      };
+
+      const handleError = () => {
+        cleanup();
+        if (next.required) {
+          conclude(false);
+        } else {
+          playNext();
+        }
+      };
+
+      audio.addEventListener('ended', handleEnded);
+      audio.addEventListener('error', handleError);
+
+      try {
+        const result = audio.play();
+        if (result && typeof result.then === 'function') {
+          result
+            .then(() => {
+              if (next.required) requiredPlayed = true;
+            })
+            .catch(() => {
+              handleError();
+            });
+        } else if (next.required) {
+          requiredPlayed = true;
+        }
+      } catch (error) {
+        handleError();
+      }
+    };
+
+    playNext();
+  });
+}
+
+function playEntryAudio(entry) {
+  if (!entry) return null;
+
+  const baseSource = getAudioFilePath(entry.number, 'base');
+  if (!baseSource) return null;
+
+  const sequence = [{ src: baseSource, required: true }];
+
+  if (entry.italian?.trim()) {
+    const italianSource = getAudioFilePath(entry.number, 'italian');
+    if (italianSource) sequence.push({ src: italianSource, required: false });
+  }
+
+  if (entry.dialect?.trim()) {
+    const dialectSource = getAudioFilePath(entry.number, 'dialect');
+    if (dialectSource) sequence.push({ src: dialectSource, required: false });
+  }
+
+  return playAudioSequence(sequence);
+}
+
+function announceEntry(entry) {
+  if (!entry) return;
+
+  const playback = state.audioEnabled ? playEntryAudio(entry) : null;
+
+  if (playback && typeof playback.then === 'function') {
+    playback
+      .then((success) => {
+        if (!success) speakEntry(entry);
+      })
+      .catch(() => {
+        speakEntry(entry);
+      });
+  } else if (!playback) {
+    speakEntry(entry);
+  }
 }
 
 // ============================================
@@ -1985,6 +2140,7 @@ function performGameReset() {
   sponsorManager.clearCurrentSponsor();
   applySponsorToOverlay(null);
 
+  stopAudioPlayback();
   if (state.currentUtterance && typeof speechSynthesis !== 'undefined') {
     speechSynthesis.cancel();
   }
@@ -2054,7 +2210,7 @@ function handleSelection(entry, cell, options = {}) {
   targetCell.classList.add(CSS_CLASSES.CELL_ACTIVE);
 
   openModal(entry, { fromDraw });
-  speakEntry(entry);
+  announceEntry(entry);
 }
 
 function applyModalIllustration(frameEl, entry) {
