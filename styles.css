@@ -629,7 +629,7 @@ button:focus-visible {
 
 .board-cell {
   position: relative;
-  aspect-ratio: 256 / 240;
+  aspect-ratio: 240 / 256;
   display: grid;
   place-items: center;
   padding: 0;
