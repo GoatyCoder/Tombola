@@ -197,9 +197,7 @@
         </header>
 
         <div class="number-dialog__body">
-          <div class="number-dialog__visual">
-            <div class="number-dialog__image-frame" id="modal-image-frame" role="img" aria-hidden="true"></div>
-          </div>
+          <div class="number-dialog__visual" id="modal-image-frame" role="img" aria-hidden="true"></div>
 
           <div class="number-dialog__details">
             <div class="number-dialog__languages">
@@ -262,6 +260,7 @@
     <!-- Board Cell Template -->
     <template id="board-cell-template">
       <button class="board-cell" type="button">
+        <img class="board-cell__image" alt="" aria-hidden="true" loading="lazy" decoding="async" />
         <span class="board-cell__token token" aria-hidden="true">
           <span class="board-cell__token-number token__number"></span>
         </span>
