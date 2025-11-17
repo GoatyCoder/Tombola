@@ -1787,6 +1787,18 @@ function renderBoard() {
     const numberEl = cell.querySelector('.board-cell__number');
     if (numberEl) numberEl.textContent = entry.number;
 
+    const imageEl = cell.querySelector('.board-cell__image');
+    if (imageEl) {
+      const fallbackSrc = 'images/caselle/casella.png';
+      const desiredSrc = `images/caselle/${entry.number}.png`;
+
+      imageEl.src = desiredSrc;
+      imageEl.onerror = () => {
+        imageEl.onerror = null;
+        imageEl.src = fallbackSrc;
+      };
+    }
+
     const tokenNumberEl = cell.querySelector('.board-cell__token-number');
     if (tokenNumberEl) tokenNumberEl.textContent = entry.number;
 

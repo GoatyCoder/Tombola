@@ -603,7 +603,7 @@ button:focus-visible {
 
 .board-grid {
   display: grid;
-  gap: clamp(0.25rem, 1vw, 0.5rem);
+  gap: clamp(0.15rem, 0.8vw, 0.35rem);
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
@@ -629,32 +629,31 @@ button:focus-visible {
 
 .board-cell {
   position: relative;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 240 / 256;
   display: grid;
   place-items: center;
-  padding: clamp(0.35rem, 1.2vw, 0.6rem);
+  padding: 0;
   border-radius: 0;
-  border: clamp(0.16rem, 0.4vw, 0.25rem) solid var(--accent);
-  background: var(--surface);
-  box-shadow: inset 0 0 0 1px rgba(143, 31, 51, 0.12);
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  overflow: hidden;
   cursor: pointer;
   contain: layout style paint;
   transition: transform var(--duration-sm) var(--easing-standard),
-    border-color var(--duration-sm) var(--easing-standard),
-    box-shadow var(--duration-sm) var(--easing-standard),
     background-color var(--duration-sm) var(--easing-standard),
     color var(--duration-sm) var(--easing-standard);
 }
 
+.board-cell__image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
 .board-cell__number {
-  font-size: clamp(1.35rem, 3.4vw, 2.35rem);
-  font-weight: 700;
-  color: #111;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.02em;
-  transition: transform var(--duration-sm) var(--easing-standard),
-    color var(--duration-sm) var(--easing-standard),
-    opacity var(--duration-sm) var(--easing-standard);
+  display: none;
 }
 
 .board-cell__token {
@@ -699,8 +698,8 @@ button:focus-visible {
 
 .board-cell--drawn {
   background: #f1f1f1;
-  border-color: var(--accent);
-  box-shadow: inset 0 0 0 1px rgba(117, 21, 40, 0.18);
+  border-color: transparent;
+  box-shadow: none;
 }
 
 .board-cell--drawn .board-cell__number {
@@ -719,7 +718,7 @@ button:focus-visible {
   content: '';
   position: absolute;
   inset: clamp(0.2rem, 2%, 0.35rem);
-  border: 2px solid rgba(143, 31, 51, 0.38);
+  border: none;
   pointer-events: none;
   animation: boardCellIncoming 540ms ease-in-out infinite alternate;
   border-radius: 0;
@@ -729,7 +728,7 @@ button:focus-visible {
   content: '';
   position: absolute;
   inset: clamp(0.18rem, 2%, 0.32rem);
-  border: 2px solid rgba(117, 21, 40, 0.48);
+  border: none;
   pointer-events: none;
   border-radius: 0;
   animation: boardCellCelebrateGlow 880ms ease-out;
