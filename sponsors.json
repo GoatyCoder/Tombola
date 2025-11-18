@@ -13,6 +13,24 @@
       "onlyShowcase": false
     },
     {
+      "logo": "images/sponsor/ingenia.jpg",
+      "url": "https://www.ingeniasolutions.it/",
+      "name": "Ingenia",
+      "onlyShowcase": false
+    },
+    {
+      "logo": "images/sponsor/florian.jpg",
+      "url": "https://www.facebook.com/profile.php?id=100054750670839",
+      "name": "Caffè Florian",
+      "onlyShowcase": false
+    },
+    {
+      "logo": "images/sponsor/colorcenter.jpg",
+      "url": "https://www.ferramentadelsud.it/",
+      "name": "Ferramenta Color Center",
+      "onlyShowcase": false
+    },
+    {
       "logo": "images/sponsor/arca.png",
       "url": "https://www.facebook.com/pasticcerialarca",
       "name": "Pasticceria L'Arca Di Porrelli Arcangelo",
