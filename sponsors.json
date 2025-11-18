@@ -1,7 +1,7 @@
 {
   "sponsors": [
     {
-      "logo": "images/sponsor/divella.png",
+      "logo": "images/sponsor/divella.jpg",
       "url": "https://www.divella.it/",
       "name": "Divella",
       "onlyShowcase": false
@@ -43,7 +43,7 @@
       "onlyShowcase": false
     },
     {
-      "logo": "images/sponsor/ilsorriso.png",
+      "logo": "images/sponsor/ilsorriso.jpg",
       "url": "https://www.facebook.com/ilsorrisopanificio",
       "name": "Panificio Il Sorriso",
       "onlyShowcase": false
@@ -55,7 +55,7 @@
       "onlyShowcase": false
     },
     {
-      "logo": "images/sponsor/LUTE.png",
+      "logo": "images/sponsor/LUTE.jpg",
       "url": null,
       "name": "LUTE Noicàttaro",
       "onlyShowcase": true
