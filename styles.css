@@ -1087,7 +1087,7 @@ button:focus-visible {
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: clamp(4.6rem, 11vw, 6.6rem);
+  min-height: clamp(5rem, 12vw, 7.2rem);
   padding: clamp(0.65rem, 1.8vw, 1rem);
   background: var(--surface);
   border: 1px solid var(--border-subtle);
