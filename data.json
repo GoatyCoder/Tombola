@@ -38,13 +38,13 @@
         },
         {
             "number": 7,
-            "italian": "La tartaruga",
-            "dialect": "A  T-RT-VAGGHIE",
+            "italian": "Il tavolo",
+            "dialect": "A  B-FETT",
             "image": "images/7.jpg"
         },
         {
             "number": 8,
-            "italian": "La fontana delle tartarughe",
+            "italian": "La fontana delle testugini",
             "dialect": "A  F-ND-N D S-STU-SCE-N",
             "image": "images/8.jpg"
         },
@@ -62,8 +62,8 @@
         },
         {
             "number": 11,
-            "italian": "Il fiasco di creta",
-            "dialect": "U  C-C N-T",
+            "italian": "Le fascine",
+            "dialect": "I MANUCHIE",
             "image": "images/11.jpg"
         },
         {
@@ -482,7 +482,7 @@
         },
         {
             "number": 81,
-            "italian": "Il ricovero",
+            "italian": "Ambiente di riposo",
             "dialect": "UAESCIE",
             "image": "images/81.jpg"
         },
