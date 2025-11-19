@@ -1306,7 +1306,7 @@ function playEntryAudio(entry) {
 }
 
 function playEntryVariant(entry, variant) {
-  if (!entry) return null;
+  if (!entry || !state.audioEnabled) return null;
 
   const source = getAudioFilePath(entry.number, variant);
   if (!source) return null;
@@ -2252,7 +2252,9 @@ function openModal(entry, options = {}) {
 
 function closeModal(options = {}) {
   const { returnFocus = true } = options instanceof Event ? {} : options;
-  
+
+  stopAudioPlayback();
+
   releaseActiveFocusTrap(elements.modal);
   elements.modal.classList.remove(CSS_CLASSES.MODAL_VISIBLE);
   elements.modal.setAttribute('hidden', '');
