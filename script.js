@@ -75,7 +75,6 @@ const ANIMATION_DELAYS = {
 const state = {
   numbers: [],
   selected: null,
-  currentUtterance: null,
   currentAudio: null,
   audioPlaybackToken: 0,
   cellsByNumber: new Map(),
@@ -1151,13 +1150,7 @@ function initializeAudioPreference() {
 function setAudioEnabled(enabled) {
   state.audioEnabled = Boolean(enabled);
 
-  if (!enabled) {
-    stopAudioPlayback();
-    if (state.currentUtterance && typeof speechSynthesis !== 'undefined') {
-      speechSynthesis.cancel();
-      state.currentUtterance = null;
-    }
-  }
+  if (!enabled) stopAudioPlayback();
 
   updateAudioToggle();
 
@@ -1178,57 +1171,6 @@ function updateAudioToggle() {
   const label = enabled ? 'Disattiva annuncio audio' : 'Attiva annuncio audio';
   elements.audioToggle.setAttribute('aria-label', label);
   elements.audioToggle.title = label;
-}
-
-function speakText(text, options = {}) {
-  if (typeof speechSynthesis === 'undefined' || typeof SpeechSynthesisUtterance !== 'function') return;
-
-  const content = typeof text === 'string' ? text.trim() : '';
-  if (!content) return;
-
-  const { lang = 'it-IT', rate = 0.92, pitch = 1.0, prefix = '', respectToggle = true } = options;
-
-  if (respectToggle && !state.audioEnabled) {
-    if (state.currentUtterance) {
-      speechSynthesis.cancel();
-      state.currentUtterance = null;
-    }
-    return;
-  }
-
-  if (state.currentUtterance) speechSynthesis.cancel();
-
-  const prefixText = typeof prefix === 'string' ? prefix.trim() : '';
-  const utterance = new SpeechSynthesisUtterance(prefixText ? `${prefixText} ${content}` : content);
-  utterance.lang = lang;
-  utterance.rate = rate;
-  utterance.pitch = pitch;
-
-  state.currentUtterance = utterance;
-
-  const cleanup = () => {
-    if (state.currentUtterance === utterance) state.currentUtterance = null;
-  };
-
-  utterance.addEventListener('end', cleanup, { once: true });
-  utterance.addEventListener('error', cleanup, { once: true });
-
-  speechSynthesis.speak(utterance);
-}
-
-function speakEntry(entry) {
-  if (!entry) return;
-
-  const segments = [`Numero ${entry.number}`];
-  if (entry.dialect) segments.push(entry.dialect);
-  if (entry.italian) segments.push(entry.italian);
-
-  const announcement = segments
-    .filter(Boolean)
-    .map((s) => s.trim().replace(/[.!?]\s*$/, ''))
-    .join('. ');
-
-  speakText(announcement, { lang: 'it-IT', rate: 0.92 });
 }
 
 function getAudioFilePath(number, variant = 'base') {
@@ -1363,22 +1305,21 @@ function playEntryAudio(entry) {
   return playAudioSequence(sequence);
 }
 
+function playEntryVariant(entry, variant) {
+  if (!entry) return null;
+
+  const source = getAudioFilePath(entry.number, variant);
+  if (!source) return null;
+
+  return playAudioSequence([{ src: source, required: true }]);
+}
+
 function announceEntry(entry) {
   if (!entry) return;
 
-  const playback = state.audioEnabled ? playEntryAudio(entry) : null;
+  if (!state.audioEnabled) return;
 
-  if (playback && typeof playback.then === 'function') {
-    playback
-      .then((success) => {
-        if (!success) speakEntry(entry);
-      })
-      .catch(() => {
-        speakEntry(entry);
-      });
-  } else if (!playback) {
-    speakEntry(entry);
-  }
+  playEntryAudio(entry);
 }
 
 // ============================================
@@ -2153,10 +2094,6 @@ function performGameReset() {
   applySponsorToOverlay(null);
 
   stopAudioPlayback();
-  if (state.currentUtterance && typeof speechSynthesis !== 'undefined') {
-    speechSynthesis.cancel();
-  }
-  state.currentUtterance = null;
 
   state.drawnNumbers.clear();
   state.drawHistory = [];
@@ -2612,13 +2549,13 @@ function setupEventListeners() {
   elements.modalDialectCard?.addEventListener('click', () => {
     if (!state.selected || elements.modalDialectCard?.disabled) return;
     const entry = state.entriesByNumber.get(Number(state.selected.dataset.number));
-    if (entry?.dialect) speakText(entry.dialect, { lang: 'it-IT', rate: 0.92, respectToggle: false });
+    if (entry?.dialect) playEntryVariant(entry, 'dialect');
   });
 
   elements.modalItalianCard?.addEventListener('click', () => {
     if (!state.selected || elements.modalItalianCard?.disabled) return;
     const entry = state.entriesByNumber.get(Number(state.selected.dataset.number));
-    if (entry?.italian) speakText(entry.italian, { lang: 'it-IT', rate: 0.96, respectToggle: false });
+    if (entry?.italian) playEntryVariant(entry, 'italian');
   });
 
   elements.modalNext?.addEventListener('click', () => {
