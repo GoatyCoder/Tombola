@@ -55,16 +55,16 @@
       "onlyShowcase": true
     },
     {
-      "logo": "images/sponsor/ingenia.jpg",
-      "url": "https://www.ingeniasolutions.it/",
-      "name": "Ingenia",
-      "onlyShowcase": false
-    },
-    {
       "logo": "images/sponsor/LUTE.jpg",
       "url": null,
       "name": "LUTE Noicàttaro",
       "onlyShowcase": true
+    },
+    {
+      "logo": "images/sponsor/ingenia.jpg",
+      "url": "https://www.ingeniasolutions.it/",
+      "name": "Ingenia",
+      "onlyShowcase": false
     }
   ]
 }
