@@ -49,7 +49,13 @@
                 <div class="status-card__metric status-card__metric--last" role="status" aria-live="polite">
                   <p class="status-card__label">Ultimo numero</p>
                   <p id="draw-last-number" class="status-card__value" aria-atomic="true">—</p>
-                  <p id="draw-last-detail" class="status-card__detail">In attesa della prima estrazione</p>
+                  <p id="draw-last-detail" class="status-card__detail">
+                    <span id="draw-last-detail-message" class="status-card__detail-message">In attesa della prima estrazione</span>
+                    <span id="draw-last-languages" class="status-card__lang-group" hidden>
+                      <span id="draw-last-dialect" class="status-card__lang status-card__lang--dialect"></span>
+                      <span id="draw-last-italian" class="status-card__lang status-card__lang--italian"></span>
+                    </span>
+                  </p>
                 </div>
 
                 <div class="status-card__metric status-card__metric--progress" role="group" aria-labelledby="progress-label">
