@@ -19,27 +19,15 @@
       "onlyShowcase": false
     },
     {
-      "logo": "images/sponsor/florian.jpg",
-      "url": "https://www.facebook.com/profile.php?id=100054750670839",
-      "name": "Caffè Florian",
-      "onlyShowcase": false
-    },
-    {
-      "logo": "images/sponsor/colorcenter.jpg",
-      "url": "https://www.ferramentadelsud.it/",
-      "name": "Ferramenta Color Center",
-      "onlyShowcase": false
-    },
-    {
       "logo": "images/sponsor/arca.png",
       "url": "https://www.facebook.com/pasticcerialarca",
       "name": "Pasticceria L'Arca Di Porrelli Arcangelo",
       "onlyShowcase": false
     },
     {
-      "logo": "images/sponsor/ingenia.jpg",
-      "url": "https://www.ingeniasolutions.it/",
-      "name": "Ingenia",
+      "logo": "images/sponsor/colorcenter.jpg",
+      "url": "https://www.ferramentadelsud.it/",
+      "name": "Ferramenta Color Center",
       "onlyShowcase": false
     },
     {
@@ -55,15 +43,27 @@
       "onlyShowcase": false
     },
     {
-      "logo": "images/sponsor/LUTE.jpg",
-      "url": null,
-      "name": "LUTE Noicàttaro",
-      "onlyShowcase": true
+      "logo": "images/sponsor/florian.jpg",
+      "url": "https://www.facebook.com/profile.php?id=100054750670839",
+      "name": "Caffè Florian",
+      "onlyShowcase": false
     },
     {
       "logo": "images/sponsor/proloco.jpg",
       "url": "https://www.facebook.com/ProLocoNoicattaroNojapro",
       "name": "Pro Loco Noicàttaro",
+      "onlyShowcase": true
+    },
+    {
+      "logo": "images/sponsor/ingenia.jpg",
+      "url": "https://www.ingeniasolutions.it/",
+      "name": "Ingenia",
+      "onlyShowcase": false
+    },
+    {
+      "logo": "images/sponsor/LUTE.jpg",
+      "url": null,
+      "name": "LUTE Noicàttaro",
       "onlyShowcase": true
     }
   ]
