@@ -2419,7 +2419,7 @@ function updateDrawStatus(latestEntry) {
     if (showLanguages) {
       elements.drawLastLanguages.hidden = false;
       elements.drawLastDetailMessage.hidden = true;
-      elements.drawLastDialect.textContent = dialectText || italianText || '—';
+      elements.drawLastDialect.textContent = dialectText || '—';
       elements.drawLastItalian.textContent = italianText || '—';
     } else {
       elements.drawLastLanguages.hidden = true;
