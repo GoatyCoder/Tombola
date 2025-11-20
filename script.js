@@ -141,6 +141,10 @@ const elements = {
   drawLastMetric: document.querySelector('.status-card__metric--last'),
   drawLastNumber: document.querySelector('#draw-last-number'),
   drawLastDetail: document.querySelector('#draw-last-detail'),
+  drawLastLanguages: document.querySelector('#draw-last-languages'),
+  drawLastDialect: document.querySelector('#draw-last-dialect'),
+  drawLastItalian: document.querySelector('#draw-last-italian'),
+  drawLastDetailMessage: document.querySelector('#draw-last-detail-message'),
 };
 
 // ============================================
@@ -2385,22 +2389,46 @@ function updateDrawStatus(latestEntry) {
     elements.drawLastNumber.textContent = normalizedEntry ? `${normalizedEntry.number}` : '—';
   }
 
-  if (elements.drawLastDetail) {
-    let detailText = '';
-    if (state.storageErrorMessage) {
-      detailText = 'Verifica la connessione e riprova.';
-    } else if (total === 0) {
-      detailText = 'Caricamento del tabellone in corso';
-    } else if (normalizedEntry) {
-      detailText = normalizedEntry.dialect || normalizedEntry.italian || '—';
-    } else if (drawnCount === 0) {
-      detailText = 'In attesa della prima estrazione';
-    } else if (drawnCount === total) {
-      detailText = 'Tutti i numeri sono stati estratti';
+  let detailText = '';
+  let showLanguages = false;
+  let dialectText = '';
+  let italianText = '';
+
+  if (state.storageErrorMessage) {
+    detailText = 'Verifica la connessione e riprova.';
+  } else if (total === 0) {
+    detailText = 'Caricamento del tabellone in corso';
+  } else if (normalizedEntry) {
+    showLanguages = true;
+    dialectText = normalizedEntry.dialect?.trim() || '';
+    italianText = normalizedEntry.italian?.trim() || '';
+  } else if (drawnCount === 0) {
+    detailText = 'In attesa della prima estrazione';
+  } else if (drawnCount === total) {
+    detailText = 'Tutti i numeri sono stati estratti';
+  } else {
+    detailText = 'Prosegui con le estrazioni';
+  }
+
+  if (
+    elements.drawLastLanguages &&
+    elements.drawLastDetailMessage &&
+    elements.drawLastDialect &&
+    elements.drawLastItalian
+  ) {
+    if (showLanguages) {
+      elements.drawLastLanguages.hidden = false;
+      elements.drawLastDetailMessage.hidden = true;
+      elements.drawLastDialect.textContent = dialectText || '—';
+      elements.drawLastItalian.textContent = italianText || '—';
     } else {
-      detailText = 'Prosegui con le estrazioni';
+      elements.drawLastLanguages.hidden = true;
+      elements.drawLastDetailMessage.hidden = false;
+      elements.drawLastDetailMessage.textContent = detailText;
     }
-    elements.drawLastDetail.textContent = detailText;
+  } else if (elements.drawLastDetail) {
+    const fallbackText = showLanguages ? (dialectText || italianText || '—') : detailText;
+    elements.drawLastDetail.textContent = fallbackText;
   }
 
   if (elements.drawLastMetric && normalizedEntry) {

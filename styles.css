@@ -374,6 +374,33 @@ button:focus-visible {
   margin: 0;
   font-size: 0.9rem;
   color: var(--ink-soft);
+  display: grid;
+  gap: 0.2rem;
+}
+
+.status-card__detail-message {
+  margin: 0;
+  color: inherit;
+}
+
+.status-card__lang-group {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.status-card__lang {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.status-card__lang--dialect {
+  font-style: italic;
+}
+
+.status-card__lang--italian {
+  color: var(--ink);
+  font-weight: 700;
 }
 
 .status-card__actions {
