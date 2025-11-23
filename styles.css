@@ -1838,13 +1838,16 @@ body.is-fullscreen .status-card__actions {
 body.is-fullscreen .layout__section--board {
   grid-area: board;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: clamp(0.35rem, 1.2vw, 0.75rem);
 }
 
 body.is-fullscreen .board-area__shell {
   width: 100%;
   height: 100%;
+  flex: 1;
   min-height: 0;
 }
 
