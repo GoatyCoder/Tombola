@@ -84,6 +84,8 @@ const state = {
   isAnimatingDraw: false,
   historyOpen: false,
   historyWasOpenBeforeFullscreen: false,
+  historyOriginalParent: null,
+  historyOriginalNextSibling: null,
   audioEnabled: true,
   storageErrorMessage: '',
   sponsorShowcaseRendered: false,
@@ -95,6 +97,7 @@ const state = {
   activeFocusTrapCleanup: null,
   activeFocusTrapElement: null,
   fullscreenActive: false,
+  sponsorRotationTimer: null,
 };
 
 // ============================================
@@ -1609,6 +1612,8 @@ function renderSponsorShowcase(sponsors, options = {}) {
   elements.sponsorShowcase.hidden = false;
   elements.sponsorShowcase.removeAttribute('aria-hidden');
   state.sponsorShowcaseRendered = true;
+
+  restartSponsorRotation();
 }
 
 // ============================================
@@ -1975,6 +1980,90 @@ function updateFullscreenToggleLabel(active) {
   }
 }
 
+function placeHistoryInSidebar() {
+  if (!elements.historyPanel || !elements.fullscreenToggle) return;
+
+  if (!state.historyOriginalParent) {
+    state.historyOriginalParent = elements.historyPanel.parentElement;
+    state.historyOriginalNextSibling = elements.historyPanel.nextSibling;
+  }
+
+  const dashboardGrid = document.querySelector('.dashboard__grid');
+  if (dashboardGrid && elements.historyPanel.parentElement !== dashboardGrid) {
+    dashboardGrid.appendChild(elements.historyPanel);
+    elements.historyPanel.classList.add('history--sidebar');
+  }
+}
+
+function restoreHistoryPlacement() {
+  if (!elements.historyPanel || !state.historyOriginalParent) return;
+
+  const { historyOriginalParent: parent, historyOriginalNextSibling: nextSibling } = state;
+  if (elements.historyPanel.parentElement !== parent) {
+    parent.insertBefore(elements.historyPanel, nextSibling);
+  }
+  elements.historyPanel.classList.remove('history--sidebar');
+}
+
+function startSponsorRotation() {
+  if (!state.fullscreenActive) return;
+  if (state.sponsorRotationTimer || !elements.sponsorShowcaseList) return;
+
+  const items = Array.from(elements.sponsorShowcaseList.querySelectorAll('.sponsor-strip__item'));
+  if (items.length <= 1) return;
+
+  const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+  const stepDuration = prefersReducedMotion ? 6000 : 4200;
+
+  state.sponsorRotationTimer = window.setInterval(() => {
+    const list = elements.sponsorShowcaseList;
+    if (!list) {
+      stopSponsorRotation();
+      return;
+    }
+
+    const firstItem = list.querySelector('.sponsor-strip__item');
+    if (!firstItem) {
+      stopSponsorRotation();
+      return;
+    }
+
+    const styles = getComputedStyle(list);
+    const gap = parseFloat(styles.rowGap || styles.gap || '0') || 0;
+    const itemHeight = firstItem.getBoundingClientRect().height;
+    const step = itemHeight + gap;
+    const maxScroll = list.scrollHeight - list.clientHeight;
+
+    if (step <= 0 || maxScroll <= 0) {
+      stopSponsorRotation();
+      return;
+    }
+
+    const nextScroll = list.scrollTop + step;
+    const behavior = prefersReducedMotion ? 'auto' : 'smooth';
+
+    if (nextScroll >= maxScroll - 2) {
+      list.scrollTo({ top: 0, behavior });
+    } else {
+      list.scrollTo({ top: nextScroll, behavior });
+    }
+  }, stepDuration);
+}
+
+function stopSponsorRotation() {
+  if (state.sponsorRotationTimer) {
+    clearInterval(state.sponsorRotationTimer);
+    state.sponsorRotationTimer = null;
+  }
+}
+
+function restartSponsorRotation() {
+  stopSponsorRotation();
+  if (state.fullscreenActive) {
+    startSponsorRotation();
+  }
+}
+
 function applyFullscreenLayoutState(active) {
   if (state.fullscreenActive === active) {
     updateFullscreenToggleLabel(active);
@@ -1988,12 +2077,15 @@ function applyFullscreenLayoutState(active) {
 
   if (active) {
     state.historyWasOpenBeforeFullscreen = wasHistoryOpen;
+    placeHistoryInSidebar();
     openHistoryPanel({ immediate: true });
-  } else if (!state.historyWasOpenBeforeFullscreen) {
-    closeHistoryPanel({ immediate: true });
-  }
-
-  if (!active) {
+    startSponsorRotation();
+  } else {
+    if (!state.historyWasOpenBeforeFullscreen) {
+      closeHistoryPanel({ immediate: true });
+    }
+    stopSponsorRotation();
+    restoreHistoryPlacement();
     state.historyWasOpenBeforeFullscreen = false;
   }
 

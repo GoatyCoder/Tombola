@@ -1775,6 +1775,7 @@ body.is-fullscreen .dashboard__grid {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
+  min-height: 0;
 }
 
 body.is-fullscreen .fullscreen-brand {
@@ -1880,7 +1881,7 @@ body.is-fullscreen .sponsor__strip {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
-  overflow: auto;
+  overflow: hidden;
 }
 
 body.is-fullscreen .history {
@@ -1914,6 +1915,11 @@ body.is-fullscreen .history__list {
 
 body.is-fullscreen .history__empty {
   margin-top: 0;
+}
+
+body.is-fullscreen .history--sidebar {
+  flex: 1;
+  min-height: 0;
 }
 
 body.is-fullscreen #history-scrim,
@@ -2090,6 +2096,12 @@ body.is-fullscreen #history-toggle {
 
   .button--dashboard {
     padding: 0.55rem 1.05rem;
+  }
+}
+
+@media (max-width: 48rem) {
+  #fullscreen-toggle {
+    display: none;
   }
 }
 
