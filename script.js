@@ -2017,25 +2017,31 @@ function startSponsorRotation() {
   const items = Array.from(list.querySelectorAll('.sponsor-strip__item'));
   if (items.length <= 1) return;
 
-  // Build a seamless loop by duplicating the current items once
+  const originalHeight = list.scrollHeight;
+  let clonesNeeded = 1;
+
+  // Keep duplicating items until the strip overflows, so scrollTop has an effect
+  while ((originalHeight * (clonesNeeded + 1)) <= list.clientHeight + 4 && clonesNeeded < 6) {
+    clonesNeeded += 1;
+  }
+
   const fragment = document.createDocumentFragment();
-  items.forEach((item) => {
-    const clone = item.cloneNode(true);
-    clone.classList.add('sponsor-strip__item--clone');
-    clone.setAttribute('aria-hidden', 'true');
-    clone.querySelectorAll('a, button, [tabindex]').forEach((node) => {
-      node.setAttribute('tabindex', '-1');
-      node.setAttribute('aria-hidden', 'true');
+  for (let i = 0; i < clonesNeeded; i += 1) {
+    items.forEach((item) => {
+      const clone = item.cloneNode(true);
+      clone.classList.add('sponsor-strip__item--clone');
+      clone.setAttribute('aria-hidden', 'true');
+      clone.querySelectorAll('a, button, [tabindex]').forEach((node) => {
+        node.setAttribute('tabindex', '-1');
+        node.setAttribute('aria-hidden', 'true');
+      });
+      fragment.appendChild(clone);
     });
-    fragment.appendChild(clone);
-  });
+  }
   list.appendChild(fragment);
 
-  const totalHeight = list.scrollHeight / 2;
-  if (totalHeight <= list.clientHeight) {
-    list.querySelectorAll('.sponsor-strip__item--clone').forEach((node) => node.remove());
-    return;
-  }
+  const loopHeight = originalHeight * clonesNeeded;
+  if (loopHeight <= 0) return;
 
   const baseSpeed = prefersReducedMotion ? 10 : 28; // px per second
   let lastFrame = null;
@@ -2053,8 +2059,8 @@ function startSponsorRotation() {
     const distance = (baseSpeed * delta) / 1000;
     list.scrollTop += distance;
 
-    if (list.scrollTop >= totalHeight) {
-      list.scrollTop -= totalHeight;
+    if (list.scrollTop >= loopHeight) {
+      list.scrollTop -= loopHeight;
     }
 
     state.sponsorRotationTimer = window.requestAnimationFrame(step);
