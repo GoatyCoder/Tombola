@@ -142,6 +142,55 @@ button:focus-visible {
   display: block;
 }
 
+.layout__section--dashboard { grid-area: dashboard; }
+.layout__section--board { grid-area: board; }
+.layout__section--sponsor { grid-area: sponsor; }
+
+body.app-fullscreen {
+  background: var(--surface);
+  overflow: hidden;
+}
+
+body.app-fullscreen .hero {
+  display: none;
+}
+
+body.app-fullscreen .layout {
+  grid-template-columns: minmax(18rem, 22vw) minmax(0, 1fr) minmax(13rem, 18vw);
+  grid-template-areas: 'dashboard board sponsor';
+  grid-auto-rows: 1fr;
+  align-items: stretch;
+  height: 100vh;
+  padding-block: var(--space-md);
+  gap: var(--space-lg);
+}
+
+body.app-fullscreen .layout__section {
+  height: 100%;
+}
+
+body.app-fullscreen .shell {
+  width: 100%;
+  max-width: none;
+}
+
+body.app-fullscreen .dashboard__shell,
+body.app-fullscreen .board-area__shell,
+body.app-fullscreen .sponsor__shell {
+  height: 100%;
+}
+
+body.app-fullscreen .board-area__shell {
+  justify-content: center;
+}
+
+body.app-fullscreen .sponsor__shell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  justify-content: flex-start;
+}
+
 /* ============================================
    4. UTILITIES
    ============================================ */
@@ -193,6 +242,14 @@ button:focus-visible {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
+}
+
+body.app-fullscreen #history-toggle {
+  display: none;
+}
+
+body.app-fullscreen #history-scrim {
+  display: none;
 }
 
 /* ============================================
@@ -258,6 +315,12 @@ button:focus-visible {
   display: grid;
 }
 
+body.app-fullscreen .dashboard__shell {
+  grid-template-rows: auto 1fr;
+  gap: var(--space-md);
+  align-content: stretch;
+}
+
 .dashboard__grid {
   display: grid;
   gap: var(--space-md);
@@ -280,6 +343,10 @@ button:focus-visible {
 .status-card__summary {
   display: grid;
   gap: clamp(1rem, 2vw, 1.6rem);
+}
+
+body.app-fullscreen .status-card__summary {
+  grid-template-columns: 1fr;
 }
 
 .status-card__metric {
@@ -409,6 +476,11 @@ button:focus-visible {
   gap: clamp(0.25rem, 1.1vw, 0.45rem);
   align-items: center;
   width: 100%;
+}
+
+body.app-fullscreen .status-card__actions {
+  flex-wrap: wrap;
+  justify-content: flex-start;
 }
 
 /* --- Progress Bar --- */
@@ -568,6 +640,11 @@ button:focus-visible {
   object-fit: contain;
 }
 
+.fullscreen-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
 /* --- Token (Pedina) --- */
 .token {
   --token-border-width: clamp(0.18rem, 0.6vw, 0.3rem);
@@ -609,10 +686,24 @@ button:focus-visible {
   padding-bottom: clamp(2rem, 5vw, 3.5rem);
 }
 
+body.app-fullscreen .board-area__layout {
+  height: 100%;
+  align-items: stretch;
+  justify-items: center;
+  align-content: center;
+  padding-bottom: 0;
+}
+
 .board-wrapper {
   display: grid;
   gap: clamp(1.1rem, 2.4vw, 1.6rem);
   position: relative;
+}
+
+body.app-fullscreen .board-wrapper {
+  height: 100%;
+  grid-template-rows: auto 1fr;
+  align-content: stretch;
 }
 
 .board-head {
@@ -632,6 +723,14 @@ button:focus-visible {
   display: grid;
   gap: clamp(0.15rem, 0.8vw, 0.35rem);
   grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+body.app-fullscreen .board-grid {
+  width: min(100%, calc((100vh - 3.5rem) * 1.08));
+  max-height: 100%;
+  aspect-ratio: 10 / 9;
+  align-self: center;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
 }
 
 .board-grid--loading {
@@ -804,6 +903,25 @@ button:focus-visible {
   pointer-events: none;
 }
 
+body.app-fullscreen .history {
+  position: relative;
+  transform: none;
+  border-radius: var(--radius-md);
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  height: 100%;
+  box-shadow: none;
+  border: 1px solid var(--border-light);
+  pointer-events: auto;
+  padding: clamp(1.1rem, 2.6vw, 1.6rem);
+  overflow: hidden;
+}
+
+body.app-fullscreen .history--open {
+  transform: none;
+}
+
 .history[hidden] {
   visibility: hidden;
 }
@@ -840,6 +958,10 @@ button:focus-visible {
   color: var(--ink);
   max-height: 22.5rem;
   overflow: auto;
+}
+
+body.app-fullscreen .history__list {
+  max-height: none;
 }
 
 .history-item {
@@ -1537,6 +1659,12 @@ button:focus-visible {
   list-style: none;
   margin: 0;
   padding: 0;
+}
+
+body.app-fullscreen .sponsor__strip {
+  grid-template-columns: 1fr;
+  gap: var(--space-sm);
+  align-content: flex-start;
 }
 
 .sponsor-strip__item {

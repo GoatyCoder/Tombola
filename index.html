@@ -39,7 +39,7 @@
       <section class="layout__section layout__section--dashboard" aria-labelledby="dashboard-heading">
         <div class="shell dashboard__shell">
           <h2 id="dashboard-heading" class="sr-only">Controllo estrazioni</h2>
-          
+
           <div class="dashboard__grid">
             <article class="status-card status-card--overview" aria-labelledby="draw-overview-heading">
               <h3 id="draw-overview-heading" class="sr-only">Ultimo numero e stato delle estrazioni</h3>
@@ -85,6 +85,23 @@
 
                 <button
                   type="button"
+                  id="fullscreen-toggle"
+                  class="button button--dashboard"
+                  aria-pressed="false"
+                  aria-label="Schermo intero"
+                  title="Schermo intero"
+                >
+                  <span class="button__label">Schermo intero</span>
+                  <svg viewBox="0 0 24 24" aria-hidden="true" class="button__icon fullscreen-icon">
+                    <path d="M5 9.25V6.5A1.5 1.5 0 0 1 6.5 5H9.25" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M5 14.75V17.5A1.5 1.5 0 0 0 6.5 19H9.25" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M19 9.25V6.5A1.5 1.5 0 0 0 17.5 5H14.75" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M19 14.75V17.5A1.5 1.5 0 0 1 17.5 19H14.75" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </button>
+
+                <button
+                  type="button"
                   id="audio-toggle"
                   class="button button--dashboard button--icon audio-toggle"
                   aria-pressed="true"
@@ -109,6 +126,15 @@
               </div>
             </article>
           </div>
+
+          <aside id="history-panel" class="history" aria-label="Cronologia estrazioni" hidden>
+            <header class="history__header">
+              <h3 class="history__title">Cronologia</h3>
+              <p class="history__subtitle">L'ordine completo delle estrazioni.</p>
+            </header>
+            <p class="history__empty" id="draw-history-empty">Nessun numero estratto finora.</p>
+            <ol class="history__list" id="draw-history" aria-live="polite"></ol>
+          </aside>
         </div>
       </section>
 
@@ -116,7 +142,7 @@
       <section class="layout__section layout__section--board" aria-labelledby="board-heading">
         <div class="shell board-area__shell">
           <div class="board-area__layout">
-            
+
             <!-- Board -->
             <article class="board-wrapper">
               <div class="board-head">
@@ -126,21 +152,8 @@
 
               <div class="board-grid" id="board" aria-live="polite"></div>
             </article>
-
-            <!-- History Panel -->
-            <aside id="history-panel" class="history" aria-label="Cronologia estrazioni" hidden>
-              <header class="history__header">
-                <h3 class="history__title">Cronologia</h3>
-                <p class="history__subtitle">L'ordine completo delle estrazioni.</p>
-              </header>
-              <p class="history__empty" id="draw-history-empty">Nessun numero estratto finora.</p>
-              <ol class="history__list" id="draw-history" aria-live="polite"></ol>
-            </aside>
           </div>
         </div>
-        
-        <!-- History Scrim -->
-        <div id="history-scrim" class="scrim" hidden></div>
       </section>
 
       <!-- Sponsor Section -->
@@ -153,6 +166,9 @@
         </div>
       </section>
     </main>
+
+    <!-- History Scrim -->
+    <div id="history-scrim" class="scrim" hidden></div>
 
     <!-- Draw Animation Portal -->
     <div id="draw-portal" class="draw-portal" hidden>

@@ -83,6 +83,7 @@ const state = {
   drawHistory: [],
   isAnimatingDraw: false,
   historyOpen: false,
+  historyOpenBeforeFullscreen: null,
   audioEnabled: true,
   storageErrorMessage: '',
   sponsorShowcaseRendered: false,
@@ -145,6 +146,7 @@ const elements = {
   drawLastDialect: document.querySelector('#draw-last-dialect'),
   drawLastItalian: document.querySelector('#draw-last-italian'),
   drawLastDetailMessage: document.querySelector('#draw-last-detail-message'),
+  fullscreenToggle: document.querySelector('#fullscreen-toggle'),
 };
 
 // ============================================
@@ -1943,6 +1945,87 @@ function updateDrawHistory() {
 }
 
 // ============================================
+// 15B. FULLSCREEN MODE
+// ============================================
+
+function isFullscreenSupported() {
+  return Boolean(document?.fullscreenEnabled ?? true);
+}
+
+function isFullscreenActive() {
+  return Boolean(document?.fullscreenElement);
+}
+
+function syncFullscreenToggleLabel(isActive) {
+  if (!elements.fullscreenToggle) return;
+
+  const label = isActive ? 'Esci da schermo intero' : 'Schermo intero';
+  elements.fullscreenToggle.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  elements.fullscreenToggle.setAttribute('aria-label', label);
+  elements.fullscreenToggle.title = label;
+
+  const labelNode = elements.fullscreenToggle.querySelector('.button__label');
+  if (labelNode) labelNode.textContent = label;
+}
+
+function syncFullscreenState() {
+  if (!isFullscreenSupported()) {
+    if (elements.fullscreenToggle) elements.fullscreenToggle.hidden = true;
+    return;
+  }
+
+  if (elements.fullscreenToggle) elements.fullscreenToggle.hidden = false;
+
+  const isActive = isFullscreenActive();
+  document.body.classList.toggle('app-fullscreen', isActive);
+  syncFullscreenToggleLabel(isActive);
+
+  if (isActive) {
+    if (state.historyOpenBeforeFullscreen === null) {
+      state.historyOpenBeforeFullscreen = state.historyOpen;
+    }
+
+    if (!state.historyOpen) {
+      state.historyOpen = true;
+      syncHistoryPanelToLayout({ immediate: true });
+    }
+    return;
+  }
+
+  if (state.historyOpen && state.historyOpenBeforeFullscreen === false) {
+    state.historyOpen = false;
+    syncHistoryPanelToLayout({ immediate: true });
+  }
+
+  state.historyOpenBeforeFullscreen = null;
+}
+
+async function toggleFullscreenMode() {
+  if (!isFullscreenSupported()) {
+    console.warn('Fullscreen non supportato in questo browser.');
+    return;
+  }
+
+  if (isFullscreenActive()) {
+    try {
+      await document.exitFullscreen();
+    } catch (error) {
+      console.warn('Impossibile uscire da schermo intero', error);
+    }
+    return;
+  }
+
+  state.historyOpenBeforeFullscreen = state.historyOpen;
+
+  try {
+    await document.documentElement.requestFullscreen();
+  } catch (error) {
+    console.warn('Impossibile attivare lo schermo intero', error);
+    state.historyOpenBeforeFullscreen = null;
+  }
+}
+
+// ============================================
 // 16. GAME LOGIC
 // ============================================
 
@@ -2625,8 +2708,11 @@ function setupEventListeners() {
   elements.drawButton?.addEventListener('click', handleDraw);
   elements.resetButton?.addEventListener('click', resetGame);
   elements.historyToggle?.addEventListener('click', toggleHistoryPanel);
+  elements.fullscreenToggle?.addEventListener('click', toggleFullscreenMode);
   elements.audioToggle?.addEventListener('click', () => setAudioEnabled(!state.audioEnabled));
   elements.historyScrim?.addEventListener('click', () => closeHistoryPanel());
+
+  document.addEventListener('fullscreenchange', syncFullscreenState);
 }
 
 // ============================================
@@ -2636,6 +2722,7 @@ function setupEventListeners() {
 function init() {
   initializeAudioPreference();
   setupEventListeners();
+  syncFullscreenState();
   syncHistoryPanelToLayout({ immediate: true });
   updateLoadingUI();
   loadNumbers();
