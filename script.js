@@ -1296,14 +1296,14 @@ function playEntryAudio(entry) {
 
   const sequence = [{ src: baseSource, required: true }];
 
-  if (entry.italian?.trim()) {
-    const italianSource = getAudioFilePath(entry.number, 'italian');
-    if (italianSource) sequence.push({ src: italianSource, required: false });
-  }
-
   if (entry.dialect?.trim()) {
     const dialectSource = getAudioFilePath(entry.number, 'dialect');
     if (dialectSource) sequence.push({ src: dialectSource, required: false });
+  }
+
+  if (entry.italian?.trim()) {
+    const italianSource = getAudioFilePath(entry.number, 'italian');
+    if (italianSource) sequence.push({ src: italianSource, required: false });
   }
 
   return playAudioSequence(sequence);
