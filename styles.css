@@ -1894,7 +1894,7 @@ body.is-fullscreen .board-grid {
 
 body.is-fullscreen .board-powered {
   display: inline-flex;
-  color: #000;
+  color: #797979;
   margin-top: clamp(0.5rem, 2vw, 1.25rem);
 }
 
