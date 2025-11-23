@@ -161,12 +161,14 @@ body.app-fullscreen .layout {
   grid-auto-rows: 1fr;
   align-items: stretch;
   height: 100vh;
+  min-height: 100vh;
   padding-block: var(--space-md);
   gap: var(--space-lg);
 }
 
 body.app-fullscreen .layout__section {
   height: 100%;
+  min-height: 0;
 }
 
 body.app-fullscreen .shell {
@@ -178,6 +180,7 @@ body.app-fullscreen .dashboard__shell,
 body.app-fullscreen .board-area__shell,
 body.app-fullscreen .sponsor__shell {
   height: 100%;
+  min-height: 0;
 }
 
 body.app-fullscreen .board-area__shell {
@@ -189,6 +192,7 @@ body.app-fullscreen .sponsor__shell {
   flex-direction: column;
   gap: var(--space-md);
   justify-content: flex-start;
+  overflow: auto;
 }
 
 /* ============================================
@@ -319,11 +323,17 @@ body.app-fullscreen .dashboard__shell {
   grid-template-rows: auto 1fr;
   gap: var(--space-md);
   align-content: stretch;
+  min-height: 0;
 }
 
 .dashboard__grid {
   display: grid;
   gap: var(--space-md);
+}
+
+body.app-fullscreen .dashboard__grid {
+  grid-template-rows: auto 1fr;
+  min-height: 0;
 }
 
 .status-card {
@@ -678,12 +688,14 @@ body.app-fullscreen .status-card__actions {
   display: flex;
   flex-direction: column;
   position: relative;
+  min-height: 0;
 }
 
 .board-area__layout {
   display: grid;
   gap: clamp(1.4rem, 3vw, 2rem);
   padding-bottom: clamp(2rem, 5vw, 3.5rem);
+  min-height: 0;
 }
 
 body.app-fullscreen .board-area__layout {
@@ -692,6 +704,7 @@ body.app-fullscreen .board-area__layout {
   justify-items: center;
   align-content: center;
   padding-bottom: 0;
+  min-height: 0;
 }
 
 .board-wrapper {
@@ -704,6 +717,7 @@ body.app-fullscreen .board-wrapper {
   height: 100%;
   grid-template-rows: auto 1fr;
   align-content: stretch;
+  min-height: 0;
 }
 
 .board-head {
@@ -726,7 +740,8 @@ body.app-fullscreen .board-wrapper {
 }
 
 body.app-fullscreen .board-grid {
-  width: min(100%, calc((100vh - 3.5rem) * 1.08));
+  width: 100%;
+  max-width: min(100%, calc((100vh - 2.6rem) * 1.08));
   max-height: 100%;
   aspect-ratio: 10 / 9;
   align-self: center;
@@ -916,6 +931,8 @@ body.app-fullscreen .history {
   pointer-events: auto;
   padding: clamp(1.1rem, 2.6vw, 1.6rem);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 body.app-fullscreen .history--open {
@@ -962,6 +979,8 @@ body.app-fullscreen .history--open {
 
 body.app-fullscreen .history__list {
   max-height: none;
+  flex: 1;
+  min-height: 0;
 }
 
 .history-item {
