@@ -1890,7 +1890,9 @@ body.is-fullscreen .board-grid {
 }
 
 body.is-fullscreen .board-powered {
-  display: none;
+  display: inline-flex;
+  color: #000;
+  margin-top: clamp(0.5rem, 2vw, 1.25rem);
 }
 
 body.is-fullscreen .board-cell {
@@ -2237,10 +2239,6 @@ body.is-fullscreen #history-toggle {
 @media (min-width: 56.25rem) {
   .board-grid {
     grid-template-columns: repeat(10, minmax(0, 1fr));
-  }
-
-  .board-powered {
-    display: inline-flex;
   }
 }
 
