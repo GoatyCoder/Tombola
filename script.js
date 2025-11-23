@@ -1296,14 +1296,14 @@ function playEntryAudio(entry) {
 
   const sequence = [{ src: baseSource, required: true }];
 
-  if (entry.italian?.trim()) {
-    const italianSource = getAudioFilePath(entry.number, 'italian');
-    if (italianSource) sequence.push({ src: italianSource, required: false });
-  }
-
   if (entry.dialect?.trim()) {
     const dialectSource = getAudioFilePath(entry.number, 'dialect');
     if (dialectSource) sequence.push({ src: dialectSource, required: false });
+  }
+
+  if (entry.italian?.trim()) {
+    const italianSource = getAudioFilePath(entry.number, 'italian');
+    if (italianSource) sequence.push({ src: italianSource, required: false });
   }
 
   return playAudioSequence(sequence);
@@ -1693,13 +1693,13 @@ function buildBoardCellLabel(entry, { drawn = false } = {}) {
 
   const labelParts = [`Numero ${entry.number}`];
 
-  const italian = entry.italian?.trim();
   const dialect = entry.dialect?.trim();
+  const italian = entry.italian?.trim();
 
-  if (italian) {
-    labelParts.push(italian);
-  } else if (dialect) {
+  if (dialect) {
     labelParts.push(dialect);
+  } else if (italian) {
+    labelParts.push(italian);
   }
 
   labelParts.push(drawn ? 'Estratto' : 'Disponibile');
@@ -1913,19 +1913,19 @@ function updateDrawHistory() {
     const meta = document.createElement('div');
     meta.className = 'history-item__meta';
 
-    const italianLine = document.createElement('span');
-    italianLine.className = 'history-item__lang history-item__lang--italian';
-    const italianValue = item.italian?.trim() || '';
-    italianLine.textContent = `Italiano: ${italianValue || '—'}`;
-    if (!italianValue) italianLine.classList.add('history-item__lang--empty');
-    meta.appendChild(italianLine);
-
     const dialectLine = document.createElement('span');
     dialectLine.className = 'history-item__lang history-item__lang--dialect';
     const dialectValue = item.dialect?.trim() || '';
     dialectLine.textContent = `Nojano: ${dialectValue || '—'}`;
     if (!dialectValue) dialectLine.classList.add('history-item__lang--empty');
     meta.appendChild(dialectLine);
+
+    const italianLine = document.createElement('span');
+    italianLine.className = 'history-item__lang history-item__lang--italian';
+    const italianValue = item.italian?.trim() || '';
+    italianLine.textContent = `Italiano: ${italianValue || '—'}`;
+    if (!italianValue) italianLine.classList.add('history-item__lang--empty');
+    meta.appendChild(italianLine);
 
     details.appendChild(meta);
     listItem.appendChild(details);
