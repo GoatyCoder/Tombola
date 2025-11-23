@@ -41,6 +41,16 @@
           <h2 id="dashboard-heading" class="sr-only">Controllo estrazioni</h2>
           
           <div class="dashboard__grid">
+            <div class="fullscreen-brand" aria-label="La Tombola Nojana">
+              <div class="fullscreen-brand__logo">
+                <img src="images/logo_amicidelteatro.svg" alt="Amici del Teatro" loading="lazy" decoding="async" />
+              </div>
+              <div class="fullscreen-brand__text">
+                <p class="fullscreen-brand__eyebrow">Amici del Teatro presenta</p>
+                <p class="fullscreen-brand__title">La Tombola Nojana</p>
+              </div>
+            </div>
+
             <article class="status-card status-card--overview" aria-labelledby="draw-overview-heading">
               <h3 id="draw-overview-heading" class="sr-only">Ultimo numero e stato delle estrazioni</h3>
               
@@ -80,6 +90,20 @@
                     <path d="M18 4.5v4.25h-4.25" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                     <path d="M18 16.5a6.75 6.75 0 0 1-12.32-1.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                     <path d="M6 19.5V15.25h4.25" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </button>
+
+                <button
+                  type="button"
+                  id="fullscreen-toggle"
+                  class="button button--dashboard button--icon button--fullscreen"
+                  aria-pressed="false"
+                  aria-label="Schermo intero"
+                  title="Schermo intero"
+                >
+                  <span class="button__label sr-only" id="fullscreen-toggle-label">Schermo intero</span>
+                  <svg class="button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4.5 9.5V5.25A.75.75 0 0 1 5.25 4.5H9.5M19.5 9.5V5.25a.75.75 0 0 0-.75-.75H14.5M4.5 14.5v4.25c0 .414.336.75.75.75H9.5M19.5 14.5v4.25a.75.75 0 0 1-.75.75H14.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                   </svg>
                 </button>
 
