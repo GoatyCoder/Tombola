@@ -453,8 +453,9 @@ button:focus-visible {
 
 .status-card__actions {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: clamp(0.25rem, 1.1vw, 0.45rem);
+  row-gap: clamp(0.3rem, 1vw, 0.55rem);
   align-items: center;
   width: 100%;
 }
@@ -1604,6 +1605,12 @@ button:focus-visible {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
+.app-footer__bottom {
+  width: min(70rem, 100%);
+  margin: 0 auto;
+  padding-inline: var(--space-page-inline);
+}
+
 .app-footer__association {
   display: inline-flex;
   align-items: center;
@@ -1620,10 +1627,6 @@ button:focus-visible {
 .app-footer__association-logo {
   width: clamp(12.5rem, 32vw, 17.5rem);
   height: auto;
-}
-
-.app-footer__bottom {
-  width: 100%;
 }
 
 .app-footer__meta {
@@ -2072,6 +2075,7 @@ body.is-fullscreen #history-toggle {
 @media (max-width: 35rem) {
   .status-card__actions {
     width: 100%;
+    flex-wrap: wrap;
     justify-content: space-between;
     gap: 0.45rem;
   }
