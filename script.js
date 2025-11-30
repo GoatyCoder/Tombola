@@ -2022,12 +2022,14 @@ function startSponsorRotation() {
   const items = Array.from(list.querySelectorAll('.sponsor-strip__item'));
   if (items.length <= 1) return;
 
+  const listStyles = getComputedStyle(list);
+  const gapValue = parseFloat(listStyles.rowGap || listStyles.gap || '0') || 0;
   const baseHeights = items.map((item) => item.getBoundingClientRect().height || item.offsetHeight || 0);
-  const originalHeight = baseHeights.reduce((sum, value) => sum + value, 0);
+  const originalHeight = baseHeights.reduce((sum, value) => sum + value, 0) + gapValue * Math.max(items.length - 1, 0);
   if (originalHeight <= 0) return;
 
   let totalHeight = originalHeight;
-  const targetHeight = Math.max(list.clientHeight * 2, originalHeight * 2);
+  const targetHeight = Math.max(originalHeight + list.clientHeight, originalHeight * 2);
   const fragment = document.createDocumentFragment();
 
   let cloneIndex = 0;
@@ -2056,11 +2058,11 @@ function startSponsorRotation() {
     return;
   }
 
-  const speedPerSecond = 28;
-  const distance = originalHeight;
-  const durationSeconds = Math.max(8, distance / speedPerSecond);
+  const cycleDistance = originalHeight + gapValue;
+  const speedPerSecond = 26;
+  const durationSeconds = Math.max(10, cycleDistance / speedPerSecond);
 
-  list.style.setProperty('--sponsor-scroll-distance', `${distance}px`);
+  list.style.setProperty('--sponsor-scroll-distance', `${cycleDistance}px`);
   list.style.setProperty('--sponsor-scroll-duration', `${durationSeconds}s`);
   list.classList.add('sponsor-strip--scrolling');
   state.sponsorRotationTimer = true;
