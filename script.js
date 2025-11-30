@@ -8,6 +8,7 @@
 const STORAGE_KEYS = {
   AUDIO: 'tombola-audio-enabled',
   DRAW_STATE: 'TOMBOLA_DRAW_STATE',
+  AUDIO_VOICE: 'tombola-dialect-voice',
 };
 
 const DATA_PATHS = {
@@ -75,6 +76,11 @@ const SponsorMarqueeConfig = {
   FALLBACK_ITEM_HEIGHT: 120,
 };
 
+const DialectVoices = Object.freeze({
+  PRUDENZA: 'ps',
+  ANNA: 'nj',
+});
+
 // ============================================
 // 2. STATE
 // ============================================
@@ -93,6 +99,7 @@ const state = {
   historyOriginalParent: null,
   historyOriginalNextSibling: null,
   audioEnabled: true,
+  dialectVoice: DialectVoices.ANNA,
   storageErrorMessage: '',
   sponsorShowcaseRendered: false,
   resetDialogOpen: false,
@@ -158,6 +165,7 @@ const elements = {
   drawLastDetailMessage: document.querySelector('#draw-last-detail-message'),
   fullscreenToggle: document.querySelector('#fullscreen-toggle'),
   fullscreenToggleLabel: document.querySelector('#fullscreen-toggle-label'),
+  dialectVoiceSelect: document.querySelector('#dialect-voice'),
   layout: document.querySelector('.layout'),
 };
 
@@ -1150,6 +1158,45 @@ function restoreDrawStateFromStorage() {
 // 12. AUDIO FUNCTIONS
 // ============================================
 
+function normalizeDialectVoice(value) {
+  if (Object.values(DialectVoices).includes(value)) return value;
+  return DialectVoices.ANNA;
+}
+
+function updateDialectVoiceSelect() {
+  if (!elements.dialectVoiceSelect) return;
+  const normalized = normalizeDialectVoice(state.dialectVoice);
+  elements.dialectVoiceSelect.value = normalized;
+}
+
+function setDialectVoice(value) {
+  const normalized = normalizeDialectVoice(value);
+  state.dialectVoice = normalized;
+  updateDialectVoiceSelect();
+
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.AUDIO_VOICE, normalized);
+    }
+  } catch (error) {
+    console.warn('Dialect voice preference save error', error);
+  }
+}
+
+function initializeDialectVoicePreference() {
+  let stored = null;
+  try {
+    if (typeof localStorage !== 'undefined') {
+      stored = localStorage.getItem(STORAGE_KEYS.AUDIO_VOICE);
+    }
+  } catch (error) {
+    console.warn('Dialect voice preference read error', error);
+  }
+
+  state.dialectVoice = normalizeDialectVoice(stored);
+  updateDialectVoiceSelect();
+}
+
 function initializeAudioPreference() {
   try {
     if (typeof localStorage !== 'undefined') {
@@ -1197,7 +1244,12 @@ function getAudioFilePath(number, variant = 'base') {
   const trimmed = String(number).trim();
   if (!trimmed) return null;
 
-  const suffix = variant === 'italian' ? '_it' : variant === 'dialect' ? '_nj' : '';
+  if (variant === 'dialect') {
+    const dialectSuffix = normalizeDialectVoice(state.dialectVoice || DialectVoices.ANNA);
+    return `audio/${trimmed}_${dialectSuffix}.mp3`;
+  }
+
+  const suffix = variant === 'italian' ? '_it' : '';
   return `audio/${trimmed}${suffix}.mp3`;
 }
 
@@ -2880,6 +2932,7 @@ function setupEventListeners() {
   elements.resetButton?.addEventListener('click', resetGame);
   elements.historyToggle?.addEventListener('click', toggleHistoryPanel);
   elements.audioToggle?.addEventListener('click', () => setAudioEnabled(!state.audioEnabled));
+  elements.dialectVoiceSelect?.addEventListener('change', (event) => setDialectVoice(event.target.value));
   elements.historyScrim?.addEventListener('click', () => closeHistoryPanel());
   elements.fullscreenToggle?.addEventListener('click', toggleFullscreenMode);
   document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -2890,6 +2943,7 @@ function setupEventListeners() {
 // ============================================
 
 function init() {
+  initializeDialectVoicePreference();
   initializeAudioPreference();
   setupEventListeners();
   updateFullscreenToggleLabel(state.fullscreenActive);
