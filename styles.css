@@ -1952,6 +1952,11 @@ body.is-fullscreen .sponsor-strip--scrolling {
 
 body.is-fullscreen .sponsor-strip--marquee {
   will-change: transform;
+  animation: sponsorScrollVertical var(--sponsor-scroll-duration, 24s) linear infinite;
+}
+
+body.is-fullscreen .sponsor-strip--marquee:hover {
+  animation-play-state: paused;
 }
 
 body.is-fullscreen .history {

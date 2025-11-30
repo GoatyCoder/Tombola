@@ -2054,45 +2054,40 @@ function startSponsorRotation() {
     return;
   }
 
-  let offset = 0;
-  let lastTimestamp = null;
+  const baseCycleHeight = measuredHeights.reduce((sum, height) => sum + height, 0) + gapValue * Math.max(items.length - 1, 0);
+  if (baseCycleHeight <= 0) return;
 
-  const step = (timestamp) => {
-    if (!state.fullscreenActive) {
-      state.sponsorRotationTimer = null;
-      return;
-    }
+  let accumulatedHeight = baseCycleHeight;
+  const fragment = document.createDocumentFragment();
 
-    if (lastTimestamp === null) {
-      lastTimestamp = timestamp;
-    }
+  // Clone full cycles until we have at least two full sets to keep the column filled while looping
+  while (accumulatedHeight < baseCycleHeight * 2 + visibleHeight) {
+    items.forEach((item) => {
+      const clone = item.cloneNode(true);
+      clone.classList.add('sponsor-strip__item--clone');
+      clone.setAttribute('aria-hidden', 'true');
+      clone.querySelectorAll('a, button, [tabindex]').forEach((node) => {
+        node.setAttribute('tabindex', '-1');
+        node.setAttribute('aria-hidden', 'true');
+      });
+      fragment.appendChild(clone);
+    });
 
-    const deltaSeconds = Math.max(0, (timestamp - lastTimestamp) / 1000);
-    lastTimestamp = timestamp;
+    accumulatedHeight += baseCycleHeight;
+  }
 
-    offset -= SponsorMarqueeConfig.PIXELS_PER_SECOND * deltaSeconds;
+  if (fragment.childNodes.length) {
+    list.appendChild(fragment);
+  }
 
-    let firstItem = list.firstElementChild;
-    while (firstItem) {
-      const itemHeight = firstItem.getBoundingClientRect().height || SponsorMarqueeConfig.FALLBACK_ITEM_HEIGHT;
-      const threshold = -(itemHeight + gapValue);
+  const durationSeconds = baseCycleHeight / SponsorMarqueeConfig.PIXELS_PER_SECOND;
+  list.style.setProperty('--sponsor-scroll-distance', `${baseCycleHeight}px`);
+  list.style.setProperty('--sponsor-scroll-duration', `${durationSeconds}s`);
 
-      if (offset <= threshold) {
-        offset += itemHeight + gapValue;
-        list.appendChild(firstItem);
-        firstItem = list.firstElementChild;
-        continue;
-      }
+  list.offsetHeight;
 
-      break;
-    }
-
-    list.style.transform = `translateY(${offset}px)`;
-    state.sponsorRotationTimer = requestAnimationFrame(step);
-  };
-
-  state.sponsorRotationTimer = requestAnimationFrame(step);
-  list.classList.add('sponsor-strip--scrolling');
+  list.classList.add('sponsor-strip--scrolling', 'sponsor-strip--marquee');
+  state.sponsorRotationTimer = true;
 }
 
 function stopSponsorRotation() {
