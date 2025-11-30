@@ -69,6 +69,12 @@ const ANIMATION_DELAYS = {
   SCROLL_IDLE_THRESHOLD: 160,
 };
 
+const SponsorMarqueeConfig = {
+  VISIBLE_COUNT: 6,
+  PIXELS_PER_SECOND: 32,
+  FALLBACK_ITEM_HEIGHT: 120,
+};
+
 // ============================================
 // 2. STATE
 // ============================================
@@ -2013,89 +2019,104 @@ function startSponsorRotation() {
 
   list.style.removeProperty('--sponsor-scroll-distance');
   list.style.removeProperty('--sponsor-scroll-duration');
+  list.style.removeProperty('--sponsor-visible-height');
+  list.style.removeProperty('height');
   list.classList.remove('sponsor-strip--scrolling');
+  list.classList.remove('sponsor-strip--marquee');
   list.style.removeProperty('transform');
 
   list.querySelectorAll('.sponsor-strip__item--clone').forEach((node) => node.remove());
 
-  const baseItems = Array.from(list.querySelectorAll('.sponsor-strip__item:not(.sponsor-strip__item--clone)'));
-  if (baseItems.length === 0) return;
+  const items = Array.from(list.querySelectorAll('.sponsor-strip__item'));
+  if (items.length === 0) return;
 
-  if (baseItems.length === 1 || prefersReducedMotion) {
-    state.sponsorRotationTimer = true;
-    return;
-  }
-
+  const visibleCount = Math.min(SponsorMarqueeConfig.VISIBLE_COUNT, items.length);
   const listStyles = getComputedStyle(list);
   const gapValue = parseFloat(listStyles.rowGap || listStyles.gap || '0') || 0;
 
   // Force reflow for accurate measurements
   list.offsetHeight;
 
-  const baseHeights = baseItems.map((item) => item.getBoundingClientRect().height || item.offsetHeight || 0);
-  const baseCycleHeight = baseHeights.reduce((sum, value) => sum + value, 0) + gapValue * Math.max(baseItems.length - 1, 0);
-  if (baseCycleHeight <= 0) return;
+  const measuredHeights = items.map((item) => {
+    const rect = item.getBoundingClientRect();
+    return rect.height || item.offsetHeight || SponsorMarqueeConfig.FALLBACK_ITEM_HEIGHT;
+  });
 
-  const fragment = document.createDocumentFragment();
-  let totalHeight = baseCycleHeight;
-  let cloneIndex = 0;
-  const minimumHeight = list.clientHeight + baseCycleHeight;
+  const maxHeight = Math.max(...measuredHeights, SponsorMarqueeConfig.FALLBACK_ITEM_HEIGHT);
+  const visibleHeight = maxHeight * visibleCount + gapValue * Math.max(visibleCount - 1, 0);
 
-  while (totalHeight < minimumHeight) {
-    const source = baseItems[cloneIndex % baseItems.length];
-    const clone = source.cloneNode(true);
-    clone.classList.add('sponsor-strip__item--clone');
-    clone.setAttribute('aria-hidden', 'true');
-    clone.querySelectorAll('a, button, [tabindex]').forEach((node) => {
-      node.setAttribute('tabindex', '-1');
-      node.setAttribute('aria-hidden', 'true');
-    });
-
-    fragment.appendChild(clone);
-    const cloneHeight = baseHeights[cloneIndex % baseHeights.length] || source.getBoundingClientRect().height || source.offsetHeight || 0;
-    totalHeight += cloneHeight + gapValue;
-    cloneIndex += 1;
+  if (visibleHeight > 0) {
+    list.style.setProperty('--sponsor-visible-height', `${visibleHeight}px`);
+    list.style.height = `${visibleHeight}px`;
   }
 
-  if (fragment.childNodes.length) {
-    list.appendChild(fragment);
-  }
-
-  const totalScrollableHeight = baseCycleHeight;
-  const needsScroll = totalHeight > list.clientHeight + 1;
-  if (!needsScroll) {
+  const hasEnoughSponsors = items.length > visibleCount;
+  if (!hasEnoughSponsors || prefersReducedMotion) {
     state.sponsorRotationTimer = true;
     return;
   }
 
-  const pixelsPerSecond = 30;
-  const durationSeconds = Math.max(8, totalScrollableHeight / pixelsPerSecond);
+  let offset = 0;
+  let lastTimestamp = null;
+  const averageHeight = measuredHeights.reduce((sum, value) => sum + value, 0) / measuredHeights.length || SponsorMarqueeConfig.FALLBACK_ITEM_HEIGHT;
 
-  list.style.setProperty('--sponsor-scroll-distance', `${totalScrollableHeight}px`);
-  list.style.setProperty('--sponsor-scroll-duration', `${durationSeconds}s`);
+  const step = (timestamp) => {
+    if (!state.fullscreenActive) {
+      stopSponsorRotation();
+      return;
+    }
 
-  // Force reflow before starting the animation
-  list.offsetHeight;
+    if (lastTimestamp === null) {
+      lastTimestamp = timestamp;
+      state.sponsorRotationTimer = requestAnimationFrame(step);
+      return;
+    }
 
-  list.classList.add('sponsor-strip--scrolling');
-  state.sponsorRotationTimer = true;
+    const deltaSeconds = Math.max(0, Math.min(0.05, (timestamp - lastTimestamp) / 1000));
+    lastTimestamp = timestamp;
+
+    offset += deltaSeconds * SponsorMarqueeConfig.PIXELS_PER_SECOND;
+
+    let firstItem = list.firstElementChild;
+    let guard = 0;
+
+    const measureDistance = (item) => {
+      const rect = item?.getBoundingClientRect?.();
+      const height = (rect?.height || item?.offsetHeight || averageHeight);
+      return height + gapValue;
+    };
+
+    while (firstItem && offset >= measureDistance(firstItem)) {
+      offset -= measureDistance(firstItem);
+      list.appendChild(firstItem);
+      firstItem = list.firstElementChild;
+      guard += 1;
+      if (guard > items.length * 2) break;
+    }
+
+    list.style.transform = `translateY(-${offset}px)`;
+    list.classList.add('sponsor-strip--marquee');
+    state.sponsorRotationTimer = requestAnimationFrame(step);
+  };
+
+  state.sponsorRotationTimer = requestAnimationFrame(step);
 }
 
 function stopSponsorRotation() {
-  if (state.sponsorRotationTimer) {
-    if (typeof state.sponsorRotationTimer === 'number') {
-      cancelAnimationFrame(state.sponsorRotationTimer);
-    }
+  if (typeof state.sponsorRotationTimer === 'number') {
+    cancelAnimationFrame(state.sponsorRotationTimer);
   }
 
   if (elements.sponsorShowcaseList) {
     const list = elements.sponsorShowcaseList;
     list.scrollTop = 0;
     list.style.removeProperty('transform');
-    list.querySelectorAll('.sponsor-strip__item--clone').forEach((node) => node.remove());
     list.style.removeProperty('--sponsor-scroll-distance');
     list.style.removeProperty('--sponsor-scroll-duration');
+    list.style.removeProperty('--sponsor-visible-height');
+    list.style.removeProperty('height');
     list.classList.remove('sponsor-strip--scrolling');
+    list.classList.remove('sponsor-strip--marquee');
   }
 
   state.sponsorRotationTimer = null;
