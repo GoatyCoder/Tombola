@@ -2018,16 +2018,13 @@ function startSponsorRotation() {
   if (items.length <= 1) return;
 
   const originalHeight = list.scrollHeight;
-  const minClones = 1;
-  let clonesNeeded = minClones;
-
-  // Keep duplicating items until the strip overflows the container for continuous vertical looping
-  while ((originalHeight * (clonesNeeded + 1)) <= list.clientHeight + 8 && clonesNeeded < 10) {
-    clonesNeeded += 1;
-  }
-
+  let totalHeight = originalHeight;
   const fragment = document.createDocumentFragment();
-  for (let i = 0; i < clonesNeeded; i += 1) {
+  const maxCloneCycles = 20;
+  let cycles = 0;
+
+  // Duplicate the full list until there is at least one full extra cycle and the column overflows
+  while ((totalHeight < originalHeight * 2 || totalHeight <= list.clientHeight + 8) && cycles < maxCloneCycles) {
     items.forEach((item) => {
       const clone = item.cloneNode(true);
       clone.classList.add('sponsor-strip__item--clone');
@@ -2038,8 +2035,13 @@ function startSponsorRotation() {
       });
       fragment.appendChild(clone);
     });
+    totalHeight += originalHeight;
+    cycles += 1;
   }
-  list.appendChild(fragment);
+
+  if (fragment.childNodes.length > 0) {
+    list.appendChild(fragment);
+  }
 
   const loopHeight = originalHeight;
   if (loopHeight <= 0) return;
