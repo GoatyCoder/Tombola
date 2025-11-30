@@ -1956,7 +1956,9 @@ body.is-fullscreen .board-powered {
 }
 
 body.is-fullscreen .board-powered--sidebar {
-  align-self: end;
+  position: sticky;
+  bottom: clamp(0.6rem, 2vw, 1.25rem);
+  align-self: stretch;
   justify-content: center;
   margin-top: 0;
   padding: clamp(0.35rem, 1vw, 0.65rem) clamp(0.4rem, 1.8vw, 0.85rem) 0;
