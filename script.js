@@ -2029,12 +2029,12 @@ function startSponsorRotation() {
   if (originalHeight <= 0) return;
 
   let totalHeight = originalHeight;
-  const targetHeight = Math.max(originalHeight + list.clientHeight, originalHeight * 2);
+  const minHeight = originalHeight * 2 + list.clientHeight;
   const fragment = document.createDocumentFragment();
 
   let cloneIndex = 0;
-  const maxClones = Math.max(items.length * 6, 8);
-  while (totalHeight < targetHeight && cloneIndex < maxClones) {
+  const maxClones = Math.max(items.length * 8, 12);
+  while (totalHeight < minHeight && cloneIndex < maxClones) {
     const source = items[cloneIndex % items.length];
     const clone = source.cloneNode(true);
     clone.classList.add('sponsor-strip__item--clone');
@@ -2044,7 +2044,8 @@ function startSponsorRotation() {
       node.setAttribute('aria-hidden', 'true');
     });
     fragment.appendChild(clone);
-    totalHeight += baseHeights[cloneIndex % baseHeights.length] || source.offsetHeight || 0;
+    const cloneHeight = baseHeights[cloneIndex % baseHeights.length] || source.offsetHeight || 0;
+    totalHeight += cloneHeight + gapValue;
     cloneIndex += 1;
   }
 
