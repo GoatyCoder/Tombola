@@ -1645,6 +1645,43 @@ button:focus-visible {
   font-weight: 600;
 }
 
+
+.sponsor__panel {
+  display: grid;
+  gap: var(--space-sm);
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-sm);
+  padding: clamp(0.85rem, 2vw, 1.35rem);
+}
+
+.sponsor__scroller {
+  position: relative;
+  border-radius: calc(var(--radius-md) + 0.4rem);
+  overflow: hidden;
+}
+
+.sponsor__scroller::before,
+.sponsor__scroller::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: clamp(0.75rem, 2vw, 1.2rem);
+  pointer-events: none;
+  z-index: 1;
+  background: linear-gradient(to bottom, rgba(246, 244, 241, 0.9), rgba(246, 244, 241, 0));
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+
+.sponsor__scroller::after {
+  top: auto;
+  bottom: 0;
+  transform: rotate(180deg);
+}
+
 .sponsor__strip {
   display: grid;
   gap: clamp(0.85rem, 2vw, 1.6rem);
@@ -1809,11 +1846,12 @@ body.is-fullscreen .app-footer {
 
 body.is-fullscreen .layout {
   height: 100dvh;
-  padding: var(--space-md);
-  gap: var(--space-md);
-  grid-template-columns: clamp(17rem, 24vw, 22rem) 1fr clamp(12rem, 18vw, 16rem);
+  padding: clamp(0.75rem, 2.6vw, 1.6rem);
+  gap: clamp(0.75rem, 2vw, 1.35rem);
+  grid-template-columns: minmax(16rem, 23vw) 1fr minmax(13rem, 21vw);
   grid-template-rows: 1fr;
   grid-template-areas: 'sidebar board sponsor';
+  align-items: stretch;
 }
 
 body.is-fullscreen .shell {
@@ -1846,7 +1884,7 @@ body.is-fullscreen .dashboard__grid {
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  gap: clamp(0.65rem, 1.6vw, 1rem);
   min-height: 0;
   overflow: hidden;
 }
@@ -1855,8 +1893,7 @@ body.is-fullscreen .fullscreen-brand {
   display: flex;
   padding: clamp(0.65rem, 1.8vw, 1rem);
   border-radius: var(--radius-md);
-  background: var(--surface);
-  box-shadow: var(--shadow-sm);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(251, 246, 240, 0.9));
   border: 1px solid var(--border-subtle);
 }
 
@@ -1955,21 +1992,34 @@ body.is-fullscreen .sponsor__shell {
   min-height: 0;
 }
 
+body.is-fullscreen .sponsor__panel {
+  height: 100%;
+  grid-template-rows: auto 1fr;
+  gap: clamp(0.5rem, 1vw, 0.8rem);
+}
+
 body.is-fullscreen .sponsor__header {
   padding-inline: clamp(0.2rem, 1vw, 0.6rem);
+}
+
+body.is-fullscreen .sponsor__scroller {
+  height: var(--sponsor-visible-height, 100%);
+  max-height: 100%;
+  mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.9) 8%, rgba(0, 0, 0, 0.9) 92%, transparent 100%);
+}
+
+body.is-fullscreen .sponsor__scroller::before,
+body.is-fullscreen .sponsor__scroller::after {
+  opacity: 1;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0));
 }
 
 body.is-fullscreen .sponsor__strip {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
-  overflow: hidden;
-  flex: 0 0 auto;
-  min-height: 0;
-  position: relative;
-  height: var(--sponsor-visible-height, 100%);
-  max-height: 100%;
-  justify-content: flex-start;
+  min-height: 100%;
+  padding: var(--space-2xs) 0;
 }
 
 body.is-fullscreen .sponsor-strip--scrolling {
@@ -1986,10 +2036,21 @@ body.is-fullscreen .sponsor-strip--marquee:hover {
   animation-play-state: paused;
 }
 
+body.is-fullscreen .sponsor__scroller--scrollable {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  overscroll-behavior: contain;
+}
+
+body.is-fullscreen .sponsor-strip--static {
+  padding-right: 0.25rem;
+}
+
 /* Fullscreen shadow softening: panels sit near the edges, so drop shadows can feel heavy. */
 body.is-fullscreen .fullscreen-brand,
 body.is-fullscreen .fullscreen-brand__logo,
 body.is-fullscreen .status-card,
+body.is-fullscreen .sponsor__panel,
 body.is-fullscreen .sponsor-card {
   box-shadow: none;
 }
