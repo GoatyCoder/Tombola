@@ -2073,13 +2073,9 @@ function startSponsorRotation() {
   });
 
   const visibleHeights = measuredHeights.slice(0, visibleCount);
-  const visibleHeight = visibleHeights.reduce((sum, height) => sum + height, 0) + gapValue * Math.max(visibleHeights.length - 1, 0);
-
-  if (visibleHeight > 0) {
-    const target = scroller || list;
-    target.style.setProperty('--sponsor-visible-height', `${visibleHeight}px`);
-    target.style.height = `${visibleHeight}px`;
-  }
+  const naturalVisibleHeight = visibleHeights.reduce((sum, height) => sum + height, 0) + gapValue * Math.max(visibleHeights.length - 1, 0);
+  const containerHeight = scroller?.getBoundingClientRect().height || list.getBoundingClientRect().height || 0;
+  const visibleHeight = containerHeight > 0 ? containerHeight : naturalVisibleHeight;
 
   const hasEnoughSponsors = items.length > 1;
   if (!hasEnoughSponsors || prefersReducedMotion) {
