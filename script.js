@@ -2018,13 +2018,14 @@ function startSponsorRotation() {
   if (items.length <= 1) return;
 
   const originalHeight = list.scrollHeight;
-  let totalHeight = originalHeight;
-  const fragment = document.createDocumentFragment();
-  const maxCloneCycles = 20;
-  let cycles = 0;
+  if (originalHeight <= 0) return;
 
-  // Duplicate the full list until there is at least one full extra cycle and the column overflows
-  while ((totalHeight < originalHeight * 2 || totalHeight <= list.clientHeight + 8) && cycles < maxCloneCycles) {
+  const fragment = document.createDocumentFragment();
+  let totalHeight = originalHeight;
+  const maxCloneCycles = 12;
+
+  // Always create at least one extra cycle so the first item that exits re-enters from the bottom
+  do {
     items.forEach((item) => {
       const clone = item.cloneNode(true);
       clone.classList.add('sponsor-strip__item--clone');
@@ -2036,15 +2037,11 @@ function startSponsorRotation() {
       fragment.appendChild(clone);
     });
     totalHeight += originalHeight;
-    cycles += 1;
-  }
+  } while (totalHeight < originalHeight * 2 || (totalHeight < list.clientHeight + 12 && totalHeight / originalHeight < maxCloneCycles));
 
-  if (fragment.childNodes.length > 0) {
-    list.appendChild(fragment);
-  }
+  list.appendChild(fragment);
 
   const loopHeight = originalHeight;
-  if (loopHeight <= 0) return;
 
   if (prefersReducedMotion) {
     list.style.removeProperty('--sponsor-scroll-distance');
