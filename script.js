@@ -83,6 +83,9 @@ const state = {
   drawHistory: [],
   isAnimatingDraw: false,
   historyOpen: false,
+  historyWasOpenBeforeFullscreen: false,
+  historyOriginalParent: null,
+  historyOriginalNextSibling: null,
   audioEnabled: true,
   storageErrorMessage: '',
   sponsorShowcaseRendered: false,
@@ -93,6 +96,8 @@ const state = {
   sponsorLoadingState: LoadingStates.IDLE,
   activeFocusTrapCleanup: null,
   activeFocusTrapElement: null,
+  fullscreenActive: false,
+  sponsorRotationTimer: null,
 };
 
 // ============================================
@@ -145,6 +150,9 @@ const elements = {
   drawLastDialect: document.querySelector('#draw-last-dialect'),
   drawLastItalian: document.querySelector('#draw-last-italian'),
   drawLastDetailMessage: document.querySelector('#draw-last-detail-message'),
+  fullscreenToggle: document.querySelector('#fullscreen-toggle'),
+  fullscreenToggleLabel: document.querySelector('#fullscreen-toggle-label'),
+  layout: document.querySelector('.layout'),
 };
 
 // ============================================
@@ -1604,6 +1612,8 @@ function renderSponsorShowcase(sponsors, options = {}) {
   elements.sponsorShowcase.hidden = false;
   elements.sponsorShowcase.removeAttribute('aria-hidden');
   state.sponsorShowcaseRendered = true;
+
+  restartSponsorRotation();
 }
 
 // ============================================
@@ -1802,7 +1812,9 @@ function syncHistoryPanelToLayout(options = {}) {
 
   if (!elements.historyScrim) return;
 
-  if (state.historyOpen) {
+  const shouldShowScrim = state.historyOpen && !state.fullscreenActive;
+
+  if (shouldShowScrim) {
     elements.historyScrim.hidden = false;
     requestAnimationFrame(() => {
       elements.historyScrim.classList.add('history-scrim--visible');
@@ -1810,7 +1822,7 @@ function syncHistoryPanelToLayout(options = {}) {
   } else {
     elements.historyScrim.classList.remove('history-scrim--visible');
     const finalizeHide = () => {
-      if (!state.historyOpen) {
+      if (!shouldShowScrim) {
         elements.historyScrim.hidden = true;
       }
       elements.historyScrim.removeEventListener('transitionend', finalizeHide);
@@ -1943,7 +1955,211 @@ function updateDrawHistory() {
 }
 
 // ============================================
-// 16. GAME LOGIC
+// 16. FULLSCREEN MODE
+// ============================================
+
+function getNativeFullscreenElement() {
+  return document.fullscreenElement ||
+    document.webkitFullscreenElement ||
+    document.mozFullScreenElement ||
+    document.msFullscreenElement ||
+    null;
+}
+
+function updateFullscreenToggleLabel(active) {
+  const label = active ? 'Esci da schermo intero' : 'Schermo intero';
+
+  if (elements.fullscreenToggleLabel) {
+    elements.fullscreenToggleLabel.textContent = label;
+  }
+
+  if (elements.fullscreenToggle) {
+    elements.fullscreenToggle.setAttribute('aria-pressed', active ? 'true' : 'false');
+    elements.fullscreenToggle.setAttribute('aria-label', label);
+    elements.fullscreenToggle.title = label;
+  }
+}
+
+function placeHistoryInSidebar() {
+  if (!elements.historyPanel || !elements.fullscreenToggle) return;
+
+  if (!state.historyOriginalParent) {
+    state.historyOriginalParent = elements.historyPanel.parentElement;
+    state.historyOriginalNextSibling = elements.historyPanel.nextSibling;
+  }
+
+  const dashboardGrid = document.querySelector('.dashboard__grid');
+  if (dashboardGrid && elements.historyPanel.parentElement !== dashboardGrid) {
+    dashboardGrid.appendChild(elements.historyPanel);
+    elements.historyPanel.classList.add('history--sidebar');
+  }
+}
+
+function restoreHistoryPlacement() {
+  if (!elements.historyPanel || !state.historyOriginalParent) return;
+
+  const { historyOriginalParent: parent, historyOriginalNextSibling: nextSibling } = state;
+  if (elements.historyPanel.parentElement !== parent) {
+    parent.insertBefore(elements.historyPanel, nextSibling);
+  }
+  elements.historyPanel.classList.remove('history--sidebar');
+}
+
+function startSponsorRotation() {
+  if (!state.fullscreenActive || state.sponsorRotationTimer || !elements.sponsorShowcaseList) return;
+
+  const list = elements.sponsorShowcaseList;
+  const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+
+  // Clear any existing clones from previous cycles
+  list.querySelectorAll('.sponsor-strip__item--clone').forEach((node) => node.remove());
+
+  const items = Array.from(list.querySelectorAll('.sponsor-strip__item'));
+  if (items.length <= 1) return;
+
+  const originalHeight = list.scrollHeight;
+  let clonesNeeded = 1;
+
+  // Keep duplicating items until the strip overflows, so the vertical marquee has distance to travel
+  while ((originalHeight * (clonesNeeded + 1)) <= list.clientHeight + 4 && clonesNeeded < 6) {
+    clonesNeeded += 1;
+  }
+
+  const fragment = document.createDocumentFragment();
+  for (let i = 0; i < clonesNeeded; i += 1) {
+    items.forEach((item) => {
+      const clone = item.cloneNode(true);
+      clone.classList.add('sponsor-strip__item--clone');
+      clone.setAttribute('aria-hidden', 'true');
+      clone.querySelectorAll('a, button, [tabindex]').forEach((node) => {
+        node.setAttribute('tabindex', '-1');
+        node.setAttribute('aria-hidden', 'true');
+      });
+      fragment.appendChild(clone);
+    });
+  }
+  list.appendChild(fragment);
+
+  const loopHeight = originalHeight * clonesNeeded;
+  if (loopHeight <= 0) return;
+
+  if (prefersReducedMotion) {
+    list.style.removeProperty('--sponsor-scroll-distance');
+    list.style.removeProperty('--sponsor-scroll-duration');
+    list.classList.remove('sponsor-strip--scrolling');
+    state.sponsorRotationTimer = true;
+    return;
+  }
+
+  const baseSpeed = 28; // px per second
+  const durationSeconds = Math.max(14, loopHeight / baseSpeed);
+
+  list.style.setProperty('--sponsor-scroll-distance', `${loopHeight}px`);
+  list.style.setProperty('--sponsor-scroll-duration', `${durationSeconds}s`);
+  list.classList.add('sponsor-strip--scrolling');
+
+  state.sponsorRotationTimer = true;
+}
+
+function stopSponsorRotation() {
+  state.sponsorRotationTimer = null;
+
+  if (elements.sponsorShowcaseList) {
+    elements.sponsorShowcaseList.scrollTop = 0;
+    elements.sponsorShowcaseList.querySelectorAll('.sponsor-strip__item--clone').forEach((node) => node.remove());
+    elements.sponsorShowcaseList.style.removeProperty('--sponsor-scroll-distance');
+    elements.sponsorShowcaseList.style.removeProperty('--sponsor-scroll-duration');
+    elements.sponsorShowcaseList.classList.remove('sponsor-strip--scrolling');
+  }
+}
+
+function restartSponsorRotation() {
+  stopSponsorRotation();
+  if (state.fullscreenActive) {
+    startSponsorRotation();
+  }
+}
+
+function applyFullscreenLayoutState(active) {
+  if (state.fullscreenActive === active) {
+    updateFullscreenToggleLabel(active);
+    return;
+  }
+
+  const wasHistoryOpen = state.historyOpen;
+  state.fullscreenActive = active;
+  document.body.classList.toggle('is-fullscreen', active);
+  updateFullscreenToggleLabel(active);
+
+  if (active) {
+    state.historyWasOpenBeforeFullscreen = wasHistoryOpen;
+    placeHistoryInSidebar();
+    openHistoryPanel({ immediate: true });
+    startSponsorRotation();
+  } else {
+    if (!state.historyWasOpenBeforeFullscreen) {
+      closeHistoryPanel({ immediate: true });
+    }
+    stopSponsorRotation();
+    restoreHistoryPlacement();
+    state.historyWasOpenBeforeFullscreen = false;
+  }
+
+  syncHistoryPanelToLayout({ immediate: true });
+}
+
+async function enterFullscreenMode() {
+  applyFullscreenLayoutState(true);
+
+  const target = document.documentElement;
+  const requestFullscreen = target.requestFullscreen ||
+    target.webkitRequestFullscreen ||
+    target.mozRequestFullScreen ||
+    target.msRequestFullscreen;
+
+  if (typeof requestFullscreen === 'function') {
+    try {
+      await requestFullscreen.call(target);
+    } catch (error) {
+      console.warn('Fullscreen request failed', error);
+    }
+  }
+}
+
+async function exitFullscreenMode() {
+  const exitFullscreen = document.exitFullscreen ||
+    document.webkitExitFullscreen ||
+    document.mozCancelFullScreen ||
+    document.msExitFullscreen;
+
+  if (typeof exitFullscreen === 'function') {
+    try {
+      await exitFullscreen.call(document);
+    } catch (error) {
+      console.warn('Exit fullscreen failed', error);
+      applyFullscreenLayoutState(false);
+    }
+  } else {
+    applyFullscreenLayoutState(false);
+  }
+}
+
+function toggleFullscreenMode() {
+  const active = state.fullscreenActive || Boolean(getNativeFullscreenElement());
+  if (active) {
+    exitFullscreenMode();
+  } else {
+    enterFullscreenMode();
+  }
+}
+
+function handleFullscreenChange() {
+  const active = Boolean(getNativeFullscreenElement());
+  applyFullscreenLayoutState(active);
+}
+
+// ============================================
+// 17. GAME LOGIC
 // ============================================
 
 function markNumberDrawn(entry, options = {}) {
@@ -2145,7 +2361,7 @@ function resetGame() {
 }
 
 // ============================================
-// 17. MODALS
+// 18. MODALS
 // ============================================
 
 function handleSelection(entry, cell, options = {}) {
@@ -2345,7 +2561,7 @@ function closeResetDialog(options = {}) {
 }
 
 // ============================================
-// 18. STATUS UPDATE
+// 19. STATUS UPDATE
 // ============================================
 
 function updateDrawStatus(latestEntry) {
@@ -2493,7 +2709,7 @@ function updateDrawStatus(latestEntry) {
 }
 
 // ============================================
-// 19. DATA LOADING
+// 20. DATA LOADING
 // ============================================
 
 async function loadNumbers() {
@@ -2566,7 +2782,7 @@ async function loadNumbers() {
 }
 
 // ============================================
-// 20. EVENT HANDLERS
+// 21. EVENT HANDLERS
 // ============================================
 
 function setupEventListeners() {
@@ -2627,15 +2843,18 @@ function setupEventListeners() {
   elements.historyToggle?.addEventListener('click', toggleHistoryPanel);
   elements.audioToggle?.addEventListener('click', () => setAudioEnabled(!state.audioEnabled));
   elements.historyScrim?.addEventListener('click', () => closeHistoryPanel());
+  elements.fullscreenToggle?.addEventListener('click', toggleFullscreenMode);
+  document.addEventListener('fullscreenchange', handleFullscreenChange);
 }
 
 // ============================================
-// 21. INITIALIZATION
+// 22. INITIALIZATION
 // ============================================
 
 function init() {
   initializeAudioPreference();
   setupEventListeners();
+  updateFullscreenToggleLabel(state.fullscreenActive);
   syncHistoryPanelToLayout({ immediate: true });
   updateLoadingUI();
   loadNumbers();
