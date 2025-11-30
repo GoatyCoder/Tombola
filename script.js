@@ -98,6 +98,7 @@ const state = {
   activeFocusTrapElement: null,
   fullscreenActive: false,
   sponsorRotationTimer: null,
+  sponsorRotationHandlers: null,
 };
 
 // ============================================
@@ -2011,66 +2012,123 @@ function startSponsorRotation() {
   const list = elements.sponsorShowcaseList;
   const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
 
+  list.style.removeProperty('--sponsor-scroll-distance');
+  list.style.removeProperty('--sponsor-scroll-duration');
+  list.classList.remove('sponsor-strip--scrolling');
+  list.style.removeProperty('transform');
+
   // Clear any existing clones from previous cycles
   list.querySelectorAll('.sponsor-strip__item--clone').forEach((node) => node.remove());
 
   const items = Array.from(list.querySelectorAll('.sponsor-strip__item'));
   if (items.length <= 1) return;
 
-  const originalHeight = list.scrollHeight;
+  const baseHeights = items.map((item) => item.getBoundingClientRect().height || item.offsetHeight || 0);
+  const originalHeight = baseHeights.reduce((sum, value) => sum + value, 0);
   if (originalHeight <= 0) return;
 
-  const fragment = document.createDocumentFragment();
   let totalHeight = originalHeight;
-  const maxCloneCycles = 12;
+  const targetHeight = Math.max(list.clientHeight * 2, originalHeight * 2);
+  const fragment = document.createDocumentFragment();
 
-  // Always create at least one extra cycle so the first item that exits re-enters from the bottom
-  do {
-    items.forEach((item) => {
-      const clone = item.cloneNode(true);
-      clone.classList.add('sponsor-strip__item--clone');
-      clone.setAttribute('aria-hidden', 'true');
-      clone.querySelectorAll('a, button, [tabindex]').forEach((node) => {
-        node.setAttribute('tabindex', '-1');
-        node.setAttribute('aria-hidden', 'true');
-      });
-      fragment.appendChild(clone);
+  let cloneIndex = 0;
+  const maxClones = items.length * 8;
+  while (totalHeight < targetHeight && cloneIndex < maxClones) {
+    const source = items[cloneIndex % items.length];
+    const clone = source.cloneNode(true);
+    clone.classList.add('sponsor-strip__item--clone');
+    clone.setAttribute('aria-hidden', 'true');
+    clone.querySelectorAll('a, button, [tabindex]').forEach((node) => {
+      node.setAttribute('tabindex', '-1');
+      node.setAttribute('aria-hidden', 'true');
     });
-    totalHeight += originalHeight;
-  } while (totalHeight < originalHeight * 2 || (totalHeight < list.clientHeight + 12 && totalHeight / originalHeight < maxCloneCycles));
+    fragment.appendChild(clone);
+    totalHeight += baseHeights[cloneIndex % baseHeights.length] || source.getBoundingClientRect().height || 0;
+    cloneIndex += 1;
+  }
 
-  list.appendChild(fragment);
+  if (fragment.childNodes.length) {
+    list.appendChild(fragment);
+  }
 
-  const loopHeight = originalHeight;
-
-  if (prefersReducedMotion) {
-    list.style.removeProperty('--sponsor-scroll-distance');
-    list.style.removeProperty('--sponsor-scroll-duration');
-    list.classList.remove('sponsor-strip--scrolling');
+  if (prefersReducedMotion || list.scrollHeight <= list.clientHeight) {
     state.sponsorRotationTimer = true;
     return;
   }
 
-  const baseSpeed = 28; // px per second
-  const durationSeconds = Math.max(14, loopHeight / baseSpeed);
+  let offset = 0;
+  let lastTimestamp = null;
+  let paused = false;
 
-  list.style.setProperty('--sponsor-scroll-distance', `${loopHeight}px`);
-  list.style.setProperty('--sponsor-scroll-duration', `${durationSeconds}s`);
-  list.classList.add('sponsor-strip--scrolling');
+  const pauseRotation = () => {
+    paused = true;
+  };
 
-  state.sponsorRotationTimer = true;
+  const resumeRotation = () => {
+    paused = false;
+    lastTimestamp = null;
+  };
+
+  list.addEventListener('pointerenter', pauseRotation);
+  list.addEventListener('pointerleave', resumeRotation);
+  state.sponsorRotationHandlers = { pauseRotation, resumeRotation };
+
+  const speedPerSecond = 26;
+
+  const step = (timestamp) => {
+    if (!state.fullscreenActive) return;
+
+    if (paused) {
+      lastTimestamp = timestamp;
+      state.sponsorRotationTimer = requestAnimationFrame(step);
+      return;
+    }
+
+    if (lastTimestamp !== null) {
+      const deltaSeconds = Math.max(0, (timestamp - lastTimestamp) / 1000);
+      offset -= deltaSeconds * speedPerSecond;
+      list.style.transform = `translateY(${offset}px)`;
+
+      let firstItem = list.firstElementChild;
+      while (firstItem) {
+        const height = firstItem.getBoundingClientRect().height || firstItem.offsetHeight || 0;
+        if (height <= 0 || -offset < height) break;
+        offset += height;
+        list.appendChild(firstItem);
+        firstItem = list.firstElementChild;
+      }
+    }
+
+    lastTimestamp = timestamp;
+    state.sponsorRotationTimer = requestAnimationFrame(step);
+  };
+
+  state.sponsorRotationTimer = requestAnimationFrame(step);
 }
 
 function stopSponsorRotation() {
-  state.sponsorRotationTimer = null;
+  if (state.sponsorRotationTimer) {
+    cancelAnimationFrame(state.sponsorRotationTimer);
+  }
 
   if (elements.sponsorShowcaseList) {
-    elements.sponsorShowcaseList.scrollTop = 0;
-    elements.sponsorShowcaseList.querySelectorAll('.sponsor-strip__item--clone').forEach((node) => node.remove());
-    elements.sponsorShowcaseList.style.removeProperty('--sponsor-scroll-distance');
-    elements.sponsorShowcaseList.style.removeProperty('--sponsor-scroll-duration');
-    elements.sponsorShowcaseList.classList.remove('sponsor-strip--scrolling');
+    const list = elements.sponsorShowcaseList;
+    list.scrollTop = 0;
+    list.style.removeProperty('transform');
+    list.querySelectorAll('.sponsor-strip__item--clone').forEach((node) => node.remove());
+    list.style.removeProperty('--sponsor-scroll-distance');
+    list.style.removeProperty('--sponsor-scroll-duration');
+    list.classList.remove('sponsor-strip--scrolling');
+
+    if (state.sponsorRotationHandlers) {
+      const { pauseRotation, resumeRotation } = state.sponsorRotationHandlers;
+      if (pauseRotation) list.removeEventListener('pointerenter', pauseRotation);
+      if (resumeRotation) list.removeEventListener('pointerleave', resumeRotation);
+    }
   }
+
+  state.sponsorRotationHandlers = null;
+  state.sponsorRotationTimer = null;
 }
 
 function restartSponsorRotation() {
