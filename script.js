@@ -2036,10 +2036,10 @@ function startSponsorRotation() {
   const originalHeight = baseHeights.reduce((sum, value) => sum + value, 0) + gapValue * Math.max(baseItems.length - 1, 0);
   if (originalHeight <= 0) return;
 
-  // Duplicate the base set until we cover at least one extra full cycle beyond the viewport
+  const cycleDistance = originalHeight + gapValue;
+  const targetHeight = Math.max(list.clientHeight + cycleDistance, cycleDistance * 2);
   const fragment = document.createDocumentFragment();
   let totalHeight = originalHeight;
-  const targetHeight = list.clientHeight + originalHeight;
   let cloneIndex = 0;
 
   while (totalHeight < targetHeight) {
@@ -2069,9 +2069,9 @@ function startSponsorRotation() {
   }
 
   const pixelsPerSecond = 30;
-  const durationSeconds = Math.max(8, originalHeight / pixelsPerSecond);
+  const durationSeconds = Math.max(8, cycleDistance / pixelsPerSecond);
 
-  list.style.setProperty('--sponsor-scroll-distance', `${originalHeight}px`);
+  list.style.setProperty('--sponsor-scroll-distance', `${cycleDistance}px`);
   list.style.setProperty('--sponsor-scroll-duration', `${durationSeconds}s`);
 
   // Force reflow before starting the animation
