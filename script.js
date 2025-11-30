@@ -2018,10 +2018,11 @@ function startSponsorRotation() {
   if (items.length <= 1) return;
 
   const originalHeight = list.scrollHeight;
-  let clonesNeeded = 1;
+  const minClones = 1;
+  let clonesNeeded = minClones;
 
-  // Keep duplicating items until the strip overflows, so the vertical marquee has distance to travel
-  while ((originalHeight * (clonesNeeded + 1)) <= list.clientHeight + 4 && clonesNeeded < 6) {
+  // Keep duplicating items until the strip overflows the container for continuous vertical looping
+  while ((originalHeight * (clonesNeeded + 1)) <= list.clientHeight + 8 && clonesNeeded < 10) {
     clonesNeeded += 1;
   }
 
@@ -2040,7 +2041,7 @@ function startSponsorRotation() {
   }
   list.appendChild(fragment);
 
-  const loopHeight = originalHeight * clonesNeeded;
+  const loopHeight = originalHeight;
   if (loopHeight <= 0) return;
 
   if (prefersReducedMotion) {
