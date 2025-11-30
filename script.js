@@ -2033,16 +2033,15 @@ function startSponsorRotation() {
   list.offsetHeight;
 
   const baseHeights = baseItems.map((item) => item.getBoundingClientRect().height || item.offsetHeight || 0);
-  const originalHeight = baseHeights.reduce((sum, value) => sum + value, 0) + gapValue * Math.max(baseItems.length - 1, 0);
-  if (originalHeight <= 0) return;
+  const baseCycleHeight = baseHeights.reduce((sum, value) => sum + value, 0) + gapValue * Math.max(baseItems.length - 1, 0);
+  if (baseCycleHeight <= 0) return;
 
-  const cycleDistance = originalHeight + gapValue;
-  const targetHeight = Math.max(list.clientHeight + cycleDistance, cycleDistance * 2);
   const fragment = document.createDocumentFragment();
-  let totalHeight = originalHeight;
+  let totalHeight = baseCycleHeight;
   let cloneIndex = 0;
+  const minimumHeight = baseCycleHeight * 2 + list.clientHeight;
 
-  while (totalHeight < targetHeight) {
+  while (totalHeight < minimumHeight) {
     const source = baseItems[cloneIndex % baseItems.length];
     const clone = source.cloneNode(true);
     clone.classList.add('sponsor-strip__item--clone');
@@ -2053,7 +2052,7 @@ function startSponsorRotation() {
     });
 
     fragment.appendChild(clone);
-    const cloneHeight = baseHeights[cloneIndex % baseHeights.length] || source.offsetHeight || 0;
+    const cloneHeight = baseHeights[cloneIndex % baseHeights.length] || source.getBoundingClientRect().height || source.offsetHeight || 0;
     totalHeight += cloneHeight + gapValue;
     cloneIndex += 1;
   }
@@ -2062,16 +2061,17 @@ function startSponsorRotation() {
     list.appendChild(fragment);
   }
 
-  const needsScroll = list.scrollHeight > list.clientHeight + 1;
+  const totalScrollableHeight = baseCycleHeight + gapValue;
+  const needsScroll = totalHeight > list.clientHeight + 1;
   if (!needsScroll) {
     state.sponsorRotationTimer = true;
     return;
   }
 
   const pixelsPerSecond = 30;
-  const durationSeconds = Math.max(8, cycleDistance / pixelsPerSecond);
+  const durationSeconds = Math.max(8, totalScrollableHeight / pixelsPerSecond);
 
-  list.style.setProperty('--sponsor-scroll-distance', `${cycleDistance}px`);
+  list.style.setProperty('--sponsor-scroll-distance', `${totalScrollableHeight}px`);
   list.style.setProperty('--sponsor-scroll-duration', `${durationSeconds}s`);
 
   // Force reflow before starting the animation
