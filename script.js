@@ -2016,26 +2016,34 @@ function startSponsorRotation() {
   list.classList.remove('sponsor-strip--scrolling');
   list.style.removeProperty('transform');
 
-  // Clear any existing clones from previous cycles
   list.querySelectorAll('.sponsor-strip__item--clone').forEach((node) => node.remove());
 
-  const items = Array.from(list.querySelectorAll('.sponsor-strip__item'));
-  if (items.length <= 1) return;
+  const baseItems = Array.from(list.querySelectorAll('.sponsor-strip__item:not(.sponsor-strip__item--clone)'));
+  if (baseItems.length === 0) return;
+
+  if (baseItems.length === 1 || prefersReducedMotion) {
+    state.sponsorRotationTimer = true;
+    return;
+  }
 
   const listStyles = getComputedStyle(list);
   const gapValue = parseFloat(listStyles.rowGap || listStyles.gap || '0') || 0;
-  const baseHeights = items.map((item) => item.getBoundingClientRect().height || item.offsetHeight || 0);
-  const originalHeight = baseHeights.reduce((sum, value) => sum + value, 0) + gapValue * Math.max(items.length - 1, 0);
+
+  // Force reflow for accurate measurements
+  list.offsetHeight;
+
+  const baseHeights = baseItems.map((item) => item.getBoundingClientRect().height || item.offsetHeight || 0);
+  const originalHeight = baseHeights.reduce((sum, value) => sum + value, 0) + gapValue * Math.max(baseItems.length - 1, 0);
   if (originalHeight <= 0) return;
 
-  let totalHeight = originalHeight;
-  const minHeight = originalHeight * 2 + list.clientHeight;
+  // Duplicate the base set until we cover at least one extra full cycle beyond the viewport
   const fragment = document.createDocumentFragment();
-
+  let totalHeight = originalHeight;
+  const targetHeight = list.clientHeight + originalHeight;
   let cloneIndex = 0;
-  const maxClones = Math.max(items.length * 8, 12);
-  while (totalHeight < minHeight && cloneIndex < maxClones) {
-    const source = items[cloneIndex % items.length];
+
+  while (totalHeight < targetHeight) {
+    const source = baseItems[cloneIndex % baseItems.length];
     const clone = source.cloneNode(true);
     clone.classList.add('sponsor-strip__item--clone');
     clone.setAttribute('aria-hidden', 'true');
@@ -2043,6 +2051,7 @@ function startSponsorRotation() {
       node.setAttribute('tabindex', '-1');
       node.setAttribute('aria-hidden', 'true');
     });
+
     fragment.appendChild(clone);
     const cloneHeight = baseHeights[cloneIndex % baseHeights.length] || source.offsetHeight || 0;
     totalHeight += cloneHeight + gapValue;
@@ -2053,18 +2062,21 @@ function startSponsorRotation() {
     list.appendChild(fragment);
   }
 
-  const needsScroll = list.scrollHeight > list.clientHeight + 4;
-  if (prefersReducedMotion || !needsScroll) {
+  const needsScroll = list.scrollHeight > list.clientHeight + 1;
+  if (!needsScroll) {
     state.sponsorRotationTimer = true;
     return;
   }
 
-  const cycleDistance = originalHeight + gapValue;
-  const speedPerSecond = 26;
-  const durationSeconds = Math.max(10, cycleDistance / speedPerSecond);
+  const pixelsPerSecond = 30;
+  const durationSeconds = Math.max(8, originalHeight / pixelsPerSecond);
 
-  list.style.setProperty('--sponsor-scroll-distance', `${cycleDistance}px`);
+  list.style.setProperty('--sponsor-scroll-distance', `${originalHeight}px`);
   list.style.setProperty('--sponsor-scroll-duration', `${durationSeconds}s`);
+
+  // Force reflow before starting the animation
+  list.offsetHeight;
+
   list.classList.add('sponsor-strip--scrolling');
   state.sponsorRotationTimer = true;
 }
