@@ -137,7 +137,7 @@ button:focus-visible {
    3. LAYOUT
    ============================================ */
 .shell {
-  width: min(70rem, 100%);
+  width: min(82rem, 100%);
   margin: 0 auto;
   padding-inline: var(--space-page-inline);
 }
@@ -267,11 +267,13 @@ button:focus-visible {
 /* --- Dashboard --- */
 .dashboard__shell {
   display: grid;
+  align-items: stretch;
 }
 
 .dashboard__grid {
   display: grid;
   gap: var(--space-md);
+  align-items: stretch;
 }
 
 .fullscreen-brand {
@@ -325,6 +327,7 @@ button:focus-visible {
   display: grid;
   gap: var(--space-sm);
   border: 1px solid var(--border-subtle);
+  height: 100%;
 }
 
 .status-card--overview {
@@ -717,6 +720,7 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   position: relative;
+  width: min(88rem, 100%);
 }
 
 .board-area__layout {
@@ -2285,6 +2289,39 @@ body.is-fullscreen .sponsor-card {
 
   .number-dialog__languages {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard__shell {
+    width: min(88rem, 100%);
+  }
+
+  .dashboard__grid {
+    grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+    align-items: stretch;
+  }
+
+  .dashboard__grid > * {
+    min-width: 0;
+  }
+
+  .fullscreen-brand {
+    display: inline-flex;
+    align-self: start;
+  }
+
+  .status-card__actions {
+    grid-template-columns: minmax(11rem, 1fr) auto auto;
+    align-items: center;
+    width: auto;
+    max-width: 34rem;
+  }
+
+  .status-card__actions .button--primary {
+    justify-self: stretch;
+  }
+
+  .status-card__actions .button--icon {
+    justify-self: end;
   }
 }
 
