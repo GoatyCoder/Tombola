@@ -2039,7 +2039,7 @@ function startSponsorRotation() {
   const fragment = document.createDocumentFragment();
   let totalHeight = baseCycleHeight;
   let cloneIndex = 0;
-  const minimumHeight = baseCycleHeight * 2 + list.clientHeight;
+  const minimumHeight = list.clientHeight + baseCycleHeight;
 
   while (totalHeight < minimumHeight) {
     const source = baseItems[cloneIndex % baseItems.length];
@@ -2061,7 +2061,7 @@ function startSponsorRotation() {
     list.appendChild(fragment);
   }
 
-  const totalScrollableHeight = baseCycleHeight + gapValue;
+  const totalScrollableHeight = baseCycleHeight;
   const needsScroll = totalHeight > list.clientHeight + 1;
   if (!needsScroll) {
     state.sponsorRotationTimer = true;
