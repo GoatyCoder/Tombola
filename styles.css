@@ -771,6 +771,10 @@ button:focus-visible {
   margin-top: clamp(0.5rem, 2vw, 1rem);
 }
 
+.board-powered--sidebar {
+  width: 100%;
+}
+
 .board-powered__label {
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -1857,7 +1861,7 @@ body.is-fullscreen .layout__section--dashboard {
 body.is-fullscreen .dashboard__shell {
   height: 100%;
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto 1fr auto;
   gap: var(--space-md);
   min-height: 0;
 }
@@ -1949,6 +1953,13 @@ body.is-fullscreen .board-powered {
   display: inline-flex;
   color: #000;
   margin-top: clamp(0.5rem, 2vw, 1.25rem);
+}
+
+body.is-fullscreen .board-powered--sidebar {
+  align-self: end;
+  justify-content: center;
+  margin-top: 0;
+  padding: clamp(0.35rem, 1vw, 0.65rem) clamp(0.4rem, 1.8vw, 0.85rem) 0;
 }
 
 body.is-fullscreen .board-cell {
