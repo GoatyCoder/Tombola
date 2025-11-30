@@ -2034,7 +2034,6 @@ function startSponsorRotation() {
   const listStyles = getComputedStyle(list);
   const gapValue = parseFloat(listStyles.rowGap || listStyles.gap || '0') || 0;
 
-  // Force reflow for accurate measurements
   list.offsetHeight;
 
   const measuredHeights = items.map((item) => {
@@ -2042,64 +2041,55 @@ function startSponsorRotation() {
     return rect.height || item.offsetHeight || SponsorMarqueeConfig.FALLBACK_ITEM_HEIGHT;
   });
 
-  const maxHeight = Math.max(...measuredHeights, SponsorMarqueeConfig.FALLBACK_ITEM_HEIGHT);
-  const visibleHeight = maxHeight * visibleCount + gapValue * Math.max(visibleCount - 1, 0);
+  const visibleHeights = measuredHeights.slice(0, visibleCount);
+  const visibleHeight = visibleHeights.reduce((sum, height) => sum + height, 0) + gapValue * Math.max(visibleHeights.length - 1, 0);
 
   if (visibleHeight > 0) {
     list.style.setProperty('--sponsor-visible-height', `${visibleHeight}px`);
     list.style.height = `${visibleHeight}px`;
   }
 
-  const hasEnoughSponsors = items.length > visibleCount;
+  const hasEnoughSponsors = items.length > 1;
   if (!hasEnoughSponsors || prefersReducedMotion) {
     state.sponsorRotationTimer = true;
     return;
   }
 
-  let offset = 0;
-  let lastTimestamp = null;
-  const averageHeight = measuredHeights.reduce((sum, value) => sum + value, 0) / measuredHeights.length || SponsorMarqueeConfig.FALLBACK_ITEM_HEIGHT;
+  const baseCycleHeight = measuredHeights.reduce((sum, height) => sum + height, 0) + gapValue * Math.max(items.length - 1, 0);
+  if (baseCycleHeight <= 0) return;
 
-  const step = (timestamp) => {
-    if (!state.fullscreenActive) {
-      stopSponsorRotation();
-      return;
-    }
+  let accumulatedHeight = baseCycleHeight;
+  const fragment = document.createDocumentFragment();
+  let cloneIndex = 0;
 
-    if (lastTimestamp === null) {
-      lastTimestamp = timestamp;
-      state.sponsorRotationTimer = requestAnimationFrame(step);
-      return;
-    }
+  while (accumulatedHeight < baseCycleHeight + visibleHeight) {
+    const sourceIndex = cloneIndex % items.length;
+    const sourceItem = items[sourceIndex];
+    const clone = sourceItem.cloneNode(true);
+    clone.classList.add('sponsor-strip__item--clone');
+    clone.setAttribute('aria-hidden', 'true');
+    clone.querySelectorAll('a, button, [tabindex]').forEach((node) => {
+      node.setAttribute('tabindex', '-1');
+      node.setAttribute('aria-hidden', 'true');
+    });
+    fragment.appendChild(clone);
 
-    const deltaSeconds = Math.max(0, Math.min(0.05, (timestamp - lastTimestamp) / 1000));
-    lastTimestamp = timestamp;
+    accumulatedHeight += measuredHeights[sourceIndex] + gapValue;
+    cloneIndex += 1;
+  }
 
-    offset += deltaSeconds * SponsorMarqueeConfig.PIXELS_PER_SECOND;
+  if (fragment.childNodes.length > 0) {
+    list.appendChild(fragment);
+  }
 
-    let firstItem = list.firstElementChild;
-    let guard = 0;
+  const scrollDistance = baseCycleHeight + gapValue;
+  const durationSeconds = scrollDistance / SponsorMarqueeConfig.PIXELS_PER_SECOND;
 
-    const measureDistance = (item) => {
-      const rect = item?.getBoundingClientRect?.();
-      const height = (rect?.height || item?.offsetHeight || averageHeight);
-      return height + gapValue;
-    };
+  list.style.setProperty('--sponsor-scroll-distance', `${scrollDistance}px`);
+  list.style.setProperty('--sponsor-scroll-duration', `${durationSeconds}s`);
 
-    while (firstItem && offset >= measureDistance(firstItem)) {
-      offset -= measureDistance(firstItem);
-      list.appendChild(firstItem);
-      firstItem = list.firstElementChild;
-      guard += 1;
-      if (guard > items.length * 2) break;
-    }
-
-    list.style.transform = `translateY(-${offset}px)`;
-    list.classList.add('sponsor-strip--marquee');
-    state.sponsorRotationTimer = requestAnimationFrame(step);
-  };
-
-  state.sponsorRotationTimer = requestAnimationFrame(step);
+  list.classList.add('sponsor-strip--scrolling');
+  state.sponsorRotationTimer = true;
 }
 
 function stopSponsorRotation() {
@@ -2117,6 +2107,7 @@ function stopSponsorRotation() {
     list.style.removeProperty('height');
     list.classList.remove('sponsor-strip--scrolling');
     list.classList.remove('sponsor-strip--marquee');
+    list.querySelectorAll('.sponsor-strip__item--clone').forEach((node) => node.remove());
   }
 
   state.sponsorRotationTimer = null;

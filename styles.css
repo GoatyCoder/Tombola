@@ -1945,6 +1945,10 @@ body.is-fullscreen .sponsor__strip {
   justify-content: flex-start;
 }
 
+body.is-fullscreen .sponsor-strip--scrolling {
+  animation: sponsorScrollVertical var(--sponsor-scroll-duration, 20s) linear infinite;
+}
+
 body.is-fullscreen .sponsor-strip--marquee {
   will-change: transform;
 }
