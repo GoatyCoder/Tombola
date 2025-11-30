@@ -1986,49 +1986,6 @@ body.is-fullscreen .sponsor-strip--marquee:hover {
   animation-play-state: paused;
 }
 
-body.is-fullscreen .history {
-  position: static;
-  inset: auto;
-  transform: none;
-  width: 100%;
-  max-width: none;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  padding: clamp(1rem, 2vw, 1.25rem);
-  background: var(--surface);
-}
-
-body.is-fullscreen .history__header {
-  position: sticky;
-  top: 0;
-  background: var(--surface);
-  padding-bottom: 0.5rem;
-  z-index: 1;
-}
-
-body.is-fullscreen .history__list {
-  flex: 1;
-  max-height: none;
-}
-
-body.is-fullscreen .history__empty {
-  margin-top: 0;
-}
-
-body.is-fullscreen .history--sidebar {
-  flex: 1;
-  min-height: 0;
-}
-
-body.is-fullscreen #history-scrim,
-body.is-fullscreen #history-toggle {
-  display: none;
-}
-
 /* ============================================
    6. ANIMATIONS
    ============================================ */

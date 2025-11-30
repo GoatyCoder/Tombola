@@ -95,9 +95,6 @@ const state = {
   drawHistory: [],
   isAnimatingDraw: false,
   historyOpen: false,
-  historyWasOpenBeforeFullscreen: false,
-  historyOriginalParent: null,
-  historyOriginalNextSibling: null,
   audioEnabled: true,
   dialectVoice: DialectVoices.ANNA,
   storageErrorMessage: '',
@@ -1870,7 +1867,7 @@ function syncHistoryPanelToLayout(options = {}) {
 
   if (!elements.historyScrim) return;
 
-  const shouldShowScrim = state.historyOpen && !state.fullscreenActive;
+  const shouldShowScrim = state.historyOpen;
 
   if (shouldShowScrim) {
     elements.historyScrim.hidden = false;
@@ -2038,31 +2035,6 @@ function updateFullscreenToggleLabel(active) {
   }
 }
 
-function placeHistoryInSidebar() {
-  if (!elements.historyPanel || !elements.fullscreenToggle) return;
-
-  if (!state.historyOriginalParent) {
-    state.historyOriginalParent = elements.historyPanel.parentElement;
-    state.historyOriginalNextSibling = elements.historyPanel.nextSibling;
-  }
-
-  const dashboardGrid = document.querySelector('.dashboard__grid');
-  if (dashboardGrid && elements.historyPanel.parentElement !== dashboardGrid) {
-    dashboardGrid.appendChild(elements.historyPanel);
-    elements.historyPanel.classList.add('history--sidebar');
-  }
-}
-
-function restoreHistoryPlacement() {
-  if (!elements.historyPanel || !state.historyOriginalParent) return;
-
-  const { historyOriginalParent: parent, historyOriginalNextSibling: nextSibling } = state;
-  if (elements.historyPanel.parentElement !== parent) {
-    parent.insertBefore(elements.historyPanel, nextSibling);
-  }
-  elements.historyPanel.classList.remove('history--sidebar');
-}
-
 function startSponsorRotation() {
   if (!state.fullscreenActive || state.sponsorRotationTimer || !elements.sponsorShowcaseList) return;
 
@@ -2176,23 +2148,14 @@ function applyFullscreenLayoutState(active) {
     return;
   }
 
-  const wasHistoryOpen = state.historyOpen;
   state.fullscreenActive = active;
   document.body.classList.toggle('is-fullscreen', active);
   updateFullscreenToggleLabel(active);
 
   if (active) {
-    state.historyWasOpenBeforeFullscreen = wasHistoryOpen;
-    placeHistoryInSidebar();
-    openHistoryPanel({ immediate: true });
     startSponsorRotation();
   } else {
-    if (!state.historyWasOpenBeforeFullscreen) {
-      closeHistoryPanel({ immediate: true });
-    }
     stopSponsorRotation();
-    restoreHistoryPlacement();
-    state.historyWasOpenBeforeFullscreen = false;
   }
 
   syncHistoryPanelToLayout({ immediate: true });
