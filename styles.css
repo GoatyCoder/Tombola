@@ -1986,6 +1986,21 @@ body.is-fullscreen .sponsor-strip--marquee:hover {
   animation-play-state: paused;
 }
 
+/* Fullscreen shadow softening: panels sit near the edges, so drop shadows can feel heavy. */
+body.is-fullscreen .fullscreen-brand,
+body.is-fullscreen .fullscreen-brand__logo,
+body.is-fullscreen .status-card,
+body.is-fullscreen .sponsor-card {
+  box-shadow: none;
+}
+
+body.is-fullscreen .fullscreen-brand,
+body.is-fullscreen .fullscreen-brand__logo,
+body.is-fullscreen .status-card,
+body.is-fullscreen .sponsor-card {
+  border-color: var(--border-subtle);
+}
+
 /* ============================================
    6. ANIMATIONS
    ============================================ */
