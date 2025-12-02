@@ -54,15 +54,18 @@
           <h2 id="dashboard-heading" class="sr-only">Controllo estrazioni</h2>
 
           <div class="dashboard__grid">
-            <div class="fullscreen-brand" aria-label="La Tombola Nojana">
-              <div class="fullscreen-brand__logo">
-                <img src="images/logo_amicidelteatro.svg" alt="Amici del Teatro" loading="lazy" decoding="async" />
+            <header class="dashboard-hero" aria-label="Amici del Teatro presenta La Tombola Nojana">
+              <div class="dashboard-hero__brand">
+                <img class="dashboard-hero__logo" src="images/logo_amicidelteatro.svg" alt="Amici del Teatro" loading="lazy" decoding="async" />
+                <div class="dashboard-hero__text">
+                  <p class="dashboard-hero__eyebrow">Amici del Teatro</p>
+                  <p class="dashboard-hero__title">La Tombola Nojana</p>
+                </div>
               </div>
-              <div class="fullscreen-brand__text">
-                <p class="fullscreen-brand__eyebrow">Amici del Teatro presenta</p>
-                <p class="fullscreen-brand__title">La Tombola Nojana</p>
+              <div class="dashboard-hero__image" aria-hidden="true">
+                <img src="images/tombola_nojana.jpg" alt="" loading="lazy" decoding="async" />
               </div>
-            </div>
+            </header>
 
             <article class="status-card status-card--overview" aria-labelledby="draw-overview-heading">
               <h3 id="draw-overview-heading" class="sr-only">Ultimo numero e stato delle estrazioni</h3>
