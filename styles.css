@@ -229,26 +229,23 @@ button:focus-visible {
 }
 
 .hero__media {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   position: relative;
-  width: min(64rem, 92%);
+  width: min(62rem, 96%);
   margin: 0;
   border-radius: var(--radius-xl);
-  overflow: hidden;
-  aspect-ratio: 16 / 9;
-  max-height: clamp(12rem, 38vw, 26rem);
+  padding: clamp(0.6rem, 1.6vw, 1.1rem);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .hero__media img {
   display: block;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-@media (min-width: 900px) {
-  .hero__media {
-    max-height: clamp(14rem, 32vw, 30rem);
-  }
+  height: auto;
+  max-height: clamp(13rem, 42vw, 24rem);
+  object-fit: contain;
 }
 
 /* --- Dashboard --- */
@@ -266,7 +263,7 @@ button:focus-visible {
 .dashboard-hero {
   display: none;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: clamp(0.8rem, 2vw, 1.2rem);
   padding: clamp(0.85rem, 2.2vw, 1.25rem);
   background: linear-gradient(135deg, rgba(104, 7, 26, 0.92), rgba(64, 4, 16, 0.95));
@@ -274,38 +271,6 @@ button:focus-visible {
   border-radius: var(--radius-lg);
   border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow: var(--shadow-sm);
-}
-
-.dashboard-hero__brand {
-  display: flex;
-  align-items: center;
-  gap: clamp(0.75rem, 1.8vw, 1.2rem);
-}
-
-.dashboard-hero__logo {
-  width: clamp(2.8rem, 6vw, 3.6rem);
-  height: auto;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
-}
-
-.dashboard-hero__text {
-  display: grid;
-  gap: 0.2rem;
-}
-
-.dashboard-hero__eyebrow {
-  margin: 0;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.82);
-}
-
-.dashboard-hero__title {
-  margin: 0;
-  font-size: clamp(1.3rem, 2.8vw, 1.7rem);
-  font-weight: 800;
 }
 
 .dashboard-hero__image {
@@ -318,9 +283,9 @@ button:focus-visible {
 
 .dashboard-hero__image img {
   display: block;
-  width: clamp(6rem, 14vw, 8rem);
+  width: clamp(7rem, 18vw, 9.5rem);
   height: auto;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .status-card {
