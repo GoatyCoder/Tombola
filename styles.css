@@ -468,7 +468,7 @@ button:focus-visible {
   display: flex;
   flex-wrap: wrap;
   gap: clamp(0.45rem, 1.4vw, 0.85rem);
-  align-items: flex-start;
+  align-items: center;
   margin-top: 0.35rem;
   padding-top: 0.55rem;
   border-top: 1px solid var(--border-subtle);
@@ -476,10 +476,11 @@ button:focus-visible {
 
 .status-card__settings-field {
   display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
+  flex-direction: row;
+  gap: clamp(0.45rem, 1vw, 0.6rem);
   min-width: 0;
-  flex: 1 1 14rem;
+  flex: 1 1 18rem;
+  align-items: center;
 }
 
 .status-card__settings-label {
@@ -487,10 +488,12 @@ button:focus-visible {
   font-weight: 700;
   color: var(--ink);
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .status-card__settings-control {
   width: 100%;
+  display: flex;
 }
 
 .status-card__settings-actions {
@@ -500,6 +503,7 @@ button:focus-visible {
   flex-wrap: nowrap;
   justify-content: flex-end;
   margin-left: auto;
+  min-width: fit-content;
 }
 
 .select {
