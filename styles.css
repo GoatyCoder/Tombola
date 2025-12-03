@@ -99,7 +99,7 @@ body {
 }
 
 body.is-fullscreen {
-  background: var(--surface);
+  background: var(--surface-alt);
   overflow: hidden;
 }
 
@@ -235,7 +235,7 @@ button:focus-visible {
   justify-content: center;
   gap: clamp(0.5rem, 1.4vw, 0.9rem);
   position: relative;
-  width: min(26rem, 92%);
+  width: min(24rem, 92%);
   margin: 0;
   padding: 0;
   background: none;
@@ -245,14 +245,14 @@ button:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: min(22rem, 88vw);
+  width: clamp(14rem, 32vw, 18.5rem);
   max-width: 100%;
 }
 
 .hero__poster-image {
   display: block;
   width: 100%;
-  max-height: clamp(10.5rem, 30vw, 14.5rem);
+  max-height: clamp(9.25rem, 26vw, 12.75rem);
   height: auto;
   object-fit: contain;
   background: none;
@@ -277,7 +277,7 @@ button:focus-visible {
   align-items: center;
   justify-content: center;
   gap: clamp(0.6rem, 1.6vw, 0.95rem);
-  padding: 0;
+  padding: clamp(0.4rem, 1.1vw, 0.7rem);
   background: transparent;
   color: inherit;
   border-radius: 0;
@@ -295,7 +295,7 @@ button:focus-visible {
 
 .dashboard-hero__image img {
   display: block;
-  width: clamp(8.5rem, 16vw, 10.5rem);
+  width: clamp(8.25rem, 15vw, 10rem);
   height: auto;
   object-fit: contain;
 }
@@ -1804,10 +1804,10 @@ button:focus-visible {
 /* --- Fullscreen Layout --- */
 body.is-fullscreen .layout {
   height: 100dvh;
-  padding-block: clamp(0.35rem, 1.4vw, 0.8rem);
-  padding-inline: clamp(0.75rem, 2vw, 1.25rem);
-  gap: clamp(0.65rem, 1.8vw, 1.2rem);
-  grid-template-columns: minmax(16rem, 23vw) 1fr minmax(13rem, 21vw);
+  padding-block: clamp(0.55rem, 1.8vw, 1rem);
+  padding-inline: clamp(0.9rem, 2.2vw, 1.35rem);
+  gap: clamp(0.75rem, 2vw, 1.3rem);
+  grid-template-columns: minmax(15rem, 21vw) minmax(32rem, 1fr) minmax(12.5rem, 18.5vw);
   grid-template-rows: 1fr;
   grid-template-areas: 'sidebar board sponsor';
   align-items: stretch;
@@ -1844,13 +1844,18 @@ body.is-fullscreen .dashboard__grid {
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: clamp(0.65rem, 1.6vw, 1rem);
+  gap: clamp(0.65rem, 1.5vw, 0.95rem);
   min-height: 0;
   overflow: hidden;
 }
 
 body.is-fullscreen .dashboard-hero {
   display: flex;
+  justify-content: center;
+}
+
+body.is-fullscreen .dashboard-hero__image img {
+  width: clamp(8.5rem, 13vw, 9.5rem);
 }
 
 body.is-fullscreen .status-card__summary {
@@ -1879,7 +1884,7 @@ body.is-fullscreen .board-area__shell {
 
 body.is-fullscreen .board-area__layout {
   height: 100%;
-  padding: clamp(0.5rem, 1.5vw, 0.9rem);
+  padding: clamp(0.6rem, 1.6vw, 1rem);
   display: flex;
   flex-direction: column;
   justify-content: center;
