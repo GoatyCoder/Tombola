@@ -232,19 +232,53 @@ button:focus-visible {
   display: flex;
   justify-content: center;
   align-items: center;
+  flex-wrap: wrap;
+  gap: clamp(0.85rem, 2.4vw, 1.4rem);
   position: relative;
-  width: min(62rem, 96%);
+  width: min(65rem, 96%);
   margin: 0;
   border-radius: var(--radius-xl);
-  padding: clamp(0.6rem, 1.6vw, 1.1rem);
+  padding: clamp(0.9rem, 2vw, 1.4rem);
   background: rgba(255, 255, 255, 0.08);
 }
 
-.hero__media img {
+.hero__brand {
+  display: grid;
+  gap: clamp(0.3rem, 1vw, 0.6rem);
+  justify-items: center;
+  padding: clamp(0.6rem, 1.5vw, 0.95rem) clamp(0.75rem, 2vw, 1.25rem);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.hero__brand-logo {
+  display: block;
+  width: clamp(7rem, 16vw, 10.5rem);
+  height: auto;
+}
+
+.hero__brand-tagline {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: clamp(0.78rem, 1.4vw, 0.95rem);
+}
+
+.hero__poster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(40rem, 80vw);
+  max-width: 100%;
+}
+
+.hero__poster-image {
   display: block;
   width: 100%;
+  max-height: clamp(12rem, 38vw, 22rem);
   height: auto;
-  max-height: clamp(13rem, 42vw, 24rem);
   object-fit: contain;
 }
 
