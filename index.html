@@ -15,33 +15,20 @@
     <a class="skip-link" href="#main-content">Salta al contenuto principale</a>
 
     <!-- Header -->
-    <header class="hero" role="banner">
+    <header class="hero">
       <div class="shell hero__shell">
-        <div class="hero__content">
-          <h1 class="sr-only">La Tombola Nojana</h1>
-          <div class="hero__presenter-card" aria-label="Amici del Teatro presenta">
-            <span class="hero__presenter-logo">
-              <img src="images/logo_amicidelteatro.svg" alt="Amici del Teatro" loading="lazy" decoding="async" />
-            </span>
-            <div class="hero__presenter-text">
-              <p class="hero__eyebrow">Amici del Teatro</p>
-              <p class="hero__presenter">presenta</p>
-            </div>
+        <h1 class="sr-only">La Tombola Nojana</h1>
+        <div class="hero__media">
+          <div class="hero__poster">
+            <img
+              src="images/tombola_nojana.png"
+              alt="Poster ufficiale della Tombola Nojana"
+              class="hero__poster-image"
+              loading="lazy"
+              decoding="async"
+            />
           </div>
-          <p class="hero__lead">
-            Il tabellone digitale per vivere la tombolata in vernacolo nojano in modo interattivo.
-          </p>
         </div>
-
-        <figure class="hero__media">
-          <img
-            src="images/tombola_nojana.png"
-            alt="Il tabellone della Tombola Nojana illuminato sul palco"
-            loading="lazy"
-            decoding="async"
-          />
-          <figcaption class="sr-only">L'immagine ufficiale della Tombola Nojana</figcaption>
-        </figure>
       </div>
     </header>
 
@@ -54,16 +41,9 @@
           <h2 id="dashboard-heading" class="sr-only">Controllo estrazioni</h2>
 
           <div class="dashboard__grid">
-            <header class="dashboard-hero" aria-label="Amici del Teatro presenta La Tombola Nojana">
-              <div class="dashboard-hero__brand">
-                <img class="dashboard-hero__logo" src="images/logo_amicidelteatro.svg" alt="Amici del Teatro" loading="lazy" decoding="async" />
-                <div class="dashboard-hero__text">
-                  <p class="dashboard-hero__eyebrow">Amici del Teatro</p>
-                  <p class="dashboard-hero__title">La Tombola Nojana</p>
-                </div>
-              </div>
-              <div class="dashboard-hero__image" aria-hidden="true">
-                <img src="images/tombola_nojana.jpg" alt="" loading="lazy" decoding="async" />
+            <header class="dashboard-hero">
+              <div class="dashboard-hero__image">
+                <img src="images/tombola_nojana.png" alt="" loading="lazy" decoding="async" />
               </div>
             </header>
 
@@ -109,8 +89,14 @@
                   </svg>
                 </button>
 
-                <button type="button" id="history-toggle" class="button button--dashboard button--icon"
-                        aria-expanded="false" aria-controls="history-panel" aria-label="Cronologia">
+                <button
+                  type="button"
+                  id="history-toggle"
+                  class="button button--dashboard button--icon"
+                  aria-expanded="false"
+                  aria-controls="history-panel"
+                  aria-label="Cronologia"
+                >
                   <svg class="button__icon" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M5.75 4.5h12.5a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H5.75a.75.75 0 0 1-.75-.75V5.25a.75.75 0 0 1 .75-.75Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                     <path d="M8 7h8m-8 4h8m-8 4h5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
@@ -118,9 +104,9 @@
                 </button>
               </div>
 
-              <div class="status-card__settings" aria-label="Impostazioni audio e schermo">
+              <div class="status-card__settings" aria-label="Impostazioni audio, voce e schermo">
                 <div class="status-card__settings-field">
-                  <label class="status-card__settings-label" for="dialect-voice">Prova voce di:</label>
+                  <label class="status-card__settings-label" for="dialect-voice">Voce di:</label>
                   <div class="status-card__settings-control">
                     <select id="dialect-voice" class="select" name="dialect-voice">
                       <option value="ps">Prudenza Scarfó</option>
@@ -168,7 +154,7 @@
       </section>
 
       <!-- Board Section -->
-          <section class="layout__section layout__section--board" aria-labelledby="board-heading">
+      <section class="layout__section layout__section--board" aria-labelledby="board-heading">
         <div class="shell board-area__shell">
           <div class="board-area__layout">
             
@@ -256,7 +242,7 @@
         </header>
 
         <div class="number-dialog__body">
-          <div class="number-dialog__visual" id="modal-image-frame" role="img" aria-hidden="true"></div>
+          <div class="number-dialog__visual" id="modal-image-frame" aria-hidden="true"></div>
 
           <div class="number-dialog__details">
             <div class="number-dialog__languages">
@@ -319,7 +305,6 @@
     <!-- Board Cell Template -->
     <template id="board-cell-template">
       <button class="board-cell" type="button">
-        <img class="board-cell__image" alt="" aria-hidden="true" loading="lazy" decoding="async" />
         <span class="board-cell__token token" aria-hidden="true">
           <span class="board-cell__token-number token__number"></span>
         </span>
