@@ -232,50 +232,27 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(0.65rem, 1.8vw, 1.2rem);
+  justify-content: center;
+  gap: clamp(0.5rem, 1.4vw, 0.9rem);
   position: relative;
-  width: min(32rem, 96%);
+  width: min(26rem, 92%);
   margin: 0;
   padding: 0;
   background: none;
-}
-
-.hero__brand {
-  display: flex;
-  flex-direction: column;
-  gap: clamp(0.25rem, 1vw, 0.5rem);
-  align-items: center;
-  padding: 0;
-  background: none;
-  box-shadow: none;
-}
-
-.hero__brand-logo {
-  display: block;
-  width: clamp(6.5rem, 18vw, 9.5rem);
-  height: auto;
-}
-
-.hero__brand-tagline {
-  margin: 0;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  font-size: clamp(0.76rem, 1.6vw, 0.92rem);
 }
 
 .hero__poster {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: min(30rem, 90vw);
+  width: min(22rem, 88vw);
   max-width: 100%;
 }
 
 .hero__poster-image {
   display: block;
   width: 100%;
-  max-height: clamp(12rem, 34vw, 18rem);
+  max-height: clamp(10.5rem, 30vw, 14.5rem);
   height: auto;
   object-fit: contain;
   background: none;
@@ -299,26 +276,26 @@ button:focus-visible {
   display: none;
   align-items: center;
   justify-content: center;
-  gap: clamp(0.8rem, 2vw, 1.2rem);
-  padding: clamp(0.85rem, 2.2vw, 1.25rem);
-  background: linear-gradient(135deg, rgba(104, 7, 26, 0.92), rgba(64, 4, 16, 0.95));
-  color: #fff;
-  border-radius: var(--radius-lg);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: var(--shadow-sm);
+  gap: clamp(0.6rem, 1.6vw, 0.95rem);
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
 }
 
 .dashboard-hero__image {
   flex: 0 0 auto;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0;
+  overflow: visible;
+  box-shadow: none;
+  border: none;
 }
 
 .dashboard-hero__image img {
   display: block;
-  width: clamp(7rem, 18vw, 9.5rem);
+  width: clamp(8.5rem, 16vw, 10.5rem);
   height: auto;
   object-fit: contain;
 }
