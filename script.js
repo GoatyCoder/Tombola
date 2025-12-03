@@ -1797,17 +1797,22 @@ function renderBoard() {
     const numberEl = cell.querySelector('.board-cell__number');
     if (numberEl) numberEl.textContent = entry.number;
 
-    const imageEl = cell.querySelector('.board-cell__image');
-    if (imageEl) {
-      const fallbackSrc = 'images/caselle/casella.png';
-      const desiredSrc = `images/caselle/${entry.number}.png`;
+    const fallbackSrc = 'images/caselle/casella.png';
+    const desiredSrc = `images/caselle/${entry.number}.png`;
 
-      imageEl.src = desiredSrc;
-      imageEl.onerror = () => {
-        imageEl.onerror = null;
-        imageEl.src = fallbackSrc;
-      };
-    }
+    cell.style.setProperty('--board-cell-image', `url("${fallbackSrc}")`);
+
+    const loader = new Image();
+    loader.onload = () => {
+      if (cell.dataset.number !== String(entry.number)) return;
+      cell.style.setProperty('--board-cell-image', `url("${desiredSrc}")`);
+    };
+    loader.onerror = () => {
+      if (cell.dataset.number !== String(entry.number)) return;
+      cell.style.setProperty('--board-cell-image', `url("${fallbackSrc}")`);
+    };
+    loader.decoding = 'async';
+    loader.src = desiredSrc;
 
     const tokenNumberEl = cell.querySelector('.board-cell__token-number');
     if (tokenNumberEl) tokenNumberEl.textContent = entry.number;
