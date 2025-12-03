@@ -783,7 +783,10 @@ button:focus-visible {
 
 .board-cell__token {
   position: absolute;
-  inset: clamp(0.52rem, 12%, 0.9rem);
+  inset: 0;
+  margin: auto;
+  width: min(76%, 7.2rem);
+  aspect-ratio: 1 / 1;
   display: grid;
   place-items: center;
   pointer-events: none;
@@ -1925,7 +1928,7 @@ body.is-fullscreen .board-cell {
 }
 
 body.is-fullscreen .board-cell__token {
-  inset: clamp(0.35rem, 2.4vw, 0.75rem);
+  width: min(78%, 8.4rem);
 }
 
 body.is-fullscreen .layout__section--sponsor {
