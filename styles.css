@@ -303,21 +303,21 @@ button:focus-visible {
 .status-card {
   background: var(--surface);
   border-radius: var(--radius-lg);
-  padding: clamp(0.9rem, 2.8vw, 1.6rem);
+  padding: clamp(0.85rem, 2.4vw, 1.4rem);
   box-shadow: var(--shadow-sm);
   display: grid;
-  gap: var(--space-sm);
+  gap: clamp(0.75rem, 2vw, 1.2rem);
   border: 1px solid var(--border-subtle);
   height: 100%;
 }
 
 .status-card--overview {
-  gap: var(--space-md);
+  gap: clamp(0.85rem, 2vw, 1.35rem);
 }
 
 .status-card__summary {
   display: grid;
-  gap: clamp(1rem, 2vw, 1.6rem);
+  gap: clamp(0.85rem, 1.8vw, 1.35rem);
 }
 
 .status-card__metric {
@@ -442,15 +442,25 @@ button:focus-visible {
 }
 
 .status-card__actions {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
-  gap: clamp(0.35rem, 1vw, 0.55rem);
-  align-items: stretch;
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(0.35rem, 0.9vw, 0.65rem);
+  align-items: center;
+  justify-content: flex-start;
   width: 100%;
+}
+
+.status-card__actions .button--dashboard {
+  flex: 0 0 auto;
+}
+
+.status-card__actions .button--primary {
+  flex: 1 1 clamp(10rem, 18vw, 12.5rem);
 }
 
 .status-card__actions .button--icon {
   justify-self: start;
+  flex: 0 0 auto;
 }
 
 .status-card__settings {
@@ -2173,7 +2183,7 @@ body.is-fullscreen .sponsor-card {
   .status-card__actions {
     width: 100%;
     flex-wrap: wrap;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 0.45rem;
   }
 
@@ -2182,7 +2192,7 @@ body.is-fullscreen .sponsor-card {
   }
 
   .status-card__actions .button--primary {
-    flex: 1 1 auto;
+    flex: 1 1 100%;
   }
 
   .button--dashboard {
@@ -2278,18 +2288,16 @@ body.is-fullscreen .sponsor-card {
   }
 
   .status-card__actions {
-    grid-template-columns: minmax(11rem, 1fr) auto auto;
-    align-items: center;
-    width: auto;
-    max-width: 34rem;
+    justify-content: flex-start;
+    gap: clamp(0.35rem, 0.7vw, 0.6rem);
   }
 
   .status-card__actions .button--primary {
-    justify-self: stretch;
+    flex: 0 1 clamp(11rem, 16vw, 13rem);
   }
 
   .status-card__actions .button--icon {
-    justify-self: end;
+    justify-self: start;
   }
 }
 
