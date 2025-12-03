@@ -1264,91 +1264,62 @@ function stopAudioPlayback() {
   }
 }
 
-function playAudioSequence(sequence) {
+async function playAudioSequence(sequence) {
   if (!Array.isArray(sequence) || sequence.length === 0) return null;
 
   stopAudioPlayback();
   const token = state.audioPlaybackToken;
+  let requiredPlayed = false;
 
-  return new Promise((resolve) => {
-    let finished = false;
-    let requiredPlayed = false;
+  for (const next of sequence) {
+    if (!next?.src) continue;
+    if (token !== state.audioPlaybackToken) return false;
 
-    const conclude = (success) => {
-      if (finished) return;
-      finished = true;
-      if (state.currentAudio) {
+    const audio = new Audio(next.src);
+    state.currentAudio = audio;
+
+    const waitForPlayback = () =>
+      new Promise((resolve) => {
+        const cleanup = () => {
+          audio.removeEventListener('ended', handleEnded);
+          audio.removeEventListener('error', handleError);
+          if (state.currentAudio === audio) {
+            state.currentAudio = null;
+          }
+        };
+
+        const handleEnded = () => {
+          cleanup();
+          resolve(true);
+        };
+
+        const handleError = () => {
+          cleanup();
+          resolve(false);
+        };
+
+        audio.addEventListener('ended', handleEnded, { once: true });
+        audio.addEventListener('error', handleError, { once: true });
+
         try {
-          state.currentAudio.pause();
+          const result = audio.play();
+          if (result && typeof result.then === 'function') {
+            result.catch(() => handleError());
+          }
         } catch (error) {
-          console.warn('Audio cleanup error', error);
+          handleError();
         }
-        state.currentAudio = null;
-      }
-      resolve(success);
-    };
+      });
 
-    const playNext = () => {
-      if (finished) return;
-      if (token !== state.audioPlaybackToken) {
-        conclude(false);
-        return;
-      }
+    const success = await waitForPlayback();
+    if (success && next.required) {
+      requiredPlayed = true;
+    } else if (!success && next.required) {
+      return false;
+    }
+  }
 
-      const next = sequence.shift();
-      if (!next || !next.src) {
-        conclude(requiredPlayed);
-        return;
-      }
-
-      const audio = new Audio(next.src);
-      state.currentAudio = audio;
-
-      const cleanup = () => {
-        audio.removeEventListener('ended', handleEnded);
-        audio.removeEventListener('error', handleError);
-        if (state.currentAudio === audio) {
-          state.currentAudio = null;
-        }
-      };
-
-      const handleEnded = () => {
-        cleanup();
-        playNext();
-      };
-
-      const handleError = () => {
-        cleanup();
-        if (next.required) {
-          conclude(false);
-        } else {
-          playNext();
-        }
-      };
-
-      audio.addEventListener('ended', handleEnded);
-      audio.addEventListener('error', handleError);
-
-      try {
-        const result = audio.play();
-        if (result && typeof result.then === 'function') {
-          result
-            .then(() => {
-              if (next.required) requiredPlayed = true;
-            })
-            .catch(() => {
-              handleError();
-            });
-        } else if (next.required) {
-          requiredPlayed = true;
-        }
-      } catch (error) {
-        handleError();
-      }
-    };
-
-    playNext();
-  });
+  return requiredPlayed;
 }
 
 function playEntryAudio(entry) {
@@ -1797,17 +1768,22 @@ function renderBoard() {
     const numberEl = cell.querySelector('.board-cell__number');
     if (numberEl) numberEl.textContent = entry.number;
 
-    const imageEl = cell.querySelector('.board-cell__image');
-    if (imageEl) {
-      const fallbackSrc = 'images/caselle/casella.png';
-      const desiredSrc = `images/caselle/${entry.number}.png`;
+    const fallbackSrc = 'images/caselle/casella.png';
+    const desiredSrc = `images/caselle/${entry.number}.png`;
 
-      imageEl.src = desiredSrc;
-      imageEl.onerror = () => {
-        imageEl.onerror = null;
-        imageEl.src = fallbackSrc;
-      };
-    }
+    cell.style.setProperty('--board-cell-image', `url("${fallbackSrc}")`);
+
+    const loader = new Image();
+    loader.onload = () => {
+      if (cell.dataset.number !== String(entry.number)) return;
+      cell.style.setProperty('--board-cell-image', `url("${desiredSrc}")`);
+    };
+    loader.onerror = () => {
+      if (cell.dataset.number !== String(entry.number)) return;
+      cell.style.setProperty('--board-cell-image', `url("${fallbackSrc}")`);
+    };
+    loader.decoding = 'async';
+    loader.src = desiredSrc;
 
     const tokenNumberEl = cell.querySelector('.board-cell__token-number');
     if (tokenNumberEl) tokenNumberEl.textContent = entry.number;
