@@ -230,14 +230,12 @@ button:focus-visible {
 
 .hero__media {
   position: relative;
-  width: min(78rem, 100%);
+  width: min(64rem, 92%);
   margin: 0;
   border-radius: var(--radius-xl);
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.28);
   aspect-ratio: 16 / 9;
-  max-height: clamp(14rem, 52vw, 32rem);
+  max-height: clamp(12rem, 38vw, 26rem);
 }
 
 .hero__media img {
@@ -249,7 +247,7 @@ button:focus-visible {
 
 @media (min-width: 900px) {
   .hero__media {
-    max-height: clamp(18rem, 40vw, 36rem);
+    max-height: clamp(14rem, 32vw, 30rem);
   }
 }
 
