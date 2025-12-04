@@ -323,6 +323,12 @@ button:focus-visible {
   gap: clamp(0.85rem, 1.8vw, 1.35rem);
 }
 
+.status-card__control-area {
+  display: grid;
+  gap: clamp(0.8rem, 2vw, 1.2rem);
+  align-items: start;
+}
+
 .status-card__metric {
   display: grid;
   gap: 0.45rem;
@@ -451,6 +457,14 @@ button:focus-visible {
   align-items: center;
   justify-content: flex-start;
   width: 100%;
+}
+
+.status-card__control-area .status-card__settings {
+  padding: clamp(0.65rem, 1.6vw, 0.9rem);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--shadow-sm);
 }
 
 .status-card__actions .button--dashboard {
@@ -1907,11 +1921,37 @@ body.is-fullscreen .dashboard-hero__image img {
 }
 
 body.is-fullscreen .status-card__summary {
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  align-items: start;
 }
 
 body.is-fullscreen .status-card__actions {
   flex-wrap: wrap;
+  justify-content: center;
+}
+
+body.is-fullscreen .status-card__control-area {
+  grid-template-columns: 1fr;
+  gap: clamp(0.75rem, 1.8vw, 1.15rem);
+}
+
+body.is-fullscreen .status-card__actions .button--primary {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+body.is-fullscreen .status-card__actions .button--icon {
+  flex: 0 1 auto;
+}
+
+body.is-fullscreen .status-card__control-area .status-card__settings {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.9));
+  border-color: var(--border-medium);
+}
+
+body.is-fullscreen .status-card__voice-options {
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 body.is-fullscreen .layout__section--board {
@@ -2303,6 +2343,20 @@ body.is-fullscreen .sponsor-card {
   .status-card__summary {
     grid-template-columns: minmax(0, 1fr) minmax(0, 0.82fr);
     align-items: start;
+  }
+
+  .status-card__control-area {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    align-items: stretch;
+  }
+
+  .status-card__actions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .status-card__actions .button--primary {
+    flex: 1 1 55%;
   }
 
   .number-dialog__body {
