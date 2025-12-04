@@ -2010,16 +2010,16 @@ body.is-fullscreen .board-wrapper {
 }
 
 body.is-fullscreen .board-grid {
-  flex: 1;
   display: grid;
   grid-template-columns: repeat(10, minmax(0, 1fr));
   grid-auto-rows: 1fr;
   align-content: stretch;
   justify-items: stretch;
-  width: min(100%, calc((100dvh - clamp(1.5rem, 3vw, 2.2rem)) * 25 / 24));
-  max-width: 100%;
+  width: 100%;
+  height: 100%;
+  max-width: min(100%, calc((100dvh - clamp(1.5rem, 3vw, 2.2rem)) * 25 / 24));
   aspect-ratio: 25 / 24;
-  margin-inline: clamp(0rem, 0.4vw, 0.35rem);
+  margin-inline: auto;
   gap: clamp(0.2rem, 0.7vw, 0.35rem);
 }
 
