@@ -115,7 +115,7 @@ body.is-fullscreen .hero {
 }
 
 body.is-fullscreen .layout {
-  height: auto;
+  height: 100dvh;
   min-height: 100dvh;
   max-height: none;
   overflow: hidden;
@@ -1993,6 +1993,7 @@ body.is-fullscreen .board-area__shell {
 }
 
 body.is-fullscreen .board-area__layout {
+  flex: 1;
   height: 100%;
   padding: 0;
   display: flex;
