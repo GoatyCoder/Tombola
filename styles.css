@@ -768,6 +768,16 @@ button:focus-visible {
   position: relative;
 }
 
+@media (min-width: 56.25rem) {
+  .board-wrapper {
+    padding: clamp(1rem, 2.6vw, 1.6rem);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-subtle);
+  }
+}
+
 .board-grid {
   display: grid;
   gap: clamp(0.15rem, 0.8vw, 0.35rem);
