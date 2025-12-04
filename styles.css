@@ -106,14 +106,22 @@ body.is-fullscreen {
   overflow: hidden;
 }
 
-body.is-fullscreen .hero,
+body.is-fullscreen {
+  --fullscreen-hero-height: clamp(9rem, 22vh, 13rem);
+}
+
 body.is-fullscreen .app-footer {
   display: none;
 }
 
+body.is-fullscreen .hero {
+  padding-block: clamp(1.1rem, 2.8vw, 1.8rem);
+}
+
 body.is-fullscreen .layout {
-  height: 100dvh;
-  max-height: 100dvh;
+  height: auto;
+  min-height: calc(100dvh - var(--fullscreen-hero-height));
+  max-height: none;
   overflow: hidden;
 }
 
@@ -1847,7 +1855,6 @@ button:focus-visible {
 
 /* --- Fullscreen Layout --- */
 body.is-fullscreen .layout {
-  height: 100dvh;
   padding-block: clamp(0.55rem, 1.8vw, 1rem);
   padding-inline: clamp(0.25rem, 1vw, 0.65rem);
   gap: clamp(0.35rem, 1vw, 0.65rem);
