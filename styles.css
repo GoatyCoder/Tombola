@@ -539,7 +539,7 @@ button:focus-visible {
   font-weight: 700;
   color: var(--ink);
   white-space: nowrap;
-  font-size: clamp(0.9rem, 2.8vw, 1rem);
+  font-size: clamp(0.86rem, 2.3vw, 0.98rem);
 }
 
 .select {
@@ -1859,7 +1859,7 @@ button:focus-visible {
 body.is-fullscreen .layout {
   height: 100dvh;
   padding-block: clamp(0.55rem, 1.8vw, 1rem);
-  padding-inline: clamp(0.55rem, 1.6vw, 1.1rem);
+  padding-inline: clamp(0.25rem, 1vw, 0.65rem);
   gap: clamp(0.35rem, 1vw, 0.65rem);
   grid-template-columns: minmax(13.5rem, 18vw) minmax(36rem, 1fr) minmax(10.5rem, 14vw);
   grid-template-rows: 1fr;
@@ -1870,7 +1870,13 @@ body.is-fullscreen .layout {
 body.is-fullscreen .shell {
   width: 100%;
   max-width: none;
-  padding-inline: clamp(0.8rem, 2.4vw, 1.6rem);
+  padding-inline: 0;
+}
+
+body.is-fullscreen .dashboard__shell,
+body.is-fullscreen .board-area__shell,
+body.is-fullscreen .sponsor__shell {
+  padding: 0;
 }
 
 body.is-fullscreen .layout__section {
@@ -1942,6 +1948,10 @@ body.is-fullscreen .status-card__voice-options {
   width: 100%;
 }
 
+body.is-fullscreen .voice-option__label {
+  font-size: clamp(0.82rem, 1.8vw, 0.92rem);
+}
+
 body.is-fullscreen .status-card__settings-field {
   flex-direction: column;
   align-items: stretch;
@@ -1970,7 +1980,7 @@ body.is-fullscreen .board-area__shell {
 
 body.is-fullscreen .board-area__layout {
   height: 100%;
-  padding: clamp(0.45rem, 1.2vw, 0.85rem);
+  padding: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
