@@ -220,9 +220,9 @@ button:focus-visible {
 
 /* --- Hero --- */
 .hero {
-  background: linear-gradient(135deg, #b61823 0%, #8f0f1d 55%, #5a0e17 100%);
-  color: #fdf3f4;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+  color: inherit;
+  border-bottom: 1px solid var(--border-subtle);
   padding-block: clamp(1.6rem, 4vw, 2.6rem);
 }
 
