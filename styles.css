@@ -1860,8 +1860,8 @@ body.is-fullscreen .layout {
   height: 100dvh;
   padding-block: clamp(0.55rem, 1.8vw, 1rem);
   padding-inline: clamp(0.9rem, 2.2vw, 1.35rem);
-  gap: clamp(0.75rem, 2vw, 1.3rem);
-  grid-template-columns: minmax(15rem, 21vw) minmax(32rem, 1fr) minmax(12.5rem, 18.5vw);
+  gap: clamp(0.55rem, 1.5vw, 0.95rem);
+  grid-template-columns: minmax(17rem, 23vw) minmax(30rem, 1fr) minmax(12rem, 17vw);
   grid-template-rows: 1fr;
   grid-template-areas: 'sidebar board sponsor';
   align-items: stretch;
@@ -1938,6 +1938,17 @@ body.is-fullscreen .status-card__actions .button--icon {
 
 body.is-fullscreen .status-card__voice-options {
   flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+}
+
+body.is-fullscreen .status-card__settings-field {
+  flex-direction: column;
+  align-items: stretch;
+  gap: clamp(0.35rem, 0.8vw, 0.55rem);
+}
+
+body.is-fullscreen .status-card__settings-control {
   justify-content: center;
 }
 
