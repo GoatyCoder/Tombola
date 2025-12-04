@@ -1864,9 +1864,9 @@ button:focus-visible {
 /* --- Fullscreen Layout --- */
 body.is-fullscreen .layout {
   padding-block: clamp(0.55rem, 1.8vw, 1rem);
-  padding-inline: clamp(0.25rem, 1vw, 0.65rem);
-  gap: clamp(0.35rem, 1vw, 0.65rem);
-  grid-template-columns: minmax(15rem, 22vw) minmax(36rem, 1fr) minmax(12rem, 18vw);
+  padding-inline: clamp(0.9rem, 2.2vw, 1.35rem);
+  gap: clamp(0.75rem, 2vw, 1.3rem);
+  grid-template-columns: minmax(15rem, 21vw) minmax(32rem, 1fr) minmax(12.5rem, 18.5vw);
   grid-template-rows: 1fr;
   grid-template-areas: 'sidebar board sponsor';
   align-items: stretch;
@@ -1875,7 +1875,7 @@ body.is-fullscreen .layout {
 body.is-fullscreen .shell {
   width: 100%;
   max-width: none;
-  padding-inline: 0;
+  padding-inline: clamp(0.8rem, 2.4vw, 1.6rem);
 }
 
 body.is-fullscreen .dashboard__shell,
@@ -1978,9 +1978,11 @@ body.is-fullscreen .status-card__settings-control {
 
 body.is-fullscreen .layout__section--board {
   grid-area: board;
-  display: grid;
-  grid-template-rows: 1fr;
-  align-items: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.35rem, 1.2vw, 0.75rem);
 }
 
 body.is-fullscreen .board-area__shell {
@@ -1991,34 +1993,36 @@ body.is-fullscreen .board-area__shell {
 }
 
 body.is-fullscreen .board-area__layout {
-  flex: 1;
   height: 100%;
-  padding: clamp(0.35rem, 1vw, 0.75rem);
+  padding: clamp(0.6rem, 1.6vw, 1rem);
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
   min-height: 0;
 }
 
 body.is-fullscreen .board-wrapper {
   height: 100%;
-  width: 100%;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: clamp(0.5rem, 1vw, 0.8rem);
   justify-content: center;
   min-height: 0;
 }
 
 body.is-fullscreen .board-grid {
+  flex: 1;
+  width: min(100%, calc((100dvh - 2 * var(--space-md)) * 25 / 24));
+  height: min(100%, calc(100dvh - 2 * var(--space-md)));
+  max-width: 100%;
+  max-height: calc(100dvh - 2 * var(--space-md));
   display: grid;
   grid-template-columns: repeat(10, minmax(0, 1fr));
   grid-auto-rows: 1fr;
   align-content: stretch;
   justify-items: stretch;
-  width: min(100%, calc((100dvh - clamp(1.5rem, 3vw, 2.2rem)) * 25 / 24));
   aspect-ratio: 25 / 24;
   margin-inline: auto;
-  gap: clamp(0.2rem, 0.7vw, 0.35rem);
 }
 
 body.is-fullscreen .board-cell {
