@@ -2016,7 +2016,6 @@ body.is-fullscreen .board-grid {
   align-content: stretch;
   justify-items: stretch;
   width: min(100%, calc((100dvh - clamp(1.5rem, 3vw, 2.2rem)) * 25 / 24));
-  max-width: min(100%, calc((100dvh - clamp(1.5rem, 3vw, 2.2rem)) * 25 / 24));
   aspect-ratio: 25 / 24;
   margin-inline: auto;
   gap: clamp(0.2rem, 0.7vw, 0.35rem);
