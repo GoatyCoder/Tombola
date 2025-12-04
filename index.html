@@ -102,50 +102,63 @@
                     <path d="M8 7h8m-8 4h8m-8 4h5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                   </svg>
                 </button>
+
+                <button
+                  type="button"
+                  id="audio-toggle"
+                  class="button button--dashboard button--icon audio-toggle"
+                  aria-pressed="true"
+                  aria-label="Disattiva annuncio audio"
+                  title="Disattiva annuncio audio"
+                >
+                  <svg class="button__icon audio-toggle__icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path class="audio-toggle__speaker" d="M5.5 9.5H8l3.5-3.5v12L8 14.5H5.5a1.5 1.5 0 0 1-1.5-1.5v-2a1.5 1.5 0 0 1 1.5-1.5Z" />
+                    <path class="audio-toggle__wave" d="M15.5 9.5a3 3 0 0 1 0 5" />
+                    <path class="audio-toggle__wave audio-toggle__wave--strong" d="M17.8 7.8a6 6 0 0 1 0 8.5" />
+                    <path class="audio-toggle__cross" d="M16 9l5 5m0-5-5 5" />
+                  </svg>
+                </button>
+
+                <button
+                  type="button"
+                  id="fullscreen-toggle"
+                  class="button button--dashboard button--icon button--fullscreen"
+                  aria-pressed="false"
+                  aria-label="Schermo intero"
+                  title="Schermo intero"
+                >
+                  <span class="button__label sr-only" id="fullscreen-toggle-label">Schermo intero</span>
+                  <svg class="button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4.5 9.5V5.25A.75.75 0 0 1 5.25 4.5H9.5M19.5 9.5V5.25a.75.75 0 0 0-.75-.75H14.5M4.5 14.5v4.25c0 .414.336.75.75.75H9.5M19.5 14.5v4.25a.75.75 0 0 1-.75.75H14.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </button>
               </div>
 
               <div class="status-card__settings" aria-label="Impostazioni audio, voce e schermo">
                 <div class="status-card__settings-field">
-                  <label class="status-card__settings-label" for="dialect-voice">Voce di:</label>
-                  <div class="status-card__settings-control">
-                    <select id="dialect-voice" class="select" name="dialect-voice">
-                      <option value="ps">Prudenza Scarfó</option>
-                      <option value="nj">Anna Tagarelli</option>
-                    </select>
+                  <span class="status-card__settings-label" id="dialect-voice-label">Voce di:</span>
+                  <div
+                    class="status-card__settings-control status-card__voice-options"
+                    role="radiogroup"
+                    aria-labelledby="dialect-voice-label"
+                  >
+                    <label class="voice-option" for="dialect-voice-ps">
+                      <input
+                        type="radio"
+                        name="dialect-voice"
+                        id="dialect-voice-ps"
+                        value="ps"
+                        checked
+                      />
+                      <span class="voice-option__label">Prudenza Scarfó</span>
+                    </label>
+                    <label class="voice-option" for="dialect-voice-nj">
+                      <input type="radio" name="dialect-voice" id="dialect-voice-nj" value="nj" />
+                      <span class="voice-option__label">Rita Tagarelli</span>
+                    </label>
                   </div>
                 </div>
 
-                <div class="status-card__settings-actions">
-                  <button
-                    type="button"
-                    id="audio-toggle"
-                    class="button button--dashboard button--icon audio-toggle"
-                    aria-pressed="true"
-                    aria-label="Disattiva annuncio audio"
-                    title="Disattiva annuncio audio"
-                  >
-                    <svg class="button__icon audio-toggle__icon" viewBox="0 0 24 24" aria-hidden="true">
-                      <path class="audio-toggle__speaker" d="M5.5 9.5H8l3.5-3.5v12L8 14.5H5.5a1.5 1.5 0 0 1-1.5-1.5v-2a1.5 1.5 0 0 1 1.5-1.5Z" />
-                      <path class="audio-toggle__wave" d="M15.5 9.5a3 3 0 0 1 0 5" />
-                      <path class="audio-toggle__wave audio-toggle__wave--strong" d="M17.8 7.8a6 6 0 0 1 0 8.5" />
-                      <path class="audio-toggle__cross" d="M16 9l5 5m0-5-5 5" />
-                    </svg>
-                  </button>
-
-                  <button
-                    type="button"
-                    id="fullscreen-toggle"
-                    class="button button--dashboard button--icon button--fullscreen"
-                    aria-pressed="false"
-                    aria-label="Schermo intero"
-                    title="Schermo intero"
-                  >
-                    <span class="button__label sr-only" id="fullscreen-toggle-label">Schermo intero</span>
-                    <svg class="button__icon" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M4.5 9.5V5.25A.75.75 0 0 1 5.25 4.5H9.5M19.5 9.5V5.25a.75.75 0 0 0-.75-.75H14.5M4.5 14.5v4.25c0 .414.336.75.75.75H9.5M19.5 14.5v4.25a.75.75 0 0 1-.75.75H14.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                  </button>
-                </div>
               </div>
             </article>
           </div>

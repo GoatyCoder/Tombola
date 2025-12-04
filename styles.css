@@ -502,14 +502,38 @@ button:focus-visible {
   min-width: 0;
 }
 
-.status-card__settings-actions {
+.status-card__voice-options {
+  gap: clamp(0.35rem, 1vw, 0.6rem);
+  flex-wrap: nowrap;
+}
+
+.voice-option {
   display: inline-flex;
   align-items: center;
-  gap: clamp(0.35rem, 1vw, 0.55rem);
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  margin-left: 0;
+  gap: 0.45rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  flex: 1 1 0;
   min-width: 0;
+  justify-content: center;
+}
+
+.voice-option input[type='radio'] {
+  accent-color: var(--accent);
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+}
+
+.voice-option__label {
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  font-size: clamp(0.9rem, 2.8vw, 1rem);
 }
 
 .select {
@@ -2140,6 +2164,7 @@ body.is-fullscreen .sponsor-card {
 @media (max-width: 26rem) {
   .status-card__actions {
     gap: 0.24rem;
+    flex-wrap: wrap;
   }
 
   .button {
@@ -2153,6 +2178,19 @@ body.is-fullscreen .sponsor-card {
 
   .button--dashboard.button--icon {
     padding: 0.32rem;
+  }
+
+  .status-card__voice-options {
+    gap: 0.3rem;
+  }
+
+  .voice-option {
+    padding: 0.3rem 0.55rem;
+  }
+
+  .voice-option input[type='radio'] {
+    width: 1rem;
+    height: 1rem;
   }
 }
 
@@ -2196,7 +2234,7 @@ body.is-fullscreen .sponsor-card {
 @media (max-width: 35rem) {
   .status-card__actions {
     width: 100%;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     justify-content: flex-start;
     gap: 0.3rem;
   }
@@ -2208,6 +2246,10 @@ body.is-fullscreen .sponsor-card {
 
   .button--dashboard {
     padding: 0.55rem 0.9rem;
+  }
+
+  .status-card__settings-field {
+    align-items: center;
   }
 }
 
