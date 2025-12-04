@@ -78,7 +78,7 @@ const SponsorMarqueeConfig = {
 
 const DialectVoices = Object.freeze({
   PRUDENZA: 'ps',
-  ANNA: 'nj',
+  RITA: 'nj',
 });
 
 // ============================================
@@ -96,7 +96,7 @@ const state = {
   isAnimatingDraw: false,
   historyOpen: false,
   audioEnabled: true,
-  dialectVoice: DialectVoices.ANNA,
+  dialectVoice: DialectVoices.PRUDENZA,
   storageErrorMessage: '',
   sponsorShowcaseRendered: false,
   resetDialogOpen: false,
@@ -162,7 +162,7 @@ const elements = {
   drawLastDetailMessage: document.querySelector('#draw-last-detail-message'),
   fullscreenToggle: document.querySelector('#fullscreen-toggle'),
   fullscreenToggleLabel: document.querySelector('#fullscreen-toggle-label'),
-  dialectVoiceSelect: document.querySelector('#dialect-voice'),
+  dialectVoiceInputs: Array.from(document.querySelectorAll('input[name="dialect-voice"]')),
   layout: document.querySelector('.layout'),
 };
 
@@ -1157,19 +1157,21 @@ function restoreDrawStateFromStorage() {
 
 function normalizeDialectVoice(value) {
   if (Object.values(DialectVoices).includes(value)) return value;
-  return DialectVoices.ANNA;
+  return DialectVoices.PRUDENZA;
 }
 
-function updateDialectVoiceSelect() {
-  if (!elements.dialectVoiceSelect) return;
+function updateDialectVoiceControls() {
+  if (!elements.dialectVoiceInputs?.length) return;
   const normalized = normalizeDialectVoice(state.dialectVoice);
-  elements.dialectVoiceSelect.value = normalized;
+  elements.dialectVoiceInputs.forEach((input) => {
+    input.checked = input.value === normalized;
+  });
 }
 
 function setDialectVoice(value) {
   const normalized = normalizeDialectVoice(value);
   state.dialectVoice = normalized;
-  updateDialectVoiceSelect();
+  updateDialectVoiceControls();
 
   try {
     if (typeof localStorage !== 'undefined') {
@@ -1191,7 +1193,7 @@ function initializeDialectVoicePreference() {
   }
 
   state.dialectVoice = normalizeDialectVoice(stored);
-  updateDialectVoiceSelect();
+  updateDialectVoiceControls();
 }
 
 function initializeAudioPreference() {
@@ -1242,7 +1244,7 @@ function getAudioFilePath(number, variant = 'base') {
   if (!trimmed) return null;
 
   if (variant === 'dialect') {
-    const dialectSuffix = normalizeDialectVoice(state.dialectVoice || DialectVoices.ANNA);
+    const dialectSuffix = normalizeDialectVoice(state.dialectVoice || DialectVoices.PRUDENZA);
     return `audio/${trimmed}_${dialectSuffix}.mp3`;
   }
 
@@ -2887,7 +2889,9 @@ function setupEventListeners() {
   elements.resetButton?.addEventListener('click', resetGame);
   elements.historyToggle?.addEventListener('click', toggleHistoryPanel);
   elements.audioToggle?.addEventListener('click', () => setAudioEnabled(!state.audioEnabled));
-  elements.dialectVoiceSelect?.addEventListener('change', (event) => setDialectVoice(event.target.value));
+  elements.dialectVoiceInputs?.forEach((input) => {
+    input.addEventListener('change', (event) => setDialectVoice(event.target.value));
+  });
   elements.historyScrim?.addEventListener('click', () => closeHistoryPanel());
   elements.fullscreenToggle?.addEventListener('click', toggleFullscreenMode);
   document.addEventListener('fullscreenchange', handleFullscreenChange);

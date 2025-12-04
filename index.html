@@ -106,12 +106,26 @@
 
               <div class="status-card__settings" aria-label="Impostazioni audio, voce e schermo">
                 <div class="status-card__settings-field">
-                  <label class="status-card__settings-label" for="dialect-voice">Voce di:</label>
-                  <div class="status-card__settings-control">
-                    <select id="dialect-voice" class="select" name="dialect-voice">
-                      <option value="ps">Prudenza Scarfó</option>
-                      <option value="nj">Anna Tagarelli</option>
-                    </select>
+                  <span class="status-card__settings-label" id="dialect-voice-label">Voce di:</span>
+                  <div
+                    class="status-card__settings-control status-card__voice-options"
+                    role="radiogroup"
+                    aria-labelledby="dialect-voice-label"
+                  >
+                    <label class="voice-option" for="dialect-voice-ps">
+                      <input
+                        type="radio"
+                        name="dialect-voice"
+                        id="dialect-voice-ps"
+                        value="ps"
+                        checked
+                      />
+                      <span class="voice-option__label">Prudenza Scarfó</span>
+                    </label>
+                    <label class="voice-option" for="dialect-voice-nj">
+                      <input type="radio" name="dialect-voice" id="dialect-voice-nj" value="nj" />
+                      <span class="voice-option__label">Rita Tagarelli</span>
+                    </label>
                   </div>
                 </div>
 

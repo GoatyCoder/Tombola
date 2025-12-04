@@ -502,6 +502,35 @@ button:focus-visible {
   min-width: 0;
 }
 
+.status-card__voice-options {
+  gap: clamp(0.4rem, 1vw, 0.65rem);
+  flex-wrap: wrap;
+}
+
+.voice-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+
+.voice-option input[type='radio'] {
+  accent-color: var(--accent);
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.voice-option__label {
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
 .status-card__settings-actions {
   display: inline-flex;
   align-items: center;
