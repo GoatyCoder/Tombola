@@ -70,12 +70,6 @@ const ANIMATION_DELAYS = {
   SCROLL_IDLE_THRESHOLD: 160,
 };
 
-const SponsorMarqueeConfig = {
-  VISIBLE_COUNT: 6,
-  PIXELS_PER_SECOND: 32,
-  FALLBACK_ITEM_HEIGHT: 120,
-};
-
 const DialectVoices = Object.freeze({
   PRUDENZA: 'ps',
   RITA: 'nj',
