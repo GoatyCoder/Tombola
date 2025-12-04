@@ -1861,7 +1861,7 @@ body.is-fullscreen .layout {
   padding-block: clamp(0.55rem, 1.8vw, 1rem);
   padding-inline: clamp(0.25rem, 1vw, 0.65rem);
   gap: clamp(0.35rem, 1vw, 0.65rem);
-  grid-template-columns: minmax(13.5rem, 18vw) minmax(36rem, 1fr) minmax(10.5rem, 14vw);
+  grid-template-columns: minmax(15rem, 22vw) minmax(36rem, 1fr) minmax(12rem, 18vw);
   grid-template-rows: 1fr;
   grid-template-areas: 'sidebar board sponsor';
   align-items: stretch;
@@ -2006,17 +2006,17 @@ body.is-fullscreen .board-head {
 
 body.is-fullscreen .board-grid {
   flex: 1;
-  width: min(100%, calc((100dvh - 0.75 * var(--space-md)) * 25 / 24));
-  height: min(100%, calc(100dvh - 0.75 * var(--space-md)));
+  width: min(100%, calc(100dvh * 25 / 24));
+  height: min(100%, 100dvh);
   max-width: 100%;
-  max-height: calc(100dvh - 0.75 * var(--space-md));
+  max-height: 100dvh;
   display: grid;
   grid-template-columns: repeat(10, minmax(0, 1fr));
   grid-auto-rows: 1fr;
   align-content: stretch;
   justify-items: stretch;
   aspect-ratio: 25 / 24;
-  margin-inline: auto;
+  margin-inline: clamp(0rem, 0.4vw, 0.35rem);
 }
 
 body.is-fullscreen .board-cell {
