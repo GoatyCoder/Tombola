@@ -154,7 +154,7 @@ button:focus-visible {
   flex: 1;
   display: grid;
   gap: var(--space-layout-gap);
-  padding-block: var(--space-page-block) 0;
+  padding-block: clamp(1.4rem, 3.2vw, 2.2rem) 0;
 }
 
 .layout__section {
@@ -236,17 +236,21 @@ button:focus-visible {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: clamp(0.6rem, 1.8vw, 1.2rem);
+  gap: clamp(0.75rem, 2vw, 1.4rem);
   text-align: center;
 }
 
 .hero__presenter-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   text-transform: uppercase;
   letter-spacing: 0.14em;
   font-weight: 800;
   font-size: clamp(0.85rem, 2vw, 1rem);
   color: var(--ink-subtle);
   line-height: 1.1;
+  margin-bottom: clamp(0.35rem, 1.2vw, 0.75rem);
 }
 
 .hero__logo {
@@ -766,19 +770,6 @@ button:focus-visible {
   display: grid;
   gap: clamp(0.9rem, 2vw, 1.3rem);
   position: relative;
-}
-
-.board-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.board-head__title {
-  margin: 0;
-  font-size: clamp(1.6rem, 3vw, 2.1rem);
-  font-weight: 700;
 }
 
 .board-grid {
@@ -1993,14 +1984,6 @@ body.is-fullscreen .board-wrapper {
   gap: clamp(0.35rem, 0.85vw, 0.65rem);
   justify-content: center;
   min-height: 0;
-}
-
-body.is-fullscreen .board-head__title {
-  font-size: clamp(1.2rem, 2vw, 1.6rem);
-}
-
-body.is-fullscreen .board-head {
-  display: none;
 }
 
 body.is-fullscreen .board-grid {
