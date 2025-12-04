@@ -159,7 +159,6 @@ const elements = {
   drawLastItalian: document.querySelector('#draw-last-italian'),
   drawLastDetailMessage: document.querySelector('#draw-last-detail-message'),
   dialectVoiceInputs: Array.from(document.querySelectorAll('input[name="dialect-voice"]')),
-  layout: document.querySelector('.layout'),
 };
 
 // ============================================
