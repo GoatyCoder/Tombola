@@ -459,14 +459,6 @@ button:focus-visible {
   width: 100%;
 }
 
-.status-card__control-area .status-card__settings {
-  padding: clamp(0.65rem, 1.6vw, 0.9rem);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-subtle);
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: var(--shadow-sm);
-}
-
 .status-card__actions .button--dashboard {
   flex: 0 0 auto;
   white-space: nowrap;
@@ -1942,11 +1934,6 @@ body.is-fullscreen .status-card__actions .button--primary {
 
 body.is-fullscreen .status-card__actions .button--icon {
   flex: 0 1 auto;
-}
-
-body.is-fullscreen .status-card__control-area .status-card__settings {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.9));
-  border-color: var(--border-medium);
 }
 
 body.is-fullscreen .status-card__voice-options {
