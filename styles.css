@@ -2015,8 +2015,7 @@ body.is-fullscreen .board-grid {
   grid-auto-rows: 1fr;
   align-content: stretch;
   justify-items: stretch;
-  width: 100%;
-  height: 100%;
+  width: min(100%, calc((100dvh - clamp(1.5rem, 3vw, 2.2rem)) * 25 / 24));
   max-width: min(100%, calc((100dvh - clamp(1.5rem, 3vw, 2.2rem)) * 25 / 24));
   aspect-ratio: 25 / 24;
   margin-inline: auto;
