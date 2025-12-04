@@ -222,45 +222,71 @@ button:focus-visible {
 .hero {
   background: transparent;
   color: inherit;
-  border-bottom: 1px solid var(--border-subtle);
   padding-block: clamp(1.6rem, 4vw, 2.6rem);
 }
 
 .hero__shell {
   display: flex;
   justify-content: center;
+  align-items: center;
 }
 
-.hero__media {
+.hero__identity {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: clamp(0.5rem, 1.4vw, 0.9rem);
-  position: relative;
-  width: min(24rem, 92%);
-  margin: 0;
-  padding: 0;
-  background: none;
+  gap: clamp(0.8rem, 2vw, 1.35rem);
+  text-align: center;
 }
 
-.hero__poster {
+.hero__presenter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-2xs) var(--space-sm);
+  background: var(--surface);
+  border-radius: 999px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+.hero__presenter-label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  color: var(--ink-soft);
+}
+
+.hero__main-mark {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: clamp(14rem, 32vw, 18.5rem);
-  max-width: 100%;
 }
 
-.hero__poster-image {
+.hero__logo {
   display: block;
-  width: 100%;
-  max-height: clamp(9.25rem, 26vw, 12.75rem);
   height: auto;
-  object-fit: contain;
-  background: none;
-  box-shadow: none;
-  border: none;
+}
+
+.hero__logo--presenter {
+  width: clamp(9rem, 26vw, 12.5rem);
+}
+
+.hero__logo--main {
+  width: clamp(17rem, 44vw, 23rem);
+}
+
+@media (min-width: 720px) {
+  .hero__identity {
+    flex-direction: row;
+    gap: clamp(1.2rem, 3vw, 1.8rem);
+  }
+
+  .hero__presenter {
+    padding-inline: var(--space-md);
+  }
 }
 
 /* --- Dashboard --- */
