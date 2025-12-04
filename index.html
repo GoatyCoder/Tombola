@@ -18,16 +18,22 @@
     <header class="hero">
       <div class="shell hero__shell">
         <h1 class="sr-only">La Tombola Nojana</h1>
-        <div class="hero__media">
-          <div class="hero__poster">
-            <img
-              src="images/tombola_nojana_red.svg"
-              alt="Logo della Tombola Nojana"
-              class="hero__poster-image"
-              loading="lazy"
-              decoding="async"
-            />
-          </div>
+        <div class="hero__identity" data-reveal>
+          <img
+            src="images/logo_amicidelteatro.svg"
+            alt="Associazione Culturale Nojana Amici del Teatro"
+            class="hero__logo hero__logo--presenter"
+            loading="lazy"
+            decoding="async"
+          />
+          <span class="hero__presenter-label">presenta</span>
+          <img
+            src="images/tombola_nojana_red.svg"
+            alt="Logo La Tombola Nojana"
+            class="hero__logo hero__logo--main"
+            loading="lazy"
+            decoding="async"
+          />
         </div>
       </div>
     </header>
@@ -41,13 +47,27 @@
           <h2 id="dashboard-heading" class="sr-only">Controllo estrazioni</h2>
 
           <div class="dashboard__grid">
-            <header class="dashboard-hero">
-              <div class="dashboard-hero__image">
-                <img src="images/tombola_nojana_red.svg" alt="" loading="lazy" decoding="async" />
+            <header class="dashboard-hero" aria-label="Amici del Teatro presenta La Tombola Nojana" data-reveal>
+              <div class="dashboard-hero__identity">
+                <img
+                  src="images/logo_amicidelteatro.svg"
+                  alt="Associazione Culturale Nojana Amici del Teatro"
+                  class="dashboard-hero__logo dashboard-hero__logo--presenter"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <span class="dashboard-hero__presenter-label">presenta</span>
+                <img
+                  src="images/tombola_nojana_red.svg"
+                  alt="Logo La Tombola Nojana"
+                  class="dashboard-hero__logo dashboard-hero__logo--main"
+                  loading="lazy"
+                  decoding="async"
+                />
               </div>
             </header>
 
-            <article class="status-card status-card--overview" aria-labelledby="draw-overview-heading">
+            <article class="status-card status-card--overview" aria-labelledby="draw-overview-heading" data-reveal>
               <h3 id="draw-overview-heading" class="sr-only">Ultimo numero e stato delle estrazioni</h3>
               
               <!-- Summary Metrics -->
@@ -120,19 +140,6 @@
                     </svg>
                   </button>
 
-                  <button
-                    type="button"
-                    id="fullscreen-toggle"
-                    class="button button--dashboard button--icon button--fullscreen"
-                    aria-pressed="false"
-                    aria-label="Schermo intero"
-                    title="Schermo intero"
-                  >
-                    <span class="button__label sr-only" id="fullscreen-toggle-label">Schermo intero</span>
-                    <svg class="button__icon" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M4.5 9.5V5.25A.75.75 0 0 1 5.25 4.5H9.5M19.5 9.5V5.25a.75.75 0 0 0-.75-.75H14.5M4.5 14.5v4.25c0 .414.336.75.75.75H9.5M19.5 14.5v4.25a.75.75 0 0 1-.75.75H14.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                  </button>
                 </div>
 
                 <div class="status-card__settings" aria-label="Impostazioni voce">
@@ -172,13 +179,11 @@
       <section class="layout__section layout__section--board" aria-labelledby="board-heading">
         <div class="shell board-area__shell">
           <div class="board-area__layout">
-            
+
             <!-- Board -->
-            <article class="board-wrapper">
-              <div class="board-head">
-                <h2 id="board-heading" class="board-head__title">Tabellone</h2>
-                <span id="draw-status" class="sr-only">Caricamento del tabellone…</span>
-              </div>
+            <article class="board-wrapper" data-reveal>
+              <h2 id="board-heading" class="sr-only">Tabellone</h2>
+              <span id="draw-status" class="sr-only">Caricamento del tabellone…</span>
 
               <div class="board-grid" id="board" aria-live="polite"></div>
             </article>
@@ -333,7 +338,7 @@
         <div class="app-footer__bottom">
           <div class="app-footer__meta">
             <a class="app-footer__association" href="https://www.amicidelteatro.it/" target="_blank" rel="noopener noreferrer">
-              <img src="images/logo_amicidelteatro.svg" alt="Associazione Culturale Nojana Amici del Teatro"
+              <img src="images/logo_amicidelteatro_footer.svg" alt="Associazione Culturale Nojana Amici del Teatro"
                  class="app-footer__association-logo" loading="lazy" decoding="async" />
             </a>
             <p class="app-footer__credits">

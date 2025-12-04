@@ -70,12 +70,6 @@ const ANIMATION_DELAYS = {
   SCROLL_IDLE_THRESHOLD: 160,
 };
 
-const SponsorMarqueeConfig = {
-  VISIBLE_COUNT: 6,
-  PIXELS_PER_SECOND: 32,
-  FALLBACK_ITEM_HEIGHT: 120,
-};
-
 const DialectVoices = Object.freeze({
   PRUDENZA: 'ps',
   RITA: 'nj',
@@ -106,8 +100,6 @@ const state = {
   sponsorLoadingState: LoadingStates.IDLE,
   activeFocusTrapCleanup: null,
   activeFocusTrapElement: null,
-  fullscreenActive: false,
-  sponsorRotationTimer: null,
 };
 
 // ============================================
@@ -160,10 +152,7 @@ const elements = {
   drawLastDialect: document.querySelector('#draw-last-dialect'),
   drawLastItalian: document.querySelector('#draw-last-italian'),
   drawLastDetailMessage: document.querySelector('#draw-last-detail-message'),
-  fullscreenToggle: document.querySelector('#fullscreen-toggle'),
-  fullscreenToggleLabel: document.querySelector('#fullscreen-toggle-label'),
   dialectVoiceInputs: Array.from(document.querySelectorAll('input[name="dialect-voice"]')),
-  layout: document.querySelector('.layout'),
 };
 
 // ============================================
@@ -266,6 +255,36 @@ function waitForScrollIdle(options = {}) {
 
     requestAnimationFrame(check);
   });
+}
+
+/** Reveal UI elements on scroll */
+function setupRevealAnimations() {
+  const revealableElements = Array.from(document.querySelectorAll('[data-reveal]'));
+  if (!revealableElements.length) return;
+
+  const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+  const shouldAnimate = typeof IntersectionObserver === 'function' && !prefersReducedMotion;
+
+  document.body.classList.add('has-reveal');
+
+  if (!shouldAnimate) {
+    revealableElements.forEach((element) => element.classList.add('is-revealed'));
+    return;
+  }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-revealed');
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.22 }
+  );
+
+  revealableElements.forEach((element) => observer.observe(element));
 }
 
 // ============================================
@@ -1640,8 +1659,6 @@ function renderSponsorShowcase(sponsors, options = {}) {
   elements.sponsorShowcase.hidden = false;
   elements.sponsorShowcase.removeAttribute('aria-hidden');
   state.sponsorShowcaseRendered = true;
-
-  restartSponsorRotation();
 }
 
 // ============================================
@@ -1985,224 +2002,6 @@ function updateDrawHistory() {
   } else {
     elements.historyList.scrollTop = 0;
   }
-}
-
-// ============================================
-// 16. FULLSCREEN MODE
-// ============================================
-
-function getNativeFullscreenElement() {
-  return document.fullscreenElement ||
-    document.webkitFullscreenElement ||
-    document.mozFullScreenElement ||
-    document.msFullscreenElement ||
-    null;
-}
-
-function updateFullscreenToggleLabel(active) {
-  const label = active ? 'Esci da schermo intero' : 'Schermo intero';
-
-  if (elements.fullscreenToggleLabel) {
-    elements.fullscreenToggleLabel.textContent = label;
-  }
-
-  if (elements.fullscreenToggle) {
-    elements.fullscreenToggle.setAttribute('aria-pressed', active ? 'true' : 'false');
-    elements.fullscreenToggle.setAttribute('aria-label', label);
-    elements.fullscreenToggle.title = label;
-  }
-}
-
-function startSponsorRotation() {
-  if (!state.fullscreenActive || state.sponsorRotationTimer || !elements.sponsorShowcaseList) return;
-
-  const list = elements.sponsorShowcaseList;
-  const scroller = list.closest('.sponsor__scroller');
-  const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
-
-  list.style.removeProperty('--sponsor-scroll-distance');
-  list.style.removeProperty('--sponsor-scroll-duration');
-  list.style.removeProperty('--sponsor-visible-height');
-  list.style.removeProperty('height');
-  list.classList.remove('sponsor-strip--scrolling');
-  list.classList.remove('sponsor-strip--marquee');
-  list.classList.remove('sponsor-strip--static');
-  list.style.removeProperty('transform');
-  list.querySelectorAll('.sponsor-strip__item--clone').forEach((node) => node.remove());
-
-  if (scroller) {
-    scroller.classList.remove('sponsor__scroller--scrollable');
-    scroller.style.removeProperty('--sponsor-visible-height');
-    scroller.style.removeProperty('height');
-  }
-
-  const items = Array.from(list.querySelectorAll('.sponsor-strip__item'));
-  if (items.length === 0) return;
-
-  const visibleCount = Math.min(SponsorMarqueeConfig.VISIBLE_COUNT, items.length);
-  const listStyles = getComputedStyle(list);
-  const gapValue = parseFloat(listStyles.rowGap || listStyles.gap || '0') || 0;
-
-  list.offsetHeight;
-
-  const measuredHeights = items.map((item) => {
-    const rect = item.getBoundingClientRect();
-    return rect.height || item.offsetHeight || SponsorMarqueeConfig.FALLBACK_ITEM_HEIGHT;
-  });
-
-  const visibleHeights = measuredHeights.slice(0, visibleCount);
-  const naturalVisibleHeight = visibleHeights.reduce((sum, height) => sum + height, 0) + gapValue * Math.max(visibleHeights.length - 1, 0);
-  const containerHeight = scroller?.getBoundingClientRect().height || list.getBoundingClientRect().height || 0;
-  const visibleHeight = containerHeight > 0 ? containerHeight : naturalVisibleHeight;
-
-  const hasEnoughSponsors = items.length > 1;
-  if (!hasEnoughSponsors || prefersReducedMotion) {
-    if (scroller) scroller.classList.add('sponsor__scroller--scrollable');
-    list.classList.add('sponsor-strip--static');
-    state.sponsorRotationTimer = true;
-    return;
-  }
-
-  const baseCycleHeight = measuredHeights.reduce((sum, height) => sum + height, 0) + gapValue * Math.max(items.length - 1, 0);
-  if (baseCycleHeight <= 0) return;
-
-  let accumulatedHeight = baseCycleHeight;
-  const fragment = document.createDocumentFragment();
-
-  // Clone full cycles until we have at least two full sets to keep the column filled while looping
-  while (accumulatedHeight < baseCycleHeight * 2 + visibleHeight) {
-    items.forEach((item) => {
-      const clone = item.cloneNode(true);
-      clone.classList.add('sponsor-strip__item--clone');
-      clone.setAttribute('aria-hidden', 'true');
-      clone.querySelectorAll('a, button, [tabindex]').forEach((node) => {
-        node.setAttribute('tabindex', '-1');
-        node.setAttribute('aria-hidden', 'true');
-      });
-      fragment.appendChild(clone);
-    });
-
-    accumulatedHeight += baseCycleHeight;
-  }
-
-  if (fragment.childNodes.length) {
-    list.appendChild(fragment);
-  }
-
-  const durationSeconds = baseCycleHeight / SponsorMarqueeConfig.PIXELS_PER_SECOND;
-  list.style.setProperty('--sponsor-scroll-distance', `${baseCycleHeight}px`);
-  list.style.setProperty('--sponsor-scroll-duration', `${durationSeconds}s`);
-
-  list.offsetHeight;
-
-  list.classList.add('sponsor-strip--scrolling', 'sponsor-strip--marquee');
-  if (scroller) scroller.classList.remove('sponsor__scroller--scrollable');
-  state.sponsorRotationTimer = true;
-}
-
-function stopSponsorRotation() {
-  if (typeof state.sponsorRotationTimer === 'number') {
-    cancelAnimationFrame(state.sponsorRotationTimer);
-  }
-
-  if (elements.sponsorShowcaseList) {
-    const list = elements.sponsorShowcaseList;
-    const scroller = list.closest('.sponsor__scroller');
-    list.scrollTop = 0;
-    list.style.removeProperty('transform');
-    list.style.removeProperty('--sponsor-scroll-distance');
-    list.style.removeProperty('--sponsor-scroll-duration');
-    list.style.removeProperty('--sponsor-visible-height');
-    list.style.removeProperty('height');
-    list.classList.remove('sponsor-strip--scrolling');
-    list.classList.remove('sponsor-strip--marquee');
-    list.classList.remove('sponsor-strip--static');
-    list.querySelectorAll('.sponsor-strip__item--clone').forEach((node) => node.remove());
-
-    if (scroller) {
-      scroller.classList.remove('sponsor__scroller--scrollable');
-      scroller.style.removeProperty('--sponsor-visible-height');
-      scroller.style.removeProperty('height');
-    }
-  }
-
-  state.sponsorRotationTimer = null;
-}
-
-function restartSponsorRotation() {
-  stopSponsorRotation();
-  if (state.fullscreenActive) {
-    startSponsorRotation();
-  }
-}
-
-function applyFullscreenLayoutState(active) {
-  if (state.fullscreenActive === active) {
-    updateFullscreenToggleLabel(active);
-    return;
-  }
-
-  state.fullscreenActive = active;
-  document.body.classList.toggle('is-fullscreen', active);
-  updateFullscreenToggleLabel(active);
-
-  if (active) {
-    startSponsorRotation();
-  } else {
-    stopSponsorRotation();
-  }
-
-  syncHistoryPanelToLayout({ immediate: true });
-}
-
-async function enterFullscreenMode() {
-  applyFullscreenLayoutState(true);
-
-  const target = document.documentElement;
-  const requestFullscreen = target.requestFullscreen ||
-    target.webkitRequestFullscreen ||
-    target.mozRequestFullScreen ||
-    target.msRequestFullscreen;
-
-  if (typeof requestFullscreen === 'function') {
-    try {
-      await requestFullscreen.call(target);
-    } catch (error) {
-      console.warn('Fullscreen request failed', error);
-    }
-  }
-}
-
-async function exitFullscreenMode() {
-  const exitFullscreen = document.exitFullscreen ||
-    document.webkitExitFullscreen ||
-    document.mozCancelFullScreen ||
-    document.msExitFullscreen;
-
-  if (typeof exitFullscreen === 'function') {
-    try {
-      await exitFullscreen.call(document);
-    } catch (error) {
-      console.warn('Exit fullscreen failed', error);
-      applyFullscreenLayoutState(false);
-    }
-  } else {
-    applyFullscreenLayoutState(false);
-  }
-}
-
-function toggleFullscreenMode() {
-  const active = state.fullscreenActive || Boolean(getNativeFullscreenElement());
-  if (active) {
-    exitFullscreenMode();
-  } else {
-    enterFullscreenMode();
-  }
-}
-
-function handleFullscreenChange() {
-  const active = Boolean(getNativeFullscreenElement());
-  applyFullscreenLayoutState(active);
 }
 
 // ============================================
@@ -2893,8 +2692,6 @@ function setupEventListeners() {
     input.addEventListener('change', (event) => setDialectVoice(event.target.value));
   });
   elements.historyScrim?.addEventListener('click', () => closeHistoryPanel());
-  elements.fullscreenToggle?.addEventListener('click', toggleFullscreenMode);
-  document.addEventListener('fullscreenchange', handleFullscreenChange);
 }
 
 // ============================================
@@ -2904,8 +2701,8 @@ function setupEventListeners() {
 function init() {
   initializeDialectVoicePreference();
   initializeAudioPreference();
+  setupRevealAnimations();
   setupEventListeners();
-  updateFullscreenToggleLabel(state.fullscreenActive);
   syncHistoryPanelToLayout({ immediate: true });
   updateLoadingUI();
   loadNumbers();
