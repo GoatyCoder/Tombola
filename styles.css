@@ -101,6 +101,11 @@ body {
   overflow-x: hidden;
 }
 
+body.presentation-mode {
+  background: var(--surface);
+  overflow-x: hidden;
+}
+
 body.modal-open {
   overflow: hidden;
 }
@@ -141,8 +146,49 @@ button:focus-visible {
   padding-block: clamp(1.4rem, 3.2vw, 2.2rem) 0;
 }
 
+body.presentation-mode .layout {
+  height: 100vh;
+  padding: clamp(1.2rem, 2.6vw, 1.8rem);
+  gap: clamp(1rem, 2vw, 1.6rem);
+  align-items: stretch;
+  grid-template-areas: 'dashboard' 'board' 'sponsor';
+}
+
+@media (min-width: 62rem) {
+  body.presentation-mode .layout {
+    grid-template-columns: minmax(18rem, 24vw) minmax(0, 1fr) minmax(10.5rem, 18vw);
+    grid-template-areas: 'dashboard board sponsor';
+  }
+}
+
 .layout__section {
   display: block;
+}
+
+body.presentation-mode .shell {
+  width: 100%;
+  max-width: none;
+  padding-inline: clamp(1.2rem, 2.6vw, 2.4rem);
+  height: 100%;
+}
+
+body.presentation-mode .layout__section {
+  min-height: 0;
+}
+
+body.presentation-mode .layout__section--dashboard {
+  grid-area: dashboard;
+  display: flex;
+}
+
+body.presentation-mode .layout__section--board {
+  grid-area: board;
+  display: flex;
+}
+
+body.presentation-mode .layout__section--sponsor {
+  grid-area: sponsor;
+  display: flex;
 }
 
 /* ============================================
@@ -209,6 +255,11 @@ button:focus-visible {
   padding-block: clamp(1.6rem, 4vw, 2.6rem);
 }
 
+body.presentation-mode .hero,
+body.presentation-mode .app-footer {
+  display: none;
+}
+
 .hero__shell {
   display: flex;
   justify-content: center;
@@ -256,10 +307,23 @@ button:focus-visible {
   align-items: stretch;
 }
 
+body.presentation-mode .dashboard__shell {
+  flex: 1;
+}
+
 .dashboard__grid {
   display: grid;
   gap: clamp(0.95rem, 2.4vw, 1.35rem);
   align-items: stretch;
+}
+
+body.presentation-mode .dashboard__grid {
+  padding: clamp(0.9rem, 2vw, 1.4rem);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-subtle);
+  align-content: start;
 }
 
 .dashboard-hero {
@@ -756,16 +820,39 @@ button:focus-visible {
   width: min(88rem, 100%);
 }
 
+body.presentation-mode .board-area__shell {
+  width: 100%;
+  height: 100%;
+}
+
 .board-area__layout {
   display: grid;
   gap: clamp(1.05rem, 2.6vw, 1.6rem);
   padding-bottom: clamp(2rem, 5vw, 3.5rem);
 }
 
+body.presentation-mode .board-area__layout {
+  height: 100%;
+  padding: 0;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+
 .board-wrapper {
   display: grid;
   gap: clamp(0.9rem, 2vw, 1.3rem);
   position: relative;
+}
+
+body.presentation-mode .board-wrapper {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(0.8rem, 2vw, 1.25rem);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-subtle);
 }
 
 @media (min-width: 56.25rem) {
@@ -782,6 +869,13 @@ button:focus-visible {
   display: grid;
   gap: clamp(0.15rem, 0.8vw, 0.35rem);
   grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+body.presentation-mode .board-grid {
+  flex: 1;
+  height: 100%;
+  grid-template-rows: repeat(18, minmax(0, 1fr));
+  align-items: stretch;
 }
 
 .board-grid--loading {
@@ -824,6 +918,11 @@ button:focus-visible {
   transition: transform var(--duration-sm) var(--easing-standard),
     background-color var(--duration-sm) var(--easing-standard),
     color var(--duration-sm) var(--easing-standard);
+}
+
+body.presentation-mode .board-cell {
+  aspect-ratio: auto;
+  height: 100%;
 }
 
 .board-cell__number {
@@ -1666,6 +1765,10 @@ button:focus-visible {
   height: 100%;
 }
 
+body.presentation-mode .sponsor__shell {
+  height: 100%;
+}
+
 .sponsor__scroller {
   position: relative;
   border-radius: calc(var(--radius-md) + 0.4rem);
@@ -1673,6 +1776,13 @@ button:focus-visible {
   overflow: hidden;
   height: 100%;
   min-height: 0;
+}
+
+body.presentation-mode .sponsor__scroller {
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-md);
+  background: var(--surface);
+  overflow-y: auto;
 }
 
 .sponsor__scroller::before,
@@ -1703,6 +1813,16 @@ button:focus-visible {
   list-style: none;
   margin: 0;
   padding: 0;
+}
+
+body.presentation-mode .sponsor__strip {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.75rem, 1.6vw, 1.3rem);
+}
+
+body.presentation-mode .sponsor-strip__item {
+  flex: 0 0 auto;
 }
 
 .sponsor-strip__item {
