@@ -9,6 +9,7 @@ const STORAGE_KEYS = {
   AUDIO: 'tombola-audio-enabled',
   DRAW_STATE: 'TOMBOLA_DRAW_STATE',
   AUDIO_VOICE: 'tombola-dialect-voice',
+  PRESENTATION_MODE: 'tombola:presentation-mode',
 };
 
 const DATA_PATHS = {
@@ -91,6 +92,7 @@ const state = {
   historyOpen: false,
   audioEnabled: true,
   dialectVoice: DialectVoices.PRUDENZA,
+  presentationMode: false,
   storageErrorMessage: '',
   sponsorShowcaseRendered: false,
   resetDialogOpen: false,
@@ -141,6 +143,7 @@ const elements = {
   historyPanel: document.querySelector('#history-panel'),
   historyToggle: document.querySelector('#history-toggle'),
   historyScrim: document.querySelector('#history-scrim'),
+  presentationToggle: document.querySelector('#presentation-toggle'),
   audioToggle: document.querySelector('#audio-toggle'),
   drawProgressValue: document.querySelector('#draw-progress-value'),
   drawProgressBar: document.querySelector('#draw-progress-bar'),
@@ -1224,6 +1227,45 @@ function updateAudioToggle() {
   const label = enabled ? 'Disattiva annuncio audio' : 'Attiva annuncio audio';
   elements.audioToggle.setAttribute('aria-label', label);
   elements.audioToggle.title = label;
+}
+
+function setPresentationMode(enabled) {
+  state.presentationMode = Boolean(enabled);
+
+  document.body.classList.toggle('presentation-mode', state.presentationMode);
+
+  updatePresentationToggle();
+
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.PRESENTATION_MODE, state.presentationMode ? 'true' : 'false');
+    }
+  } catch (error) {
+    console.warn('Presentation preference save error', error);
+  }
+}
+
+function updatePresentationToggle() {
+  if (!elements.presentationToggle) return;
+
+  const label = state.presentationMode ? 'Disattiva vista proiezione' : 'Attiva vista proiezione';
+  elements.presentationToggle.setAttribute('aria-pressed', state.presentationMode ? 'true' : 'false');
+  elements.presentationToggle.setAttribute('aria-label', label);
+  elements.presentationToggle.title = label;
+}
+
+function initializePresentationPreference() {
+  try {
+    const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.PRESENTATION_MODE) : null;
+    if (stored === 'true') {
+      setPresentationMode(true);
+      return;
+    }
+  } catch (error) {
+    console.warn('Presentation preference load error', error);
+  }
+
+  updatePresentationToggle();
 }
 
 function getAudioFilePath(number, variant = 'base') {
@@ -2657,6 +2699,7 @@ function setupEventListeners() {
   elements.drawButton?.addEventListener('click', handleDraw);
   elements.resetButton?.addEventListener('click', resetGame);
   elements.historyToggle?.addEventListener('click', toggleHistoryPanel);
+  elements.presentationToggle?.addEventListener('click', () => setPresentationMode(!state.presentationMode));
   elements.audioToggle?.addEventListener('click', () => setAudioEnabled(!state.audioEnabled));
   elements.dialectVoiceInputs?.forEach((input) => {
     input.addEventListener('change', (event) => setDialectVoice(event.target.value));
@@ -2671,6 +2714,7 @@ function setupEventListeners() {
 function init() {
   initializeDialectVoicePreference();
   initializeAudioPreference();
+  initializePresentationPreference();
   setupEventListeners();
   syncHistoryPanelToLayout({ immediate: true });
   updateLoadingUI();
